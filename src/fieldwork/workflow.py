@@ -130,6 +130,15 @@ def compare(before, after):
     """Compare per-feature populated fractions across scopes or deliveries."""
     if before.kind != "missingness" or after.kind != "missingness":
         raise ValueError("compare accepts two missingness results")
+
+    def counting(analysis):
+        unit = analysis.payload.get("analysis_unit", {})
+        if unit.get("counting_unit", "rows") == "rows":
+            return ("rows",)
+        return ("entities", unit["entity_keys"], unit["presence_aggregation"])
+
+    if counting(before) != counting(after):
+        raise ValueError("Comparison requires the same analysis unit, entity keys and aggregation")
     left = {r["feature"]: r for r in before["availability"]}
     right = {r["feature"]: r for r in after["availability"]}
     records = []
@@ -149,6 +158,14 @@ def compare(before, after):
         "before_convention": before["missing_convention"],
         "after_convention": after["missing_convention"],
         "changes": records,
+        "analysis_unit": after.payload.get(
+            "analysis_unit",
+            {
+                "counting_unit": "rows",
+                "denominator": after["scope"]["evaluated_rows"],
+                "presence_aggregation": "per_row",
+            },
+        ),
         "findings": [],
     }
     for record in records:
@@ -160,5 +177,6 @@ def compare(before, after):
             record,
             [],
             example_limit=0,
+            unit=counting(after)[0],
         )
     return result("comparison", base)

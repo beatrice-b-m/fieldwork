@@ -118,3 +118,84 @@ def test_candidate_roles_and_priority():
     assert roles[("entity",)] == "repeated grouping"
     assert overview["grains"][0]["role"] == "repeated grouping"
     assert len(overview["grains"]) == 5
+
+
+def test_signature_to_complete_scope_and_saved_overview_inspection():
+    df = pd.DataFrame({"a": [1, 2, 3, None], "b": [None, None, None, 4]}, index=[0] * 4)
+    analysis = fw.missingness(df, example_limit=1)
+    signature = next(s for s in analysis["signatures"] if s["present"] == ["a"])
+    assert len(analysis.inspect(df, signature["finding_id"])) == 1
+    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(analysis.to_dict())))
+    scope = saved.select(df, signature["finding_id"], name="a only")
+    assert scope.positions == (0, 1, 2)
+    assert scope.parent == "input"
+    assert saved.inspect(df, signature["finding_id"], all_matches=True).equals(df.iloc[:3])
+    assert fw.missingness(df, scope=scope)["availability"][0]["populated"] == 3
+    with pytest.raises(ValueError, match="differs"):
+        saved.select(df.iloc[::-1], signature["finding_id"])
+    overview = fw.explore(df)
+    record = next(f for f in overview["findings"] if f["pattern"] == "availability_signature")
+    assert len(overview.select(df, record["id"]).positions) == 3
+    for rendered in (fw.render_plaintext(saved), fw.render_html(saved)):
+        assert "Present: a; absent: b" in rendered
+    assert "<pre>" not in fw.render_html(saved)
+
+
+def test_context_and_entity_findings_select_full_source_rows():
+    df = pd.DataFrame(
+        {"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]}, index=[0] * 3
+    )
+    analysis = fw.missingness(df, features=["x"], by=["site"], entity="entity", example_limit=0)
+    context = next(
+        f
+        for f in analysis["findings"]
+        if f["pattern"] == "context_availability"
+        and f["structure"]["context"]["site"]["value"] == "A"
+    )
+    assert analysis.select(df, context["id"], exceptions=True).positions == (1,)
+    entity = next(
+        f
+        for f in analysis["findings"]
+        if f["pattern"] == "entity_availability" and f["structure"]["presence_pattern"] == "some"
+    )
+    assert analysis.select(df, entity["id"]).positions == (0, 1)
+    assert "some populated rows" in fw.render_plaintext(analysis)
+
+
+def test_equal_entity_weights_and_aggregation():
+    df = pd.DataFrame(
+        {"entity": ["big"] * 100 + ["small", None], "a": [1] * 102, "b": [1] * 100 + [None, None]},
+        index=[0] * 102,
+    )
+    args = {"features": ["a", "b"], "entity": "entity", "min_implication": 0, "min_similarity": 0}
+    rows = fw.missingness(df.iloc[:101], **args)
+    entities = fw.missingness(df, **args, unit="entities")
+
+    def implication(analysis):
+        return next(
+            f
+            for f in analysis["findings"]
+            if f["pattern"] == "presence_implication" and f["features"][0]["column"] == "a"
+        )
+
+    assert implication(rows)["measurements"]["conditional_presence"] == pytest.approx(100 / 101)
+    assert implication(entities)["measurements"]["conditional_presence"] == 0.5
+    assert implication(entities)["measurements"]["presence_jaccard"] == 0.5
+    assert implication(entities)["counting_unit"] == "entities"
+    assert sorted(s["count"] for s in entities["signatures"]) == [1, 1]
+    assert entities["analysis_unit"]["missing_key_excluded_rows"] == 1
+    assert entities.select(df, implication(entities)["id"]).positions == tuple(range(100))
+    assert entities.select(df, implication(entities)["id"], exceptions=True).positions == (100,)
+    # A separate mixed entity demonstrates any/all presence without index-label selection.
+    mixed = pd.DataFrame({"e": [1, 1, 2], "x": [1, None, None]})
+    any_present = fw.missingness(mixed, entity="e", features=["x"], unit="entities")
+    all_present = fw.missingness(
+        mixed, entity="e", features=["x"], unit="entities", entity_presence="all"
+    )
+    assert any_present["availability"][0]["populated"] == 1
+    assert all_present["availability"][0]["populated"] == 0
+    with pytest.raises(ValueError, match="same analysis unit"):
+        fw.compare(any_present, all_present)
+    with pytest.raises(ValueError, match="requires entity"):
+        fw.missingness(mixed, unit="entities")
+    assert "2 entities" in fw.render_plaintext(any_present)

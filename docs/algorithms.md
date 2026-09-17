@@ -2,8 +2,9 @@
 
 ## Availability
 
-Features are encoded once per operation. Repeated boolean availability signatures
-are ranked by descending row count with lexical signature ties. `max_signatures=50`
+Features are encoded once per operation. Row presence or explicit any/all entity
+aggregation provides the analysis masks. Repeated boolean availability signatures
+are ranked by descending analysis-unit count with lexical signature ties. `max_signatures=50`
 limits stored signatures, with omitted row mass reported. Identical masks form
 families even for always-missing or always-present columns.
 

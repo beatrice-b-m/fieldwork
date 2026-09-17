@@ -35,9 +35,12 @@ sample: search budgets and display limits never change its row population.
 Examples and exceptions contain at most `example_limit` positions (default 5),
 selected in source order. `total`, `omitted`, `limit`, and selection method accompany
 each. `inspect` returns those saved representative rows, not every matching row;
-`result.recompute(df, example_limit=len(df))` replays saved parameters, missing
-conventions and scope to recover all examples before calling `inspect` again.
-Recomputation applies to individual discovery sections, not an overview/comparison. Dependency exception groups
+`result.inspect(df, finding_id, all_matches=True)` recovers the entire matching
+source population. `result.select(df, finding_id, exceptions=False, name=...)`
+returns that population as a reusable `Scope` with parent lineage. Selection
+recomputes saved analysis parameters on the verified source with unbounded examples;
+no display limit changes the matching population. This works for overview findings
+by replaying their owning section. Recomputation applies to individual discovery sections, not an overview/comparison. Dependency exception groups
 also report omitted groups and rows. Findings never embed entire source rows.
 
 ## Missing conventions
@@ -93,3 +96,27 @@ original source, separating scope restrictions from missing-value exclusions.
 With explicit dimensions, `explore` accepts common `scope`, `missing`, `table_id`
 and `features` settings in `discovery`; search-only settings raise `ValueError`.
 Duplicate settings in `discovery` and explicit options are rejected.
+
+## Availability units and selectable patterns
+
+`missingness(..., unit="rows")` remains the default, even with `entity=` supplied.
+`unit="entities"` requires entity keys. Each distinct populated key has equal
+weight. `entity_presence="any"` (default) aggregates presence across its rows;
+`"all"` requires presence on every row. Incomplete keys are excluded and counted.
+All availability metrics, families, signatures, similarity and implications use
+the chosen unit. `analysis_unit` records aggregation, denominator, eligible source
+rows and missing-key exclusions. Context analyses aggregate within each context;
+an entity spanning contexts contributes once to each relevant context.
+
+The denominator of conditional presence is antecedent-populated units; Jaccard
+uses either-populated units. Signature counts use units; omission metadata reports
+both omitted units and their source rows. Entity summaries always classify raw-row
+presence as any/all/one/some/none. Singleton all/one overlap intentionally.
+
+Signatures reference finding IDs. Context availability and each entity presence
+pattern are also findings, with typed structural predicates, bounded examples and
+selectors. Entity selections return **all source rows** belonging to matching
+entities (within the analyzed scope/context), including rows where the feature is
+absent. Examples and exception totals always count source rows, separately from
+unit support. Comparisons require compatible units and entity aggregation; recipes
+persist these settings. HTML renders named evidence tables and source selections.

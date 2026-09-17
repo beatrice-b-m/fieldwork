@@ -76,7 +76,7 @@ class InvestigationResult(ExplorerResult):
     def to_frame(self, section: str = "findings") -> pd.DataFrame:
         return pd.json_normalize(self.payload.get(section, []))
 
-    def inspect(self, df: pd.DataFrame, finding: str | int, *, exceptions: bool = False):
+    def _finding(self, df, finding):
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs from the ordered analysis source")
         records = self.payload["findings"]
@@ -87,8 +87,36 @@ class InvestigationResult(ExplorerResult):
         )
         if record is None:
             raise KeyError(finding)
-        selection = record["exceptions" if exceptions else "examples"]
-        return df.iloc[selection["positions"]].copy()
+        return record
+
+    def inspect(self, df: pd.DataFrame, finding: str | int, *, exceptions=False, all_matches=False):
+        """Return saved examples, or recompute the complete matching source population."""
+        record = self._finding(df, finding)
+        if all_matches:
+            return df.iloc[list(self.select(df, finding, exceptions=exceptions).positions)].copy()
+        return df.iloc[record["exceptions" if exceptions else "examples"]["positions"]].copy()
+
+    def select(self, df, finding, *, exceptions=False, name="finding selection"):
+        """Recover all matching source positions as a reusable, source-bound Scope."""
+        record = self._finding(df, finding)
+        selector = record["selector"]
+        analysis = self
+        if self.kind == "overview":
+            analysis = InvestigationResult.from_dict(self["sections"][selector["analysis_section"]])
+        if analysis.kind == "paths":
+            selected = analysis["scope"].get("selection_positions")
+            return Scope(
+                self["source"]["dataset_id"],
+                tuple(selected if selected is not None else range(len(df))),
+                name,
+                analysis["scope"]["name"],
+            )
+        replay = analysis.recompute(df, example_limit=len(df))
+        complete = replay._finding(df, selector["finding_id"])
+        positions = complete["exceptions" if exceptions else "examples"]["positions"]
+        return Scope(
+            self["source"]["dataset_id"], tuple(positions), name, analysis["scope"]["name"]
+        )
 
     def recompute(self, df: pd.DataFrame, **overrides):
         """Reapply saved conventions and scope to the same source, with explicit budget overrides."""

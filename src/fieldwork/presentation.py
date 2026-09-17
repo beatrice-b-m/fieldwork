@@ -76,6 +76,7 @@ def visualization_data(result, *, section=None, detail="full"):
         }
         if detail == "full":
             row.update(
+                id=record["id"],
                 measurements=record["measurements"],
                 counting_unit=record["counting_unit"],
                 examples=record["examples"],
@@ -84,6 +85,7 @@ def visualization_data(result, *, section=None, detail="full"):
         output["findings"].append(row)
     if detail == "full":
         for key in (
+            "analysis_unit",
             "scope",
             "coverage",
             "availability",
@@ -161,6 +163,11 @@ def render_plaintext(
         lines.append("Topology only · quantitative evidence suppressed")
     else:
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
+    if detail == "full" and "analysis_unit" in data:
+        unit = data["analysis_unit"]
+        lines.append(
+            f"Analysis: {unit['denominator']} {unit['counting_unit']}; presence={unit['presence_aggregation']}"
+        )
     if data["kind"] == "overview":
         overview = data["overview"]
         lines.append("Availability families")
@@ -183,14 +190,14 @@ def render_plaintext(
             "Summary lists are limited; individual sections retain complete evidence and coverage."
         )
     for row in [] if data["kind"] == "overview" else data["findings"][:max_nodes]:
-        lines.append(row["statement"])
+        lines.append((f"[{row['id']}] " if detail == "full" else "") + row["statement"])
         if detail == "full":
             metrics = ", ".join(
                 f"{k}={v}"
                 for k, v in row["measurements"].items()
                 if not isinstance(v, (dict, list))
             )
-            lines.append("  " + metrics)
+            lines.append(f"  Unit: {row['counting_unit']}; " + metrics)
             lines.append(
                 f"  Examples: {row['examples']['positions']}; exceptions: {row['exceptions']['positions']}"
             )
@@ -294,15 +301,58 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
         render_svg(data, detail=detail, max_findings=min(12, max_findings)),
         "<h1>Inspect findings</h1>",
     ]
+    if detail == "full" and "analysis_unit" in projected:
+        parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
     for row in projected["findings"][:max_findings]:
+        anchor = f' id="{html.escape(row["id"], quote=True)}"' if detail == "full" else ""
         parts.append(
-            "<details><summary>"
-            + html.escape(row["statement"])
-            + "</summary><pre>"
-            + html.escape(json.dumps(row, indent=2, ensure_ascii=False))
-            + "</pre></details>"
+            "<details" + anchor + "><summary>" + html.escape(row["statement"]) + "</summary>"
         )
+        if detail == "full":
+            parts.append(
+                "<p>Finding "
+                + html.escape(row["id"])
+                + " · counting unit: "
+                + html.escape(row["counting_unit"])
+                + "</p>"
+            )
+            parts.append(_html_evidence(row["measurements"]))
+            parts.append(
+                "<h3>Representative source rows</h3>"
+                + _html_evidence({"examples": row["examples"], "exceptions": row["exceptions"]})
+            )
+        if row.get("structure"):
+            parts.append(_html_evidence(row["structure"]))
+        parts.append("</details>")
     if len(projected["findings"]) > max_findings:
         parts.append("<p>More findings available; display limit reached.</p>")
     parts.append("</body></html>")
     return "".join(parts)
+
+
+def _html_evidence(value):
+    """Readable saved evidence without making readers interpret serialized dictionaries."""
+    if isinstance(value, dict):
+        return (
+            "<table>"
+            + "".join(
+                "<tr><th style='text-align:left;vertical-align:top;padding-right:1rem'>"
+                + html.escape(str(key).replace("_", " "))
+                + "</th><td>"
+                + _html_evidence(item)
+                + "</td></tr>"
+                for key, item in value.items()
+            )
+            + "</table>"
+        )
+    if isinstance(value, list):
+        if any(isinstance(item, (dict, list)) for item in value):
+            return (
+                "<ul>"
+                + "".join("<li>" + _html_evidence(item) + "</li>" for item in value)
+                + "</ul>"
+            )
+        return html.escape(", ".join(str(item) for item in value) or "none")
+    if isinstance(value, float):
+        return f"{value:.4g}"
+    return html.escape("undefined" if value is None else str(value))
