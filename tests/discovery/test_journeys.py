@@ -296,3 +296,18 @@ def test_path_empty_exception_selection_and_entity_presentation_units():
     assert "(1 entities)" in text
     assert "(1 rows)" not in text
     assert "2 entities" in fw.render_svg(overview)
+
+
+def test_whole_context_and_entity_summaries_are_selectable_after_save():
+    df = pd.DataFrame(
+        {"site": ["A", "A", "B"], "e": [1, 1, None], "x": [1, None, 2]}, index=[0] * 3
+    )
+    analysis = fw.missingness(df, by=["site"], entity="e", features=["x"], example_limit=0)
+    saved = fw.InvestigationResult.from_dict(
+        json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
+    )
+    context_id = saved["contexts"][0]["finding_id"]
+    assert saved.select(df, context_id).positions == (0, 1)
+    entity = next(f for f in saved["findings"] if f["pattern"] == "entity_summary")
+    assert saved.select(df, entity["id"]).positions == (0, 1)
+    assert "x: 1/2 populated rows" in fw.render_plaintext(saved)

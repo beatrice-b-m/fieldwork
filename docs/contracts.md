@@ -113,7 +113,10 @@ uses either-populated units. Signature counts use units; omission metadata repor
 both omitted units and their source rows. Entity summaries always classify raw-row
 presence as any/all/one/some/none. Singleton all/one overlap intentionally.
 
-Signatures reference finding IDs. Context availability and each entity presence
+Signatures and whole context summaries reference finding IDs. Selecting a context
+summary returns every eligible source row in that context. Whole entity summaries
+select all eligible entities; individual patterns narrow to matching entities.
+Context availability and each entity presence
 pattern are also findings, with typed structural predicates, bounded examples and
 selectors. Entity selections return **all source rows** belonging to matching
 entities (within the analyzed scope/context), including rows where the feature is

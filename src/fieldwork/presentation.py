@@ -242,6 +242,10 @@ def render_plaintext(
                 if not isinstance(v, (dict, list))
             )
             lines.append(f"  Unit: {row['counting_unit']}; " + metrics)
+            for feature in row["measurements"].get("availability", []):
+                lines.append(
+                    f"  {feature['feature']}: {feature['populated']}/{feature['denominator']} populated {row['counting_unit']}"
+                )
             lines.append(
                 f"  Examples: {row['examples']['positions']}; exceptions: {row['exceptions']['positions']}"
             )

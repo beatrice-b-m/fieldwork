@@ -286,6 +286,23 @@ def missingness(
                 selector={"operation": "context_availability", "context": values, "feature": c},
             )
             record["finding_ids"].append(f["id"])
+        summary = finding(
+            base,
+            "context_summary",
+            "Availability within " + context_statement(values),
+            list(dict.fromkeys([*contexts, *selected])),
+            {
+                "source_rows": len(rows),
+                "denominator": len(context_units),
+                "availability": record["availability"],
+            },
+            positions[sorted(i for group in context_units for i in group)],
+            example_limit=example_limit,
+            unit=unit,
+            structure={"context": values},
+            selector={"operation": "context_summary", "context": values},
+        )
+        record["finding_id"] = summary["id"]
         base["contexts"].append(record)
     base["entities"] = []
     if entities:
@@ -322,6 +339,18 @@ def missingness(
                         "presence_pattern": pattern,
                     },
                 )
+            finding(
+                base,
+                "entity_summary",
+                f"{c}: presence across entities ({', '.join(entities)})",
+                list(dict.fromkeys([*entities, c])),
+                summary,
+                positions[sorted(i for rows in entity_groups.values() for i in rows)],
+                example_limit=example_limit,
+                unit="entities",
+                structure={"entity_keys": entities},
+                selector={"operation": "entity_summary", "feature": c},
+            )
             base["entities"].append(summary)
     omitted = [j for _, indices in ordered[max_signatures:] for j in indices]
     base["coverage"] = {
