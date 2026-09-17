@@ -115,7 +115,7 @@ def visualization_data(result, *, section=None, detail="full"):
                 "relationships": sorted(
                     [
                         {
-                            k: edge[k]
+                            k: structural_evidence(edge[k]) if k == "structure" else edge[k]
                             for k in (
                                 "kind",
                                 "features",
@@ -212,7 +212,7 @@ def render_plaintext(
         for signature in overview["signatures"][: min(5, max_nodes)]:
             text = "  Present: " + (", ".join(signature["present"]) or "none")
             if detail == "full":
-                text += f" ({signature['count']} rows)"
+                text += f" ({signature['count']} {data.get('analysis_unit', {}).get('counting_unit', 'rows')})"
             lines.append(text)
         lines.append("Candidate grains")
         for candidate in overview["grains"][: min(5, max_nodes)]:
@@ -275,7 +275,14 @@ def render_svg(
         62,
         "Topology only"
         if detail == "topology"
-        else f"{data.get('scope', {}).get('evaluated_rows', 0)} evaluated rows · saved evidence",
+        else (
+            f"{data.get('scope', {}).get('evaluated_rows', 0)} source rows · "
+            + (
+                f"{data['analysis_unit']['denominator']} {data['analysis_unit']['counting_unit']} · {data['analysis_unit']['presence_aggregation']}"
+                if "analysis_unit" in data
+                else "saved evidence"
+            )
+        ),
         size=13,
     )
     y = 92
@@ -295,11 +302,17 @@ def render_svg(
             lines = _wrap(row["statement"], 90)
             metrics = ""
             if detail == "full":
-                metrics = " · ".join(
-                    f"{k}: {v:.3g}" if isinstance(v, float) else f"{k}: {v}"
-                    for k, v in row["measurements"].items()
-                    if isinstance(v, (int, float)) and not isinstance(v, bool)
+                metrics = (
+                    row["counting_unit"]
+                    + " · "
+                    + " · ".join(
+                        f"{k}: {v:.3g}" if isinstance(v, float) else f"{k}: {v}"
+                        for k, v in row["measurements"].items()
+                        if isinstance(v, (int, float)) and not isinstance(v, bool)
+                    )
                 )
+            if detail == "full" and row["measurements"].get("explanation"):
+                metrics = row["measurements"]["explanation"]
             detail_lines = _wrap(metrics, 102) if metrics else []
             height = 26 + len(lines) * 20 + len(detail_lines) * 17
             svg.rect(20, y, 820, height)

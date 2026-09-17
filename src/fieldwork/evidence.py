@@ -116,7 +116,7 @@ class InvestigationResult(ExplorerResult):
         if self.kind == "overview":
             analysis = InvestigationResult.from_dict(self["sections"][selector["analysis_section"]])
         if analysis.kind == "paths":
-            selected = analysis["scope"].get("selection_positions")
+            selected = [] if exceptions else analysis["scope"].get("selection_positions")
             return Scope(
                 self["source"]["dataset_id"],
                 tuple(selected if selected is not None else range(len(df))),

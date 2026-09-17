@@ -283,3 +283,16 @@ def test_overview_entity_context_configuration_and_selection():
         if f["pattern"] == "availability_signature" and "x" in f["structure"]["present"]
     )
     assert overview.select(df, signature["id"]).positions == (0, 1)
+
+
+def test_path_empty_exception_selection_and_entity_presentation_units():
+    df = pd.DataFrame({"e": [1, 1, 2], "x": [1, 2, None]})
+    paths = fw.suggest_paths(df)
+    path = next(f for f in paths["findings"] if f["pattern"] == "census_path")
+    assert paths.select(df, path["id"], exceptions=True).positions == ()
+    assert paths.inspect(df, path["id"], exceptions=True, all_matches=True).empty
+    overview = fw.explore(df, discovery={"entity": "e", "unit": "entities"})
+    text = fw.render_plaintext(overview)
+    assert "(1 entities)" in text
+    assert "(1 rows)" not in text
+    assert "2 entities" in fw.render_svg(overview)
