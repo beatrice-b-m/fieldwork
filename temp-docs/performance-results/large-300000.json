@@ -1,0 +1,171 @@
+{
+  "environment": {
+    "python": "3.11.14",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6",
+    "fieldwork": "0.1.0"
+  },
+  "configuration": {
+    "rows": 300000,
+    "columns": 150,
+    "fixture": "sparse",
+    "seed": 721,
+    "operations": [
+      "levels",
+      "census",
+      "pairs",
+      "joint_counts",
+      "infer_schema",
+      "fingerprint",
+      "missingness",
+      "patterns",
+      "paths",
+      "dependencies",
+      "explore"
+    ],
+    "features": null,
+    "candidates": null,
+    "timeout": 180.0,
+    "repeats": 1,
+    "output": "/tmp/fieldwork-perf/large-300000.json",
+    "profile": null
+  },
+  "results": [
+    {
+      "status": "completed",
+      "analysis_seconds": 0.35518483398482203,
+      "fixture_seconds": 0.4976330419885926,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.0010110000148415565,
+      "result_bytes": 202208,
+      "coverage": null,
+      "process_peak_rss_bytes": 798556160,
+      "operation": "levels",
+      "repeat": 1,
+      "process_seconds": 1.0185839590267278
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 0.01641224999912083,
+      "fixture_seconds": 0.3640413749963045,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.00017862499225884676,
+      "result_bytes": 27542,
+      "coverage": null,
+      "process_peak_rss_bytes": 798359552,
+      "operation": "census",
+      "repeat": 1,
+      "process_seconds": 0.5427437920006923
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 0.06735795899294317,
+      "fixture_seconds": 0.36310395802138373,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.0001687089679762721,
+      "result_bytes": 24219,
+      "coverage": null,
+      "process_peak_rss_bytes": 798359552,
+      "operation": "pairs",
+      "repeat": 1,
+      "process_seconds": 0.5922809580224566
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 0.015342500002589077,
+      "fixture_seconds": 0.3622656250372529,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.00011920899851247668,
+      "result_bytes": 14962,
+      "coverage": null,
+      "process_peak_rss_bytes": 798244864,
+      "operation": "joint_counts",
+      "repeat": 1,
+      "process_seconds": 0.5365569589775987
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 0.24364724999759346,
+      "fixture_seconds": 0.3622648339951411,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.000362333026714623,
+      "result_bytes": 61909,
+      "coverage": null,
+      "process_peak_rss_bytes": 798375936,
+      "operation": "infer_schema",
+      "repeat": 1,
+      "process_seconds": 0.7669719160185196
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 66.32462487503653,
+      "fixture_seconds": 0.36055854201549664,
+      "frame_bytes": 360000132,
+      "process_peak_rss_bytes": 798179328,
+      "operation": "fingerprint",
+      "repeat": 1,
+      "process_seconds": 66.8476247920189
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 122.1914398749941,
+      "fixture_seconds": 0.3834445830434561,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.0035655000247061253,
+      "result_bytes": 864950,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 300000,
+        "signatures_shown": 50,
+        "signature_omitted_units": 299950,
+        "signature_omitted_rows": 299950,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1636548608,
+      "operation": "missingness",
+      "repeat": 1,
+      "process_seconds": 122.76027383300243
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 67.82033154199598,
+      "fixture_seconds": 0.3779611249919981,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.0007167499861679971,
+      "result_bytes": 172029,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 20
+      },
+      "process_peak_rss_bytes": 865386496,
+      "operation": "patterns",
+      "repeat": 1,
+      "process_seconds": 68.43390699999873
+    },
+    {
+      "status": "timeout",
+      "timeout_seconds": 180.0,
+      "operation": "paths",
+      "repeat": 1,
+      "process_seconds": 180.0228909169673
+    },
+    {
+      "status": "timeout",
+      "timeout_seconds": 180.0,
+      "operation": "dependencies",
+      "repeat": 1,
+      "process_seconds": 180.02559354197
+    },
+    {
+      "status": "timeout",
+      "timeout_seconds": 180.0,
+      "operation": "explore",
+      "repeat": 1,
+      "process_seconds": 180.01194029202452
+    }
+  ]
+}

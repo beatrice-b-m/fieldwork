@@ -1,0 +1,1046 @@
+[
+  {
+    "function": "src/fieldwork/workflow.py:19:explore",
+    "calls": 1,
+    "self_seconds": 0.0015980450000000002,
+    "cumulative_seconds": 16.915571542000002
+  },
+  {
+    "function": "src/fieldwork/discovery.py:16:discover_dependencies",
+    "calls": 1,
+    "self_seconds": 0.16776185200000002,
+    "cumulative_seconds": 12.209061708
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:96:grain",
+    "calls": 20,
+    "self_seconds": 0.017863731,
+    "cumulative_seconds": 10.281077373
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:209:encode_series",
+    "calls": 4056,
+    "self_seconds": 0.24705017,
+    "cumulative_seconds": 5.171311827
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:111:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 0.024569172,
+    "cumulative_seconds": 5.146948915
+  },
+  {
+    "function": "src/fieldwork/evidence.py:245:prepare_context",
+    "calls": 7,
+    "self_seconds": 0.003814249,
+    "cumulative_seconds": 4.70138475
+  },
+  {
+    "function": "src/fieldwork/evidence.py:18:fingerprint",
+    "calls": 7,
+    "self_seconds": 0.8211525260000001,
+    "cumulative_seconds": 4.583075749000001
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:39:_fd_record",
+    "calls": 5960,
+    "self_seconds": 0.09709787700000001,
+    "cumulative_seconds": 4.575522072
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:78:normalize_scalar",
+    "calls": 4587402,
+    "self_seconds": 1.480209651,
+    "cumulative_seconds": 3.4535056990000004
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:235:<listcomp>",
+    "calls": 3006,
+    "self_seconds": 0.40677762700000003,
+    "cumulative_seconds": 3.36389487
+  },
+  {
+    "function": "src/fieldwork/navigation.py:48:suggest_paths",
+    "calls": 1,
+    "self_seconds": 0.006243797000000001,
+    "cumulative_seconds": 3.039165042
+  },
+  {
+    "function": "src/fieldwork/evidence.py:240:prepare",
+    "calls": 4,
+    "self_seconds": 2.7958000000000002e-05,
+    "cumulative_seconds": 2.6879114580000003
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:15:build_grain_graph",
+    "calls": 20,
+    "self_seconds": 0.024244064000000003,
+    "cumulative_seconds": 2.358934585
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:471:census",
+    "calls": 3,
+    "self_seconds": 0.001954084,
+    "cumulative_seconds": 2.158084542
+  },
+  {
+    "function": "src/fieldwork/evidence.py:416:foundation_context",
+    "calls": 3,
+    "self_seconds": 0.002678167,
+    "cumulative_seconds": 2.1561265410000003
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:68:_is_missing",
+    "calls": 4088400,
+    "self_seconds": 0.660110765,
+    "cumulative_seconds": 1.1686440790000001
+  },
+  {
+    "function": "src/fieldwork/availability.py:15:missingness",
+    "calls": 1,
+    "self_seconds": 0.00740088,
+    "cumulative_seconds": 0.959010208
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:238:<genexpr>",
+    "calls": 3009006,
+    "self_seconds": 0.360366473,
+    "cumulative_seconds": 0.8312393170000001
+  },
+  {
+    "function": "src/fieldwork/patterns.py:15:value_patterns",
+    "calls": 1,
+    "self_seconds": 0.0027825470000000002,
+    "cumulative_seconds": 0.7049777500000001
+  },
+  {
+    "function": "src/fieldwork/evidence.py:435:contextual_result",
+    "calls": 23,
+    "self_seconds": 0.000452832,
+    "cumulative_seconds": 0.482699704
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:54:to_dict",
+    "calls": 1547827,
+    "self_seconds": 0.358015425,
+    "cumulative_seconds": 0.415162126
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:173:<listcomp>",
+    "calls": 3000,
+    "self_seconds": 0.09204772800000001,
+    "cumulative_seconds": 0.38711162600000004
+  },
+  {
+    "function": "src/fieldwork/discovery.py:122:<dictcomp>",
+    "calls": 14900,
+    "self_seconds": 0.016628573,
+    "cumulative_seconds": 0.38225385100000003
+  },
+  {
+    "function": "src/fieldwork/availability.py:73:masks_for",
+    "calls": 1,
+    "self_seconds": 1.5e-06,
+    "cumulative_seconds": 0.250234
+  },
+  {
+    "function": "src/fieldwork/availability.py:75:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 0.00029624100000000004,
+    "cumulative_seconds": 0.2502325
+  },
+  {
+    "function": "src/fieldwork/availability.py:76:<listcomp>",
+    "calls": 150,
+    "self_seconds": 0.083518125,
+    "cumulative_seconds": 0.24875133300000002
+  },
+  {
+    "function": "src/fieldwork/navigation.py:152:measure",
+    "calls": 200,
+    "self_seconds": 0.006817074,
+    "cumulative_seconds": 0.198940462
+  },
+  {
+    "function": "src/fieldwork/navigation.py:144:impurity",
+    "calls": 380,
+    "self_seconds": 0.09552131100000001,
+    "cumulative_seconds": 0.16087468700000002
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:25:_source",
+    "calls": 46,
+    "self_seconds": 5.8778000000000005e-05,
+    "cumulative_seconds": 0.12171290800000001
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:30:<listcomp>",
+    "calls": 46,
+    "self_seconds": 0.009237497,
+    "cumulative_seconds": 0.121526376
+  },
+  {
+    "function": "src/fieldwork/evidence.py:455:rebase",
+    "calls": 262524,
+    "self_seconds": 0.069030751,
+    "cumulative_seconds": 0.089596121
+  },
+  {
+    "function": "src/fieldwork/discovery.py:106:<genexpr>",
+    "calls": 543728,
+    "self_seconds": 0.035203197000000006,
+    "cumulative_seconds": 0.035203197000000006
+  },
+  {
+    "function": "src/fieldwork/navigation.py:157:<listcomp>",
+    "calls": 380,
+    "self_seconds": 0.030715584,
+    "cumulative_seconds": 0.030715584
+  },
+  {
+    "function": "src/fieldwork/discovery.py:110:<genexpr>",
+    "calls": 295703,
+    "self_seconds": 0.029238365000000002,
+    "cumulative_seconds": 0.029238365000000002
+  },
+  {
+    "function": "src/fieldwork/evidence.py:445:rebase_sources",
+    "calls": 23,
+    "self_seconds": 0.000142915,
+    "cumulative_seconds": 0.02230621
+  },
+  {
+    "function": "src/fieldwork/availability.py:87:emit",
+    "calls": 200,
+    "self_seconds": 0.000260266,
+    "cumulative_seconds": 0.021044121000000002
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:217:_census",
+    "calls": 3,
+    "self_seconds": 0.00054051,
+    "cumulative_seconds": 0.020474876000000003
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:228:<listcomp>",
+    "calls": 1050,
+    "self_seconds": 0.0013942240000000001,
+    "cumulative_seconds": 0.019844718
+  },
+  {
+    "function": "src/fieldwork/discovery.py:113:<listcomp>",
+    "calls": 23839,
+    "self_seconds": 0.019113271,
+    "cumulative_seconds": 0.019113271
+  },
+  {
+    "function": "src/fieldwork/discovery.py:112:<listcomp>",
+    "calls": 23839,
+    "self_seconds": 0.018964772,
+    "cumulative_seconds": 0.018964772
+  },
+  {
+    "function": "src/fieldwork/availability.py:84:source_rows",
+    "calls": 351,
+    "self_seconds": 0.0025634190000000004,
+    "cumulative_seconds": 0.018622937000000003
+  },
+  {
+    "function": "src/fieldwork/evidence.py:22:<listcomp>",
+    "calls": 7,
+    "self_seconds": 0.000498384,
+    "cumulative_seconds": 0.014913209
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:36:sort_key",
+    "calls": 42701,
+    "self_seconds": 0.010958787000000001,
+    "cumulative_seconds": 0.012855262000000001
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:58:<dictcomp>",
+    "calls": 5960,
+    "self_seconds": 0.011868578000000001,
+    "cumulative_seconds": 0.011868578000000001
+  },
+  {
+    "function": "src/fieldwork/availability.py:157:<genexpr>",
+    "calls": 151000,
+    "self_seconds": 0.011001089,
+    "cumulative_seconds": 0.011001089
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:78:<listcomp>",
+    "calls": 5960,
+    "self_seconds": 0.0027126510000000004,
+    "cumulative_seconds": 0.010858322
+  },
+  {
+    "function": "src/fieldwork/availability.py:85:<genexpr>",
+    "calls": 151351,
+    "self_seconds": 0.010746127000000001,
+    "cumulative_seconds": 0.010746127000000001
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:171:validate_frame",
+    "calls": 71,
+    "self_seconds": 0.001628251,
+    "cumulative_seconds": 0.010326086
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:18:_key_specs",
+    "calls": 20,
+    "self_seconds": 0.000126741,
+    "cumulative_seconds": 0.009849249000000001
+  },
+  {
+    "function": "src/fieldwork/navigation.py:150:<genexpr>",
+    "calls": 13967,
+    "self_seconds": 0.0036160220000000004,
+    "cumulative_seconds": 0.009294394000000001
+  },
+  {
+    "function": "src/fieldwork/discovery.py:111:<lambda>",
+    "calls": 144976,
+    "self_seconds": 0.008618364,
+    "cumulative_seconds": 0.008618364
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:152:<genexpr>",
+    "calls": 5960,
+    "self_seconds": 0.008348007000000001,
+    "cumulative_seconds": 0.008348007000000001
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:181:resolve_columns",
+    "calls": 23,
+    "self_seconds": 9.200400000000001e-05,
+    "cumulative_seconds": 0.0076956260000000005
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:237:<dictcomp>",
+    "calls": 3006,
+    "self_seconds": 0.0033534330000000003,
+    "cumulative_seconds": 0.0072989890000000005
+  },
+  {
+    "function": "src/fieldwork/discovery.py:130:<listcomp>",
+    "calls": 14900,
+    "self_seconds": 0.006751330000000001,
+    "cumulative_seconds": 0.006751330000000001
+  },
+  {
+    "function": "src/fieldwork/evidence.py:277:<listcomp>",
+    "calls": 1050,
+    "self_seconds": 0.002251152,
+    "cumulative_seconds": 0.005438807
+  },
+  {
+    "function": "src/fieldwork/evidence.py:220:columns",
+    "calls": 14,
+    "self_seconds": 0.000193591,
+    "cumulative_seconds": 0.004282291000000001
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:199:<dictcomp>",
+    "calls": 23,
+    "self_seconds": 0.0008996540000000001,
+    "cumulative_seconds": 0.0042639570000000005
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:40:_scope",
+    "calls": 11963,
+    "self_seconds": 0.00321336,
+    "cumulative_seconds": 0.00321336
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:231:<genexpr>",
+    "calls": 10500,
+    "self_seconds": 0.0013285780000000002,
+    "cumulative_seconds": 0.002696674
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:230:<dictcomp>",
+    "calls": 1050,
+    "self_seconds": 0.0012244340000000002,
+    "cumulative_seconds": 0.002689621
+  },
+  {
+    "function": "src/fieldwork/discovery.py:81:<genexpr>",
+    "calls": 6054,
+    "self_seconds": 0.001445583,
+    "cumulative_seconds": 0.002172999
+  },
+  {
+    "function": "src/fieldwork/navigation.py:142:<listcomp>",
+    "calls": 1,
+    "self_seconds": 0.0008227190000000001,
+    "cumulative_seconds": 0.002141875
+  },
+  {
+    "function": "src/fieldwork/evidence.py:314:finding",
+    "calls": 354,
+    "self_seconds": 0.00054177,
+    "cumulative_seconds": 0.002133097
+  },
+  {
+    "function": "src/fieldwork/evidence.py:268:sentinel_key",
+    "calls": 8400,
+    "self_seconds": 0.001384762,
+    "cumulative_seconds": 0.001853281
+  },
+  {
+    "function": "src/fieldwork/families.py:19:feature_network",
+    "calls": 1,
+    "self_seconds": 0.0012898850000000002,
+    "cumulative_seconds": 0.001725125
+  },
+  {
+    "function": "src/fieldwork/discovery.py:191:<listcomp>",
+    "calls": 20,
+    "self_seconds": 0.000812744,
+    "cumulative_seconds": 0.001462664
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:55:<listcomp>",
+    "calls": 5960,
+    "self_seconds": 0.0014350690000000002,
+    "cumulative_seconds": 0.0014350690000000002
+  },
+  {
+    "function": "src/fieldwork/evidence.py:258:<setcomp>",
+    "calls": 7,
+    "self_seconds": 0.000276535,
+    "cumulative_seconds": 0.0013567100000000001
+  },
+  {
+    "function": "src/fieldwork/navigation.py:142:<genexpr>",
+    "calls": 21000,
+    "self_seconds": 0.0013191560000000001,
+    "cumulative_seconds": 0.0013191560000000001
+  },
+  {
+    "function": "src/fieldwork/availability.py:162:<listcomp>",
+    "calls": 50,
+    "self_seconds": 0.0011722870000000002,
+    "cumulative_seconds": 0.0011722870000000002
+  },
+  {
+    "function": "src/fieldwork/evidence.py:222:<genexpr>",
+    "calls": 2114,
+    "self_seconds": 0.000288906,
+    "cumulative_seconds": 0.0009502800000000001
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:143:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 0.000924456,
+    "cumulative_seconds": 0.000924456
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:45:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 0.00082125,
+    "cumulative_seconds": 0.00082125
+  },
+  {
+    "function": "src/fieldwork/evidence.py:332:<listcomp>",
+    "calls": 354,
+    "self_seconds": 0.000761369,
+    "cumulative_seconds": 0.000761369
+  },
+  {
+    "function": "src/fieldwork/evidence.py:304:selection",
+    "calls": 708,
+    "self_seconds": 0.00036234200000000004,
+    "cumulative_seconds": 0.0007349720000000001
+  },
+  {
+    "function": "src/fieldwork/navigation.py:111:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 0.000483336,
+    "cumulative_seconds": 0.000484208
+  },
+  {
+    "function": "src/fieldwork/evidence.py:298:<listcomp>",
+    "calls": 7,
+    "self_seconds": 0.00010864800000000001,
+    "cumulative_seconds": 0.000430958
+  },
+  {
+    "function": "src/fieldwork/_explore/_kernels.py:11:dense_counts",
+    "calls": 27,
+    "self_seconds": 4.6334e-05,
+    "cumulative_seconds": 0.000428835
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:144:<setcomp>",
+    "calls": 3000,
+    "self_seconds": 0.00042209100000000004,
+    "cumulative_seconds": 0.00042209100000000004
+  },
+  {
+    "function": "src/fieldwork/evidence.py:306:<listcomp>",
+    "calls": 708,
+    "self_seconds": 0.000305176,
+    "cumulative_seconds": 0.000305176
+  },
+  {
+    "function": "src/fieldwork/navigation.py:104:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 0.00023150500000000001,
+    "cumulative_seconds": 0.00023700000000000001
+  },
+  {
+    "function": "src/fieldwork/availability.py:161:<listcomp>",
+    "calls": 50,
+    "self_seconds": 0.000216256,
+    "cumulative_seconds": 0.000216256
+  },
+  {
+    "function": "src/fieldwork/evidence.py:421:<genexpr>",
+    "calls": 453,
+    "self_seconds": 6.6877e-05,
+    "cumulative_seconds": 0.00021079600000000002
+  },
+  {
+    "function": "src/fieldwork/availability.py:55:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 0.000189461,
+    "cumulative_seconds": 0.00019466600000000002
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:145:<genexpr>",
+    "calls": 3020,
+    "self_seconds": 0.00016824300000000002,
+    "cumulative_seconds": 0.00018128300000000002
+  },
+  {
+    "function": "src/fieldwork/discovery.py:44:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 0.000160587,
+    "cumulative_seconds": 0.00016625
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:69:_rank_counts",
+    "calls": 27,
+    "self_seconds": 9.842e-06,
+    "cumulative_seconds": 0.000137753
+  },
+  {
+    "function": "src/fieldwork/navigation.py:170:<genexpr>",
+    "calls": 580,
+    "self_seconds": 6.757100000000001e-05,
+    "cumulative_seconds": 9.706600000000001e-05
+  },
+  {
+    "function": "src/fieldwork/availability.py:158:<lambda>",
+    "calls": 1000,
+    "self_seconds": 7.532300000000001e-05,
+    "cumulative_seconds": 9.687600000000001e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:70:<lambda>",
+    "calls": 186,
+    "self_seconds": 3.3761000000000004e-05,
+    "cumulative_seconds": 8.9175e-05
+  },
+  {
+    "function": "src/fieldwork/evidence.py:275:<setcomp>",
+    "calls": 1050,
+    "self_seconds": 8.9108e-05,
+    "cumulative_seconds": 8.9108e-05
+  },
+  {
+    "function": "src/fieldwork/evidence.py:266:<setcomp>",
+    "calls": 1050,
+    "self_seconds": 8.796e-05,
+    "cumulative_seconds": 8.796e-05
+  },
+  {
+    "function": "src/fieldwork/availability.py:132:<genexpr>",
+    "calls": 1001,
+    "self_seconds": 5.9806e-05,
+    "cumulative_seconds": 8.2377e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:50:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 8.121e-05,
+    "cumulative_seconds": 8.121e-05
+  },
+  {
+    "function": "src/fieldwork/availability.py:64:units_for",
+    "calls": 1,
+    "self_seconds": 9.58e-07,
+    "cumulative_seconds": 7.7958e-05
+  },
+  {
+    "function": "src/fieldwork/availability.py:66:<listcomp>",
+    "calls": 1,
+    "self_seconds": 7.7e-05,
+    "cumulative_seconds": 7.7e-05
+  },
+  {
+    "function": "src/fieldwork/evidence.py:281:<listcomp>",
+    "calls": 1050,
+    "self_seconds": 7.2e-05,
+    "cumulative_seconds": 7.2e-05
+  },
+  {
+    "function": "src/fieldwork/discovery.py:193:<listcomp>",
+    "calls": 20,
+    "self_seconds": 2.2917e-05,
+    "cumulative_seconds": 5.4541000000000005e-05
+  },
+  {
+    "function": "src/fieldwork/patterns.py:44:<genexpr>",
+    "calls": 300,
+    "self_seconds": 4.2945e-05,
+    "cumulative_seconds": 5.1511e-05
+  },
+  {
+    "function": "src/fieldwork/availability.py:355:<listcomp>",
+    "calls": 1,
+    "self_seconds": 4.6291e-05,
+    "cumulative_seconds": 4.6291e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:222:<listcomp>",
+    "calls": 20,
+    "self_seconds": 1.2709000000000001e-05,
+    "cumulative_seconds": 4.3459000000000005e-05
+  },
+  {
+    "function": "src/fieldwork/navigation.py:307:path_reasons",
+    "calls": 3,
+    "self_seconds": 1.6415e-05,
+    "cumulative_seconds": 3.7542e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:114:<setcomp>",
+    "calls": 20,
+    "self_seconds": 1.2748e-05,
+    "cumulative_seconds": 3.4374e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/_kernels.py:15:<dictcomp>",
+    "calls": 27,
+    "self_seconds": 3.396e-05,
+    "cumulative_seconds": 3.396e-05
+  },
+  {
+    "function": "src/fieldwork/discovery.py:222:<listcomp>",
+    "calls": 20,
+    "self_seconds": 3.3877e-05,
+    "cumulative_seconds": 3.3877e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:425:<listcomp>",
+    "calls": 3,
+    "self_seconds": 1.5123e-05,
+    "cumulative_seconds": 3.1416e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:225:<listcomp>",
+    "calls": 20,
+    "self_seconds": 9.458e-06,
+    "cumulative_seconds": 3.075e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:200:<listcomp>",
+    "calls": 23,
+    "self_seconds": 1.5497e-05,
+    "cumulative_seconds": 2.8873000000000003e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/result.py:69:__post_init__",
+    "calls": 40,
+    "self_seconds": 2.2911e-05,
+    "cumulative_seconds": 2.4663e-05
+  },
+  {
+    "function": "src/fieldwork/discovery.py:190:<lambda>",
+    "calls": 20,
+    "self_seconds": 5.123e-06,
+    "cumulative_seconds": 2.4248000000000002e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/result.py:21:to_dict",
+    "calls": 32,
+    "self_seconds": 2.4126000000000002e-05,
+    "cumulative_seconds": 2.4126000000000002e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:433:<lambda>",
+    "calls": 51,
+    "self_seconds": 9.627000000000001e-06,
+    "cumulative_seconds": 2.3087e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:206:<genexpr>",
+    "calls": 49,
+    "self_seconds": 1.1962e-05,
+    "cumulative_seconds": 2.1419000000000003e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:196:<listcomp>",
+    "calls": 23,
+    "self_seconds": 7.786e-06,
+    "cumulative_seconds": 1.9581e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:306:<listcomp>",
+    "calls": 3,
+    "self_seconds": 7.206e-06,
+    "cumulative_seconds": 1.6583e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:28:<listcomp>",
+    "calls": 20,
+    "self_seconds": 4.916e-06,
+    "cumulative_seconds": 1.5499000000000002e-05
+  },
+  {
+    "function": "src/fieldwork/navigation.py:165:<genexpr>",
+    "calls": 200,
+    "self_seconds": 1.3711000000000001e-05,
+    "cumulative_seconds": 1.3711000000000001e-05
+  },
+  {
+    "function": "src/fieldwork/navigation.py:279:<listcomp>",
+    "calls": 1,
+    "self_seconds": 1.3416000000000002e-05,
+    "cumulative_seconds": 1.3416000000000002e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:380:<genexpr>",
+    "calls": 93,
+    "self_seconds": 1.301e-05,
+    "cumulative_seconds": 1.301e-05
+  },
+  {
+    "function": "src/fieldwork/discovery.py:90:<genexpr>",
+    "calls": 180,
+    "self_seconds": 1.2491000000000001e-05,
+    "cumulative_seconds": 1.2491000000000001e-05
+  },
+  {
+    "function": "src/fieldwork/evidence.py:475:<dictcomp>",
+    "calls": 23,
+    "self_seconds": 1.2335000000000001e-05,
+    "cumulative_seconds": 1.2335000000000001e-05
+  },
+  {
+    "function": "src/fieldwork/navigation.py:168:<genexpr>",
+    "calls": 200,
+    "self_seconds": 1.2123e-05,
+    "cumulative_seconds": 1.2123e-05
+  },
+  {
+    "function": "src/fieldwork/navigation.py:200:<genexpr>",
+    "calls": 202,
+    "self_seconds": 1.1530000000000001e-05,
+    "cumulative_seconds": 1.1530000000000001e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:392:<genexpr>",
+    "calls": 147,
+    "self_seconds": 1.1416e-05,
+    "cumulative_seconds": 1.1416e-05
+  },
+  {
+    "function": "src/fieldwork/discovery.py:89:<genexpr>",
+    "calls": 180,
+    "self_seconds": 1.1259e-05,
+    "cumulative_seconds": 1.1259e-05
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:372:<listcomp>",
+    "calls": 27,
+    "self_seconds": 9.708000000000001e-06,
+    "cumulative_seconds": 9.708000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:379:<setcomp>",
+    "calls": 27,
+    "self_seconds": 8.874e-06,
+    "cumulative_seconds": 8.874e-06
+  },
+  {
+    "function": "src/fieldwork/evidence.py:351:result",
+    "calls": 4,
+    "self_seconds": 4.2510000000000005e-06,
+    "cumulative_seconds": 8.667e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:346:<genexpr>",
+    "calls": 9,
+    "self_seconds": 8.540000000000001e-06,
+    "cumulative_seconds": 8.540000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:73:_mixed_warning",
+    "calls": 6,
+    "self_seconds": 3.875e-06,
+    "cumulative_seconds": 8.294e-06
+  },
+  {
+    "function": "src/fieldwork/evidence.py:235:limit",
+    "calls": 18,
+    "self_seconds": 4.456e-06,
+    "cumulative_seconds": 6.039e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:146:<genexpr>",
+    "calls": 40,
+    "self_seconds": 5.9600000000000005e-06,
+    "cumulative_seconds": 5.9600000000000005e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:105:<listcomp>",
+    "calls": 1,
+    "self_seconds": 5.917e-06,
+    "cumulative_seconds": 5.917e-06
+  },
+  {
+    "function": "src/fieldwork/discovery.py:198:<listcomp>",
+    "calls": 20,
+    "self_seconds": 5.5030000000000005e-06,
+    "cumulative_seconds": 5.5030000000000005e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:120:<listcomp>",
+    "calls": 20,
+    "self_seconds": 5.416e-06,
+    "cumulative_seconds": 5.416e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:28:<setcomp>",
+    "calls": 20,
+    "self_seconds": 5.415000000000001e-06,
+    "cumulative_seconds": 5.415000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:34:<setcomp>",
+    "calls": 20,
+    "self_seconds": 5.2890000000000005e-06,
+    "cumulative_seconds": 5.2890000000000005e-06
+  },
+  {
+    "function": "src/fieldwork/families.py:70:<listcomp>",
+    "calls": 1,
+    "self_seconds": 4.875e-06,
+    "cumulative_seconds": 4.875e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain.py:142:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 4.7930000000000005e-06,
+    "cumulative_seconds": 4.7930000000000005e-06
+  },
+  {
+    "function": "src/fieldwork/discovery.py:87:<genexpr>",
+    "calls": 40,
+    "self_seconds": 4.6690000000000005e-06,
+    "cumulative_seconds": 4.6690000000000005e-06
+  },
+  {
+    "function": "src/fieldwork/patterns.py:102:<genexpr>",
+    "calls": 2,
+    "self_seconds": 1.125e-06,
+    "cumulative_seconds": 4.458e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:127:<dictcomp>",
+    "calls": 20,
+    "self_seconds": 4.168000000000001e-06,
+    "cumulative_seconds": 4.168000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:242:validate_limit",
+    "calls": 15,
+    "self_seconds": 3.586e-06,
+    "cumulative_seconds": 4.084e-06
+  },
+  {
+    "function": "src/fieldwork/families.py:52:<listcomp>",
+    "calls": 1,
+    "self_seconds": 3.875e-06,
+    "cumulative_seconds": 3.875e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:333:<genexpr>",
+    "calls": 9,
+    "self_seconds": 3.79e-06,
+    "cumulative_seconds": 3.79e-06
+  },
+  {
+    "function": "src/fieldwork/discovery.py:47:<genexpr>",
+    "calls": 21,
+    "self_seconds": 3.4190000000000002e-06,
+    "cumulative_seconds": 3.4190000000000002e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:107:<listcomp>",
+    "calls": 1,
+    "self_seconds": 3.417e-06,
+    "cumulative_seconds": 3.417e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:24:best",
+    "calls": 1,
+    "self_seconds": 1.041e-06,
+    "cumulative_seconds": 3.2500000000000002e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:76:<setcomp>",
+    "calls": 6,
+    "self_seconds": 3.209e-06,
+    "cumulative_seconds": 3.209e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/result.py:52:__getitem__",
+    "calls": 5,
+    "self_seconds": 1.5830000000000001e-06,
+    "cumulative_seconds": 3.208e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:174:<listcomp>",
+    "calls": 20,
+    "self_seconds": 3.0830000000000004e-06,
+    "cumulative_seconds": 3.0830000000000004e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:129:<setcomp>",
+    "calls": 20,
+    "self_seconds": 2.832e-06,
+    "cumulative_seconds": 2.832e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:229:<genexpr>",
+    "calls": 36,
+    "self_seconds": 2.792e-06,
+    "cumulative_seconds": 2.792e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/grain_graph.py:135:<genexpr>",
+    "calls": 20,
+    "self_seconds": 2.6650000000000003e-06,
+    "cumulative_seconds": 2.6650000000000003e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:28:path",
+    "calls": 1,
+    "self_seconds": 1.7920000000000002e-06,
+    "cumulative_seconds": 2.209e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:228:<lambda>",
+    "calls": 12,
+    "self_seconds": 2.043e-06,
+    "cumulative_seconds": 2.043e-06
+  },
+  {
+    "function": "src/fieldwork/evidence.py:355:qualitative_analysis_unit",
+    "calls": 1,
+    "self_seconds": 1.542e-06,
+    "cumulative_seconds": 2.0000000000000003e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:220:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 1.875e-06,
+    "cumulative_seconds": 1.875e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:219:<listcomp>",
+    "calls": 1,
+    "self_seconds": 1.791e-06,
+    "cumulative_seconds": 1.791e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:448:<listcomp>",
+    "calls": 3,
+    "self_seconds": 1.3750000000000002e-06,
+    "cumulative_seconds": 1.3750000000000002e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:112:<listcomp>",
+    "calls": 1,
+    "self_seconds": 1.167e-06,
+    "cumulative_seconds": 1.167e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:311:<listcomp>",
+    "calls": 3,
+    "self_seconds": 1.1660000000000001e-06,
+    "cumulative_seconds": 1.1660000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/navigation.py:287:<genexpr>",
+    "calls": 4,
+    "self_seconds": 9.18e-07,
+    "cumulative_seconds": 1.0840000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/discovery.py:232:<genexpr>",
+    "calls": 2,
+    "self_seconds": 7.510000000000001e-07,
+    "cumulative_seconds": 1.0420000000000001e-06
+  },
+  {
+    "function": "src/fieldwork/_explore/census.py:437:<genexpr>",
+    "calls": 6,
+    "self_seconds": 7.49e-07,
+    "cumulative_seconds": 7.49e-07
+  },
+  {
+    "function": "src/fieldwork/navigation.py:310:<listcomp>",
+    "calls": 3,
+    "self_seconds": 5.01e-07,
+    "cumulative_seconds": 5.01e-07
+  },
+  {
+    "function": "src/fieldwork/navigation.py:33:__init__",
+    "calls": 1,
+    "self_seconds": 4.1700000000000004e-07,
+    "cumulative_seconds": 4.1700000000000004e-07
+  },
+  {
+    "function": "src/fieldwork/workflow.py:40:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 3.75e-07,
+    "cumulative_seconds": 3.75e-07
+  },
+  {
+    "function": "src/fieldwork/_explore/encoding.py:251:validate_schema",
+    "calls": 3,
+    "self_seconds": 3.3300000000000003e-07,
+    "cumulative_seconds": 3.3300000000000003e-07
+  },
+  {
+    "function": "src/fieldwork/navigation.py:314:<listcomp>",
+    "calls": 3,
+    "self_seconds": 2.9300000000000004e-07,
+    "cumulative_seconds": 2.9300000000000004e-07
+  },
+  {
+    "function": "src/fieldwork/workflow.py:41:<dictcomp>",
+    "calls": 1,
+    "self_seconds": 2.09e-07,
+    "cumulative_seconds": 2.09e-07
+  },
+  {
+    "function": "src/fieldwork/navigation.py:275:<listcomp>",
+    "calls": 1,
+    "self_seconds": 2.08e-07,
+    "cumulative_seconds": 2.08e-07
+  },
+  {
+    "function": "src/fieldwork/navigation.py:90:<setcomp>",
+    "calls": 1,
+    "self_seconds": 1.2500000000000002e-07,
+    "cumulative_seconds": 1.2500000000000002e-07
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "environment": {
+    "python": "3.11.14",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6",
+    "fieldwork": "0.1.0"
+  },
+  "configuration": {
+    "rows": 1000,
+    "columns": 150,
+    "fixture": "sparse",
+    "seed": 721,
+    "operations": [
+      "explore"
+    ],
+    "features": null,
+    "candidates": null,
+    "timeout": 300,
+    "repeats": 1,
+    "output": "/tmp/fieldwork-perf/profile-1000.json",
+    "profile": "/tmp/fieldwork-perf/overview.prof"
+  },
+  "results": [
+    {
+      "status": "completed",
+      "analysis_seconds": 16.915621874970384,
+      "fixture_seconds": 0.0023102909908629954,
+      "frame_bytes": 1200132,
+      "serialization_seconds": 0.05327216599835083,
+      "result_bytes": 11502479,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 1000,
+        "signatures_shown": 50,
+        "signature_omitted_units": 950,
+        "signature_omitted_rows": 950,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 158023680,
+      "operation": "explore",
+      "repeat": 1,
+      "process_seconds": 17.157654875016306
+    }
+  ]
+}

@@ -49,7 +49,26 @@ wide frames. At most one view is built per distinct supported candidate mask.
 ```bash
 uv run python benchmarks/foundation.py --suite smoke --repeats 3 --output /tmp/fieldwork-foundation-benchmarks
 uv run python benchmarks/discovery.py --output /tmp/discovery.json
+uv run python benchmarks/scaling.py --rows 10000 --columns 150 --operations missingness paths dependencies explore --output /tmp/scaling.json
 ```
+
+`scaling.py` measures each operation in a fresh process, with a per-process
+deadline (`--timeout`, default 300 seconds). It records fixture construction,
+analysis, JSON serialization, result bytes, and absolute process peak RSS
+separately. Peak RSS includes fixture construction and serialization; it is not
+incremental analysis memory. Timeouts include startup and fixture construction.
+Use `--repeats 3` for multiple measurements, `--fixture dense` or `--fixture mixed`
+to vary data characteristics, and `--rows 300000` for a larger case. The default
+sparse fixture uses 70% missingness and eight populated values per column.
+
+For comparable overview components, its `dependencies` workload uses 20
+single-column candidates and `patterns` uses 20 pairs. `--candidates` changes
+standalone dependency/path budgets; for `explore` it changes path search only,
+matching the current public API. `--features` restricts analytical features but
+does not project the source frame. `--profile /tmp/overview.prof` supports one
+operation/repeat with cProfile; keep these diagnostic timings separate from
+unprofiled measurements. The harness uses Unix `resource` RSS reporting (macOS
+bytes, Linux KiB converted to bytes).
 
 Timings and serialized result bytes are measured separately from correctness checks.
 Do not assert wall-clock thresholds in unit tests. Fingerprinting traverses the

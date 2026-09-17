@@ -1,0 +1,19 @@
+{
+  "pandas": "3.0.5",
+  "records": [
+    {
+      "case": "original",
+      "dtype": "float64",
+      "array_type": "NumpyExtensionArray",
+      "inferred_array": "floating",
+      "inferred_numpy": "floating"
+    },
+    {
+      "case": "object_normalized",
+      "dtype": "object",
+      "array_type": "NumpyExtensionArray",
+      "inferred_array": "unknown-array",
+      "inferred_numpy": "floating"
+    }
+  ]
+}
