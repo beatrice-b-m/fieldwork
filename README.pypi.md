@@ -27,13 +27,18 @@ df = pd.DataFrame({
 overview = fw.explore(df)
 availability = fw.missingness(df, entity="exam", min_implication=0.75)
 paths = fw.suggest_paths(df, features=["site", "exam"])
-tree = fw.census(df, paths.best.dimensions)
+tree = paths.best.census(df)
 print(tree)
 ```
 
 Use `result.to_frame()` for discovery tables and `result.inspect(df, finding_id,
 exceptions=True)` for the saved example rows. Duplicate indexes are supported;
-inspection checks the ordered source dataset. Save results with `to_dict()`, export
+inspection checks the ordered source dataset. Use `result.select(df, finding_id)`
+to recover the complete matching population as a `Scope`, then pass that scope to
+`missingness` or `suggest_paths`. `paths.best.census(df)` preserves the selected
+population and sentinel conventions. Choose `unit="entities"` with `entity=` for
+equal entity weights, or keep the default `unit="rows"`. Browse connected feature
+evidence with `overview.relationships("image")`. Save results with `to_dict()`, export
 with `render_svg()` or `render_html()`, and reapply a `Recipe` to later deliveries.
 
 ![Observed census from the worked example](https://raw.githubusercontent.com/beatrice-b-m/fieldwork/v0.1.0/docs/assets/census.png)
@@ -47,6 +52,7 @@ Automatic related-table discovery is a later extension.
 
 - [User documentation source](https://github.com/beatrice-b-m/fieldwork-docs)
 - [Developer documentation](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/docs/index.md): architecture, contracts, algorithms, releases
+- [Investigation journey and units](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/docs/investigation.md)
 - [Executable investigation](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/examples/investigation.py) and [notebook](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/examples/investigation.ipynb)
 - [MIT license](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/LICENSE) and [extraction provenance](https://github.com/beatrice-b-m/fieldwork/blob/v0.1.0/NOTICE)
 

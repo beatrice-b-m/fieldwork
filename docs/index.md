@@ -9,6 +9,9 @@ reference belong in [fieldwork-docs](https://github.com/beatrice-b-m/fieldwork-d
 4. [Development and validation](development.md) — uv, parity tests, examples, profiling.
 5. [Release and documentation](releases.md) — generated assets, two-repository sync, publication.
 
+See the [complete single-table journey](investigation.md) for scope handoffs,
+selectable signatures, entity units and connected feature evidence.
+
 For a small executable tour, read `examples/investigation.py`. For exact interface
 signatures, read `src/fieldwork/__init__.py` and the exported functions' modules.
 Tests under `tests/foundation/` preserve the extracted explorer contracts;

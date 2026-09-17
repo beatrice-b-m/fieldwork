@@ -11,6 +11,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f0",
       "measurements": {
         "populated": 8,
         "missing": 0,
@@ -48,6 +50,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f1",
       "measurements": {
         "populated": 8,
         "missing": 0,
@@ -85,6 +89,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f2",
       "measurements": {
         "populated": 8,
         "missing": 0,
@@ -122,6 +128,8 @@
           "column": "image_1"
         }
       ],
+      "structure": {},
+      "id": "f3",
       "measurements": {
         "populated": 4,
         "missing": 4,
@@ -163,6 +171,8 @@
           "column": "image_2"
         }
       ],
+      "structure": {},
+      "id": "f4",
       "measurements": {
         "populated": 3,
         "missing": 5,
@@ -204,6 +214,8 @@
           "column": "dose"
         }
       ],
+      "structure": {},
+      "id": "f5",
       "measurements": {
         "populated": 4,
         "missing": 4,
@@ -237,6 +249,203 @@
       }
     },
     {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, dose; absent: image_1, image_2",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "dose"
+        ],
+        "absent": [
+          "image_1",
+          "image_2"
+        ]
+      },
+      "id": "f6",
+      "measurements": {
+        "count": 4,
+        "denominator": 8
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, image_1, image_2; absent: dose",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "image_1",
+          "image_2"
+        ],
+        "absent": [
+          "dose"
+        ]
+      },
+      "id": "f7",
+      "measurements": {
+        "count": 3,
+        "denominator": 8
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, image_1; absent: image_2, dose",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "image_1"
+        ],
+        "absent": [
+          "image_2",
+          "dose"
+        ]
+      },
+      "id": "f8",
+      "measurements": {
+        "count": 1,
+        "denominator": 8
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          5
+        ],
+        "total": 1,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
       "pattern": "availability_family",
       "statement": "Same availability: site, exam_id, modality",
       "features": [
@@ -253,6 +462,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f9",
       "measurements": {
         "denominator": 8,
         "populated": 8
@@ -292,6 +503,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f10",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -339,6 +552,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f11",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -386,6 +601,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f12",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -433,6 +650,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f13",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -480,6 +699,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f14",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -526,6 +747,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f15",
       "measurements": {
         "both_present": 3,
         "either_present": 8,
@@ -571,6 +794,8 @@
           "column": "site"
         }
       ],
+      "structure": {},
+      "id": "f16",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -617,6 +842,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f17",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -664,6 +891,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f18",
       "measurements": {
         "both_present": 8,
         "either_present": 8,
@@ -711,6 +940,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f19",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -757,6 +988,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f20",
       "measurements": {
         "both_present": 3,
         "either_present": 8,
@@ -802,6 +1035,8 @@
           "column": "exam_id"
         }
       ],
+      "structure": {},
+      "id": "f21",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -848,6 +1083,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f22",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -894,6 +1131,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f23",
       "measurements": {
         "both_present": 3,
         "either_present": 8,
@@ -939,6 +1178,8 @@
           "column": "modality"
         }
       ],
+      "structure": {},
+      "id": "f24",
       "measurements": {
         "both_present": 4,
         "either_present": 8,
@@ -985,6 +1226,8 @@
           "column": "image_2"
         }
       ],
+      "structure": {},
+      "id": "f25",
       "measurements": {
         "both_present": 3,
         "either_present": 4,
@@ -1032,6 +1275,8 @@
           "column": "image_1"
         }
       ],
+      "structure": {},
+      "id": "f26",
       "measurements": {
         "both_present": 3,
         "either_present": 4,
@@ -1077,6 +1322,8 @@
           "column": "dose"
         }
       ],
+      "structure": {},
+      "id": "f27",
       "measurements": {
         "both_present": 0,
         "either_present": 8,
@@ -1120,6 +1367,8 @@
           "column": "dose"
         }
       ],
+      "structure": {},
+      "id": "f28",
       "measurements": {
         "both_present": 0,
         "either_present": 7,
@@ -1149,8 +1398,2344 @@
         "method": "first_in_source_order",
         "limit": 5
       }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "site: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f29",
+      "measurements": {
+        "feature": "site",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "exam_id: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f30",
+      "measurements": {
+        "feature": "exam_id",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "modality: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f31",
+      "measurements": {
+        "feature": "modality",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_1: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f32",
+      "measurements": {
+        "feature": "image_1",
+        "populated": 2,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          2,
+          3
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_2: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f33",
+      "measurements": {
+        "feature": "image_2",
+        "populated": 2,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          2,
+          3
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "dose: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f34",
+      "measurements": {
+        "feature": "dose",
+        "populated": 2,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          0,
+          1
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_summary",
+      "statement": "Availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      },
+      "id": "f35",
+      "measurements": {
+        "source_rows": 4,
+        "denominator": 4,
+        "availability": [
+          {
+            "feature": "site",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "exam_id",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "modality",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "image_1",
+            "populated": 2,
+            "denominator": 4
+          },
+          {
+            "feature": "image_2",
+            "populated": 2,
+            "denominator": 4
+          },
+          {
+            "feature": "dose",
+            "populated": 2,
+            "denominator": 4
+          }
+        ]
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "site: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f36",
+      "measurements": {
+        "feature": "site",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "exam_id: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f37",
+      "measurements": {
+        "feature": "exam_id",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "modality: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f38",
+      "measurements": {
+        "feature": "modality",
+        "populated": 4,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_1: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f39",
+      "measurements": {
+        "feature": "image_1",
+        "populated": 2,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4,
+          5
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          6,
+          7
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_2: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f40",
+      "measurements": {
+        "feature": "image_2",
+        "populated": 1,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4
+        ],
+        "total": 1,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          5,
+          6,
+          7
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "dose: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f41",
+      "measurements": {
+        "feature": "dose",
+        "populated": 2,
+        "denominator": 4
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          6,
+          7
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          4,
+          5
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "context_summary",
+      "statement": "Availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      },
+      "id": "f42",
+      "measurements": {
+        "source_rows": 4,
+        "denominator": 4,
+        "availability": [
+          {
+            "feature": "site",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "exam_id",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "modality",
+            "populated": 4,
+            "denominator": 4
+          },
+          {
+            "feature": "image_1",
+            "populated": 2,
+            "denominator": 4
+          },
+          {
+            "feature": "image_2",
+            "populated": 1,
+            "denominator": 4
+          },
+          {
+            "feature": "dose",
+            "populated": 2,
+            "denominator": 4
+          }
+        ]
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f43",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f44",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f45",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f46",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f47",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "site: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f48",
+      "measurements": {
+        "feature": "site",
+        "denominator": 4,
+        "any": 4,
+        "all": 4,
+        "one": 0,
+        "some": 0,
+        "none": 0
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f49",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f50",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f51",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f52",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f53",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "exam_id: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f54",
+      "measurements": {
+        "feature": "exam_id",
+        "denominator": 4,
+        "any": 4,
+        "all": 4,
+        "one": 0,
+        "some": 0,
+        "none": 0
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f55",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f56",
+      "measurements": {
+        "entities": 4,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f57",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f58",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f59",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "modality: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f60",
+      "measurements": {
+        "feature": "modality",
+        "denominator": 4,
+        "any": 4,
+        "all": 4,
+        "one": 0,
+        "some": 0,
+        "none": 0
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f61",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f62",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f63",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f64",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f65",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "image_1: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f66",
+      "measurements": {
+        "feature": "image_1",
+        "denominator": 4,
+        "any": 2,
+        "all": 2,
+        "one": 0,
+        "some": 0,
+        "none": 2
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f67",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f68",
+      "measurements": {
+        "entities": 1,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f69",
+      "measurements": {
+        "entities": 1,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          4,
+          5
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f70",
+      "measurements": {
+        "entities": 1,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          4,
+          5
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f71",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "image_2: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f72",
+      "measurements": {
+        "feature": "image_2",
+        "denominator": 4,
+        "any": 2,
+        "all": 1,
+        "one": 1,
+        "some": 1,
+        "none": 2
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      },
+      "id": "f73",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      },
+      "id": "f74",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      },
+      "id": "f75",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      },
+      "id": "f76",
+      "measurements": {
+        "entities": 0,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      },
+      "id": "f77",
+      "measurements": {
+        "entities": 2,
+        "denominator": 4
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "dose: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "id": "f78",
+      "measurements": {
+        "feature": "dose",
+        "denominator": 4,
+        "any": 2,
+        "all": 2,
+        "one": 0,
+        "some": 0,
+        "none": 2
+      },
+      "counting_unit": "entities",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
     }
   ],
+  "analysis_unit": {
+    "counting_unit": "rows",
+    "denominator": 8,
+    "entity_keys": [
+      "exam_id"
+    ],
+    "presence_aggregation": "per_row",
+    "source_rows": 8,
+    "missing_key_excluded_rows": 0,
+    "context_aggregation": "within_each_context"
+  },
   "scope": {
     "name": "input",
     "parent": null,
@@ -1164,6 +3749,7 @@
     "pairs_evaluated": 15,
     "signatures_total": 3,
     "signatures_shown": 3,
+    "signature_omitted_units": 0,
     "signature_omitted_rows": 0,
     "contexts_total": 2,
     "contexts_shown": 2,
@@ -1226,7 +3812,8 @@
         "image_2"
       ],
       "count": 4,
-      "denominator": 8
+      "denominator": 8,
+      "finding_id": "f6"
     },
     {
       "present": [
@@ -1240,7 +3827,8 @@
         "dose"
       ],
       "count": 3,
-      "denominator": 8
+      "denominator": 8,
+      "finding_id": "f7"
     },
     {
       "present": [
@@ -1254,7 +3842,8 @@
         "dose"
       ],
       "count": 1,
-      "denominator": 8
+      "denominator": 8,
+      "finding_id": "f8"
     }
   ],
   "entities": [
@@ -1353,7 +3942,16 @@
           "populated": 2,
           "denominator": 4
         }
-      ]
+      ],
+      "finding_ids": [
+        "f29",
+        "f30",
+        "f31",
+        "f32",
+        "f33",
+        "f34"
+      ],
+      "finding_id": "f35"
     },
     {
       "values": {
@@ -1394,7 +3992,16 @@
           "populated": 2,
           "denominator": 4
         }
-      ]
+      ],
+      "finding_ids": [
+        "f36",
+        "f37",
+        "f38",
+        "f39",
+        "f40",
+        "f41"
+      ],
+      "finding_id": "f42"
     }
   ]
 }

@@ -280,7 +280,7 @@ def render_svg(
         "Topology only"
         if detail == "topology"
         else (
-            f"{data.get('scope', {}).get('evaluated_rows', 0)} source rows · "
+            f"{data.get('scope', {}).get('evaluated_rows', 0)} evaluated rows · "
             + (
                 f"{data['analysis_unit']['denominator']} {data['analysis_unit']['counting_unit']} · {data['analysis_unit']['presence_aggregation']}"
                 if "analysis_unit" in data

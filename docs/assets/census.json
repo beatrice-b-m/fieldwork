@@ -1,7 +1,7 @@
 {
   "kind": "census",
   "detail": "full",
-  "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+  "scope": "Conditional cohort \u00b7 4 evaluated / 8 input rows \u00b7 0 missing, 4 restricted exclusions",
   "caption": "Observed paths; omitted branches retain their original mass.",
   "rows": [
     {
@@ -9,7 +9,7 @@
       "parent": null,
       "depth": 0,
       "label": "All evaluated rows",
-      "count": 8,
+      "count": 4,
       "share": 1.0,
       "parent_share": null,
       "parent_label": null
@@ -18,8 +18,8 @@
       "id": "c1",
       "parent": "c0",
       "depth": 1,
-      "label": "modality='CT'",
-      "count": 4,
+      "label": "site='North'",
+      "count": 2,
       "share": 0.5,
       "parent_share": 0.5,
       "parent_label": "All evaluated rows"
@@ -28,91 +28,71 @@
       "id": "c2",
       "parent": "c1",
       "depth": 2,
-      "label": "site='North'",
+      "label": "exam_id='N01'",
       "count": 2,
-      "share": 0.25,
-      "parent_share": 0.5,
-      "parent_label": "modality='CT'"
+      "share": 0.5,
+      "parent_share": 1.0,
+      "parent_label": "site='North'"
     },
     {
       "id": "c3",
       "parent": "c2",
       "depth": 3,
-      "label": "exam_id='N02'",
-      "count": 2,
+      "label": "image_2=12.0",
+      "count": 1,
       "share": 0.25,
-      "parent_share": 1.0,
-      "parent_label": "site='North'"
+      "parent_share": 0.5,
+      "parent_label": "exam_id='N01'"
     },
     {
       "id": "c4",
-      "parent": "c1",
-      "depth": 2,
-      "label": "site='South'",
-      "count": 2,
+      "parent": "c2",
+      "depth": 3,
+      "label": "image_2=13.0",
+      "count": 1,
       "share": 0.25,
       "parent_share": 0.5,
-      "parent_label": "modality='CT'"
+      "parent_label": "exam_id='N01'"
     },
     {
       "id": "c5",
-      "parent": "c4",
-      "depth": 3,
-      "label": "exam_id='S02'",
-      "count": 2,
-      "share": 0.25,
-      "parent_share": 1.0,
-      "parent_label": "site='South'"
-    },
-    {
-      "id": "c6",
       "parent": "c0",
       "depth": 1,
-      "label": "modality='MR'",
-      "count": 4,
+      "label": "site='South'",
+      "count": 2,
       "share": 0.5,
       "parent_share": 0.5,
       "parent_label": "All evaluated rows"
     },
     {
+      "id": "c6",
+      "parent": "c5",
+      "depth": 2,
+      "label": "exam_id='S01'",
+      "count": 2,
+      "share": 0.5,
+      "parent_share": 1.0,
+      "parent_label": "site='South'"
+    },
+    {
       "id": "c7",
       "parent": "c6",
-      "depth": 2,
-      "label": "site='North'",
-      "count": 2,
+      "depth": 3,
+      "label": "image_2=22.0",
+      "count": 1,
       "share": 0.25,
       "parent_share": 0.5,
-      "parent_label": "modality='MR'"
+      "parent_label": "exam_id='S01'"
     },
     {
       "id": "c8",
-      "parent": "c7",
-      "depth": 3,
-      "label": "exam_id='N01'",
-      "count": 2,
-      "share": 0.25,
-      "parent_share": 1.0,
-      "parent_label": "site='North'"
-    },
-    {
-      "id": "c9",
       "parent": "c6",
-      "depth": 2,
-      "label": "site='South'",
-      "count": 2,
+      "depth": 3,
+      "label": "image_2=<NA>",
+      "count": 1,
       "share": 0.25,
       "parent_share": 0.5,
-      "parent_label": "modality='MR'"
-    },
-    {
-      "id": "c10",
-      "parent": "c9",
-      "depth": 3,
-      "label": "exam_id='S01'",
-      "count": 2,
-      "share": 0.25,
-      "parent_share": 1.0,
-      "parent_label": "site='South'"
+      "parent_label": "exam_id='S01'"
     }
   ]
 }

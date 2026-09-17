@@ -10,7 +10,8 @@
           "table": "table",
           "column": "dose"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability",
@@ -20,7 +21,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability",
@@ -30,7 +32,8 @@
           "table": "table",
           "column": "image_1"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability",
@@ -40,7 +43,8 @@
           "table": "table",
           "column": "image_2"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability",
@@ -50,7 +54,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability",
@@ -60,7 +65,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "availability_family",
@@ -78,7 +84,1156 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
+    },
+    {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, dose; absent: image_1, image_2",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "dose"
+        ],
+        "absent": [
+          "image_1",
+          "image_2"
+        ]
+      }
+    },
+    {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, image_1, image_2; absent: dose",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "image_1",
+          "image_2"
+        ],
+        "absent": [
+          "dose"
+        ]
+      }
+    },
+    {
+      "pattern": "availability_signature",
+      "statement": "Present: site, exam_id, modality, image_1; absent: image_2, dose",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "present": [
+          "site",
+          "exam_id",
+          "modality",
+          "image_1"
+        ],
+        "absent": [
+          "image_2",
+          "dose"
+        ]
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "dose: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "dose: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "exam_id: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "exam_id: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_1: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_1: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_2: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_2: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "modality: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "modality: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "site: availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "site: availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_summary",
+      "statement": "Availability within site = 'North' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "North"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "context_summary",
+      "statement": "Availability within site = 'South' (string)",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "context": {
+          "site": {
+            "type": "string",
+            "value": "South"
+          }
+        }
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "dose: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "exam_id: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_1: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "image_2: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "modality: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: all populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "all"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: any populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "any"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: none populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "none"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: one populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "one"
+      }
+    },
+    {
+      "pattern": "entity_availability",
+      "statement": "site: some populated rows per entity (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_pattern": "some"
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "dose: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "exam_id: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "image_1: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "image_2: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "modality: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
+    },
+    {
+      "pattern": "entity_summary",
+      "statement": "site: presence across entities (exam_id)",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      }
     },
     {
       "pattern": "mutually_exclusive",
@@ -92,7 +1247,8 @@
           "table": "table",
           "column": "dose"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "mutually_exclusive",
@@ -106,7 +1262,8 @@
           "table": "table",
           "column": "dose"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -120,7 +1277,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -134,7 +1292,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -148,7 +1307,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -162,7 +1322,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -176,7 +1337,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -190,7 +1352,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -204,7 +1367,8 @@
           "table": "table",
           "column": "image_2"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -218,7 +1382,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -232,7 +1397,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -246,7 +1412,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -260,7 +1427,8 @@
           "table": "table",
           "column": "image_1"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -274,7 +1442,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -288,7 +1457,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -302,7 +1472,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -316,7 +1487,8 @@
           "table": "table",
           "column": "site"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -330,7 +1502,8 @@
           "table": "table",
           "column": "exam_id"
         }
-      ]
+      ],
+      "structure": {}
     },
     {
       "pattern": "presence_implication",
@@ -344,7 +1517,8 @@
           "table": "table",
           "column": "modality"
         }
-      ]
+      ],
+      "structure": {}
     }
   ]
 }

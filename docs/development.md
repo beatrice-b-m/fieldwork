@@ -20,6 +20,16 @@ rendering and strict-JSON semantics, including Hypothesis differential oracles.
 Discovery fixtures check co-absence, sentinels, unequal entities, duplicate indexes,
 modal exceptions, conditional/composite dependencies, constraints and saved exports.
 The notebook executes as part of validation with IPython; no external data is used.
+`tests/discovery/test_journeys.py` follows scoped recommendation handoffs, sparse
+grain views, typed conditional contexts, complete signature/context/entity
+selection, unequal entity weights, candidate classification, diverse path reasons,
+and linked feature relationships through saved exports. The executable example
+also saves/loads a recipe in a temporary directory and restores a saved signature.
+
+After graph or path search changes, run the seeded discovery benchmark. Its
+population-compatible views retain more evidence than a single intersected graph;
+inspect result bytes as well as runtime. Narrow candidate and feature budgets for
+wide frames. At most one view is built per distinct supported candidate mask.
 
 ## Profile representative workloads
 

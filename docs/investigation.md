@@ -1,0 +1,101 @@
+# One single-table investigation
+
+Start with `overview = fw.explore(df)`. Its compact summary presents availability
+families and signatures, supported candidate grains, and census recommendations.
+`overview.relationships("image_1")` lists typed connections to other features and
+the finding IDs behind them. Indexed names, shared availability and exact mappings
+remain distinct evidence. Follow one relationship to `overview.inspect(df, id)`.
+
+## Discover and inspect a signature
+
+```python
+availability = fw.missingness(
+    df, features=["image_1", "image_2"], by=["site"],
+    entity="exam_id", missing={"image_2": [-999]}, example_limit=3,
+)
+signature = next(s for s in availability["signatures"] if "image_2" in s["absent"])
+examples = availability.inspect(df, signature["finding_id"])
+scope = availability.select(df, signature["finding_id"], name="missing second image")
+all_rows = availability.inspect(df, signature["finding_id"], all_matches=True)
+```
+
+Examples are bounded source rows. The selected scope contains every matching row,
+including duplicate index labels. It is bound to the ordered source values; changes
+to that source require a new analysis. `scope.refine(df, positions, name=...)`
+restricts it further. Context findings retain typed predicates such as
+`site = 'North' (string)` in text, HTML and topology. Entity pattern findings can
+select all rows belonging to entities with some, all, one, any or no populated rows.
+
+## Refine, compare and navigate
+
+```python
+local = fw.missingness(df, scope=scope, missing={"image_2": [-999]})
+baseline = fw.missingness(df, missing={"image_2": [-999]})
+change = fw.compare(baseline, local)
+paths = fw.suggest_paths(
+    df, scope=scope, missing={"image_2": [-999]},
+    features=["site", "exam_id", "image_2"], start_with=["site"],
+)
+if paths.best is not None:
+    print(paths["paths"][0]["explanation"])
+    tree = paths.best.census(df)
+```
+
+Path reasons name actual nesting, observed branching, redundant steps, and
+availability or target separation. Alternatives use different feature sets;
+steering order remains authoritative. The census handoff preserves scope and
+sentinels. Its population accounting separates restrictions and missing exclusions
+against the original source. `path.dimensions` alone is an ordinary tuple and
+carries no context.
+
+Candidate grains distinguish repeated groupings, unique identifiers, constants
+and candidates without evaluated support. `dependencies["grain_views"]` retains
+separate compatible populations for sparse keys. Inspect a view's `population`
+and render its `grain` with the standard foundation renderer. Relationships are
+combined only within a compatible view; excluded candidates retain their evidence.
+
+## Choose the counting unit
+
+```python
+row_evidence = fw.missingness(df, entity="exam_id", unit="rows")
+entity_evidence = fw.missingness(
+    df, entity="exam_id", unit="entities", entity_presence="any",
+)
+```
+
+Rows each contribute one observation by default. With entity units, distinct
+populated keys each contribute one observation, regardless of row count. `any`
+means a feature is present on at least one entity row; `all` requires every row.
+Missing entity keys are excluded and counted. These choices apply to availability,
+implications, similarity, families, signatures and context availability. A matching
+entity's selection includes all its scoped source rows.
+
+For 100 matching rows from one entity and one exception from another, conditional
+presence is 100/101 with row units and 1/2 with entity units. A context analysis
+aggregates each entity within that context. Comparisons require compatible units
+and aggregation. `explore(df, discovery={"entity": "exam_id", "unit": "entities"})`
+uses entity availability alongside row-based path and dependency evidence.
+
+## Save and reapply
+
+```python
+import json
+
+saved = json.loads(json.dumps(availability.to_dict(), allow_nan=False))
+restored = fw.InvestigationResult.from_dict(saved)
+html = fw.render_html(restored)  # Works without a source dataframe.
+restored.select(df, signature["finding_id"])
+
+recipe = fw.Recipe(
+    "missingness",
+    {"entity": "exam_id", "unit": "entities", "missing": {"image_2": [-999]}},
+)
+recipe.save("availability-recipe.json")
+next_evidence = fw.Recipe.load("availability-recipe.json").run(next_delivery)
+```
+
+Results preserve source-bound evidence; recipes reapply settings to new deliveries.
+Pass a source-bound scope as a run override rather than storing it in a recipe.
+Saved path results restore `best.census` as well. Topology exports retain feature
+labels, relation types and context predicates while suppressing measurements,
+source positions and population identifiers. Related-table discovery remains deferred.
