@@ -1,0 +1,180 @@
+{
+  "kind": "paths",
+  "detail": "full",
+  "findings": [
+    {
+      "pattern": "census_path",
+      "statement": "modality \u2192 site \u2192 exam_id",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "score": 2.25,
+        "prefix_counts": [
+          2,
+          4,
+          4
+        ],
+        "prefix_cost": 0.25,
+        "overflow": 0.0,
+        "nesting_inversions": 0,
+        "redundant_steps": 1,
+        "alias_steps": 0,
+        "target_impurity_sum": 0.0,
+        "availability_impurity_sum": 0.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2
+        ],
+        "total": 8,
+        "omitted": 5,
+        "method": "first_in_source_order",
+        "limit": 3
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 3
+      }
+    },
+    {
+      "pattern": "census_path",
+      "statement": "site \u2192 modality \u2192 exam_id",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "score": 2.25,
+        "prefix_counts": [
+          2,
+          4,
+          4
+        ],
+        "prefix_cost": 0.25,
+        "overflow": 0.0,
+        "nesting_inversions": 0,
+        "redundant_steps": 1,
+        "alias_steps": 0,
+        "target_impurity_sum": 0.0,
+        "availability_impurity_sum": 0.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2
+        ],
+        "total": 8,
+        "omitted": 5,
+        "method": "first_in_source_order",
+        "limit": 3
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 3
+      }
+    },
+    {
+      "pattern": "census_path",
+      "statement": "modality \u2192 exam_id \u2192 site",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "score": 10.25,
+        "prefix_counts": [
+          2,
+          4,
+          4
+        ],
+        "prefix_cost": 0.25,
+        "overflow": 0.0,
+        "nesting_inversions": 1,
+        "redundant_steps": 1,
+        "alias_steps": 0,
+        "target_impurity_sum": 0.0,
+        "availability_impurity_sum": 0.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2
+        ],
+        "total": 8,
+        "omitted": 5,
+        "method": "first_in_source_order",
+        "limit": 3
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 3
+      }
+    }
+  ],
+  "scope": {
+    "name": "input",
+    "parent": null,
+    "evaluated_rows": 8,
+    "restriction_excluded_rows": 0,
+    "positions_are": "zero_based_source_positions"
+  },
+  "coverage": {
+    "features_requested": 3,
+    "features_evaluated": 3,
+    "features_omitted": [],
+    "pairs_evaluated": 3,
+    "pair_candidates": 3,
+    "paths_evaluated": 15,
+    "search_exhausted_budget": false,
+    "requested_depth": 3,
+    "returned_depth": 3
+  }
+}

@@ -6,12 +6,12 @@ build-backend = "uv_build"
 name = "fieldwork"
 version = "0.1.0"
 description = "Explore unfamiliar data through patterns, evidence, and reproducible investigations"
-readme = "README.md"
+readme = "README.pypi.md"
 license = "MIT"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.11,<3.15"
 authors = [{name = "Beatrice Brown-Mulry"}]
-dependencies = ["numpy>=1.26", "pandas>=2.2"]
+dependencies = ["numpy>=1.26", "pandas>=2.2.3"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -27,7 +27,7 @@ Documentation = "https://fieldwork.beabm.dev"
 Issues = "https://github.com/beatrice-b-m/fieldwork/issues"
 
 [dependency-groups]
-dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.11", "resvg-py>=0.2", "pillow>=11"]
+dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.11", "resvg-py>=0.2", "pillow>=11", "ipython>=8"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

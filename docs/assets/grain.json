@@ -1,0 +1,408 @@
+{
+  "kind": "grain",
+  "detail": "full",
+  "caption": "Observed groupings among tested keys.",
+  "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+  "missingness": "missing as level",
+  "features": [
+    {
+      "id": "f0",
+      "label": "site",
+      "nodes": [
+        "g0"
+      ],
+      "key_component": true,
+      "reason": null,
+      "node_labels": [
+        "site"
+      ]
+    },
+    {
+      "id": "f1",
+      "label": "exam_id",
+      "nodes": [
+        "g1"
+      ],
+      "key_component": true,
+      "reason": null,
+      "node_labels": [
+        "exam_id"
+      ]
+    },
+    {
+      "id": "f2",
+      "label": "modality",
+      "nodes": [
+        "g2"
+      ],
+      "key_component": true,
+      "reason": null,
+      "node_labels": [
+        "modality"
+      ]
+    },
+    {
+      "id": "f3",
+      "label": "image_1",
+      "nodes": [],
+      "key_component": false,
+      "reason": "no_supported_key",
+      "node_labels": []
+    },
+    {
+      "id": "f4",
+      "label": "image_2",
+      "nodes": [],
+      "key_component": false,
+      "reason": "no_supported_key",
+      "node_labels": []
+    },
+    {
+      "id": "f5",
+      "label": "dose",
+      "nodes": [],
+      "key_component": false,
+      "reason": "no_supported_key",
+      "node_labels": []
+    }
+  ],
+  "nodes": [
+    {
+      "id": "g0",
+      "titles": [
+        "site"
+      ],
+      "attributes": [],
+      "key_names": [
+        "site"
+      ],
+      "support": {
+        "evaluated_rows": 8,
+        "evaluated_groups": 2,
+        "singleton_groups": 0,
+        "repeated_groups": 2
+      },
+      "attribute_labels": []
+    },
+    {
+      "id": "g1",
+      "titles": [
+        "exam_id"
+      ],
+      "attributes": [],
+      "key_names": [
+        "exam_id"
+      ],
+      "support": {
+        "evaluated_rows": 8,
+        "evaluated_groups": 4,
+        "singleton_groups": 0,
+        "repeated_groups": 4
+      },
+      "attribute_labels": []
+    },
+    {
+      "id": "g2",
+      "titles": [
+        "modality"
+      ],
+      "attributes": [],
+      "key_names": [
+        "modality"
+      ],
+      "support": {
+        "evaluated_rows": 8,
+        "evaluated_groups": 2,
+        "singleton_groups": 0,
+        "repeated_groups": 2
+      },
+      "attribute_labels": []
+    }
+  ],
+  "edges": [
+    {
+      "source": "g0",
+      "target": "g1",
+      "source_label": "site",
+      "target_label": "exam_id"
+    },
+    {
+      "source": "g2",
+      "target": "g1",
+      "source_label": "modality",
+      "target_label": "exam_id"
+    }
+  ],
+  "evidence": [
+    {
+      "feature": "f0",
+      "key": "site",
+      "state": "constant",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "group_rate": 0.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 0,
+      "feature_label": "site"
+    },
+    {
+      "feature": "f1",
+      "key": "site",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "exam_id"
+    },
+    {
+      "feature": "f2",
+      "key": "site",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "modality"
+    },
+    {
+      "feature": "f3",
+      "key": "site",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "image_1"
+    },
+    {
+      "feature": "f4",
+      "key": "site",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "image_2"
+    },
+    {
+      "feature": "f5",
+      "key": "site",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "dose"
+    },
+    {
+      "feature": "f0",
+      "key": "exam_id",
+      "state": "constant",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "group_rate": 0.0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0,
+      "feature_label": "site"
+    },
+    {
+      "feature": "f1",
+      "key": "exam_id",
+      "state": "constant",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "group_rate": 0.0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0,
+      "feature_label": "exam_id"
+    },
+    {
+      "feature": "f2",
+      "key": "exam_id",
+      "state": "constant",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "group_rate": 0.0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0,
+      "feature_label": "modality"
+    },
+    {
+      "feature": "f3",
+      "key": "exam_id",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 2,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 4,
+      "feature_label": "image_1"
+    },
+    {
+      "feature": "f4",
+      "key": "exam_id",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 2,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 4,
+      "feature_label": "image_2"
+    },
+    {
+      "feature": "f5",
+      "key": "exam_id",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 4,
+      "violating_groups": 2,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 4,
+      "feature_label": "dose"
+    },
+    {
+      "feature": "f0",
+      "key": "modality",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "site"
+    },
+    {
+      "feature": "f1",
+      "key": "modality",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "group_rate": 1.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8,
+      "feature_label": "exam_id"
+    },
+    {
+      "feature": "f2",
+      "key": "modality",
+      "state": "constant",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "group_rate": 0.0,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 0,
+      "feature_label": "modality"
+    },
+    {
+      "feature": "f3",
+      "key": "modality",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 4,
+      "feature_label": "image_1"
+    },
+    {
+      "feature": "f4",
+      "key": "modality",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 4,
+      "feature_label": "image_2"
+    },
+    {
+      "feature": "f5",
+      "key": "modality",
+      "state": "varying",
+      "compatible": true,
+      "scope": "Input population \u00b7 8 evaluated / 8 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "evaluated_rows": 8,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "group_rate": 0.5,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 4,
+      "feature_label": "dose"
+    }
+  ]
+}

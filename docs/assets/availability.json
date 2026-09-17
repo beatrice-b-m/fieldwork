@@ -1,0 +1,1399 @@
+{
+  "kind": "missingness",
+  "detail": "full",
+  "findings": [
+    {
+      "pattern": "availability",
+      "statement": "site: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "populated": 8,
+        "missing": 0,
+        "denominator": 8,
+        "populated_fraction": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability",
+      "statement": "exam_id: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "populated": 8,
+        "missing": 0,
+        "denominator": 8,
+        "populated_fraction": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability",
+      "statement": "modality: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "populated": 8,
+        "missing": 0,
+        "denominator": 8,
+        "populated_fraction": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability",
+      "statement": "image_1: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "measurements": {
+        "populated": 4,
+        "missing": 4,
+        "denominator": 8,
+        "populated_fraction": 0.5
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability",
+      "statement": "image_2: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "measurements": {
+        "populated": 3,
+        "missing": 5,
+        "denominator": 8,
+        "populated_fraction": 0.375
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          2,
+          3,
+          5,
+          6,
+          7
+        ],
+        "total": 5,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability",
+      "statement": "dose: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "measurements": {
+        "populated": 4,
+        "missing": 4,
+        "denominator": 8,
+        "populated_fraction": 0.5
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "availability_family",
+      "statement": "Same availability: site, exam_id, modality",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "denominator": 8,
+        "populated": 8
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "site populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "exam_id populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "site populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "modality populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "both_present": 3,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.375,
+        "agreement": 0.375,
+        "antecedent_populated": 3,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "exam_id populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "modality populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "both_present": 8,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 1.0,
+        "agreement": 1.0,
+        "antecedent_populated": 8,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "both_present": 3,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.375,
+        "agreement": 0.375,
+        "antecedent_populated": 3,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4,
+          5
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "both_present": 3,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.375,
+        "agreement": 0.375,
+        "antecedent_populated": 3,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ],
+      "measurements": {
+        "both_present": 4,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.5,
+        "agreement": 0.5,
+        "antecedent_populated": 4,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 1.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "total": 4,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies image_2 populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ],
+      "measurements": {
+        "both_present": 3,
+        "either_present": 4,
+        "both_absent": 4,
+        "denominator": 8,
+        "presence_jaccard": 0.75,
+        "agreement": 0.875,
+        "antecedent_populated": 4,
+        "conditional_presence": 0.75,
+        "exception_rate": 0.25,
+        "baseline_presence": 0.375
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [
+          5
+        ],
+        "total": 1,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies image_1 populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "measurements": {
+        "both_present": 3,
+        "either_present": 4,
+        "both_absent": 4,
+        "denominator": 8,
+        "presence_jaccard": 0.75,
+        "agreement": 0.875,
+        "antecedent_populated": 3,
+        "conditional_presence": 1.0,
+        "exception_rate": 0.0,
+        "baseline_presence": 0.5
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          4
+        ],
+        "total": 3,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "mutually_exclusive",
+      "statement": "image_1 and dose are mutually exclusive",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "measurements": {
+        "both_present": 0,
+        "either_present": 8,
+        "both_absent": 0,
+        "denominator": 8,
+        "presence_jaccard": 0.0,
+        "agreement": 0.0
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 8,
+        "omitted": 3,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    },
+    {
+      "pattern": "mutually_exclusive",
+      "statement": "image_2 and dose are mutually exclusive",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ],
+      "measurements": {
+        "both_present": 0,
+        "either_present": 7,
+        "both_absent": 1,
+        "denominator": 8,
+        "presence_jaccard": 0.0,
+        "agreement": 0.125
+      },
+      "counting_unit": "rows",
+      "examples": {
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total": 7,
+        "omitted": 2,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      }
+    }
+  ],
+  "scope": {
+    "name": "input",
+    "parent": null,
+    "evaluated_rows": 8,
+    "restriction_excluded_rows": 0,
+    "positions_are": "zero_based_source_positions"
+  },
+  "coverage": {
+    "pair_candidates": 15,
+    "pairs_evaluated": 15,
+    "signatures_total": 3,
+    "signatures_shown": 3,
+    "signature_omitted_rows": 0,
+    "contexts_total": 2,
+    "contexts_shown": 2,
+    "entity_missing_key_rows": 0
+  },
+  "availability": [
+    {
+      "feature": "site",
+      "populated": 8,
+      "missing": 0,
+      "denominator": 8,
+      "populated_fraction": 1.0
+    },
+    {
+      "feature": "exam_id",
+      "populated": 8,
+      "missing": 0,
+      "denominator": 8,
+      "populated_fraction": 1.0
+    },
+    {
+      "feature": "modality",
+      "populated": 8,
+      "missing": 0,
+      "denominator": 8,
+      "populated_fraction": 1.0
+    },
+    {
+      "feature": "image_1",
+      "populated": 4,
+      "missing": 4,
+      "denominator": 8,
+      "populated_fraction": 0.5
+    },
+    {
+      "feature": "image_2",
+      "populated": 3,
+      "missing": 5,
+      "denominator": 8,
+      "populated_fraction": 0.375
+    },
+    {
+      "feature": "dose",
+      "populated": 4,
+      "missing": 4,
+      "denominator": 8,
+      "populated_fraction": 0.5
+    }
+  ],
+  "signatures": [
+    {
+      "present": [
+        "site",
+        "exam_id",
+        "modality",
+        "dose"
+      ],
+      "absent": [
+        "image_1",
+        "image_2"
+      ],
+      "count": 4,
+      "denominator": 8
+    },
+    {
+      "present": [
+        "site",
+        "exam_id",
+        "modality",
+        "image_1",
+        "image_2"
+      ],
+      "absent": [
+        "dose"
+      ],
+      "count": 3,
+      "denominator": 8
+    },
+    {
+      "present": [
+        "site",
+        "exam_id",
+        "modality",
+        "image_1"
+      ],
+      "absent": [
+        "image_2",
+        "dose"
+      ],
+      "count": 1,
+      "denominator": 8
+    }
+  ],
+  "entities": [
+    {
+      "feature": "site",
+      "denominator": 4,
+      "any": 4,
+      "all": 4,
+      "one": 0,
+      "some": 0,
+      "none": 0
+    },
+    {
+      "feature": "exam_id",
+      "denominator": 4,
+      "any": 4,
+      "all": 4,
+      "one": 0,
+      "some": 0,
+      "none": 0
+    },
+    {
+      "feature": "modality",
+      "denominator": 4,
+      "any": 4,
+      "all": 4,
+      "one": 0,
+      "some": 0,
+      "none": 0
+    },
+    {
+      "feature": "image_1",
+      "denominator": 4,
+      "any": 2,
+      "all": 2,
+      "one": 0,
+      "some": 0,
+      "none": 2
+    },
+    {
+      "feature": "image_2",
+      "denominator": 4,
+      "any": 2,
+      "all": 1,
+      "one": 1,
+      "some": 1,
+      "none": 2
+    },
+    {
+      "feature": "dose",
+      "denominator": 4,
+      "any": 2,
+      "all": 2,
+      "one": 0,
+      "some": 0,
+      "none": 2
+    }
+  ],
+  "contexts": [
+    {
+      "values": {
+        "site": {
+          "type": "string",
+          "value": "North"
+        }
+      },
+      "rows": 4,
+      "availability": [
+        {
+          "feature": "site",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "exam_id",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "modality",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "image_1",
+          "populated": 2,
+          "denominator": 4
+        },
+        {
+          "feature": "image_2",
+          "populated": 2,
+          "denominator": 4
+        },
+        {
+          "feature": "dose",
+          "populated": 2,
+          "denominator": 4
+        }
+      ]
+    },
+    {
+      "values": {
+        "site": {
+          "type": "string",
+          "value": "South"
+        }
+      },
+      "rows": 4,
+      "availability": [
+        {
+          "feature": "site",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "exam_id",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "modality",
+          "populated": 4,
+          "denominator": 4
+        },
+        {
+          "feature": "image_1",
+          "populated": 2,
+          "denominator": 4
+        },
+        {
+          "feature": "image_2",
+          "populated": 1,
+          "denominator": 4
+        },
+        {
+          "feature": "dose",
+          "populated": 2,
+          "denominator": 4
+        }
+      ]
+    }
+  ]
+}

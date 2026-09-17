@@ -1,0 +1,350 @@
+{
+  "kind": "missingness",
+  "detail": "topology",
+  "findings": [
+    {
+      "pattern": "availability",
+      "statement": "dose: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ]
+    },
+    {
+      "pattern": "availability",
+      "statement": "exam_id: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "availability",
+      "statement": "image_1: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ]
+    },
+    {
+      "pattern": "availability",
+      "statement": "image_2: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ]
+    },
+    {
+      "pattern": "availability",
+      "statement": "modality: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "availability",
+      "statement": "site: populated values",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "availability_family",
+      "statement": "Same availability: site, exam_id, modality",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "mutually_exclusive",
+      "statement": "image_1 and dose are mutually exclusive",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ]
+    },
+    {
+      "pattern": "mutually_exclusive",
+      "statement": "image_2 and dose are mutually exclusive",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "dose"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "dose populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "dose"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "exam_id populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "exam_id populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "exam_id"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies image_2 populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "image_2"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_1 populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_1"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies image_1 populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "image_2 populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "image_2"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "modality populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "modality populated implies site populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "site"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "site populated implies exam_id populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "exam_id"
+        }
+      ]
+    },
+    {
+      "pattern": "presence_implication",
+      "statement": "site populated implies modality populated",
+      "features": [
+        {
+          "table": "table",
+          "column": "site"
+        },
+        {
+          "table": "table",
+          "column": "modality"
+        }
+      ]
+    }
+  ]
+}

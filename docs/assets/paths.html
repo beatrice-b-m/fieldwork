@@ -1,0 +1,154 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Fieldwork evidence</title><style>body{font:16px system-ui;background:#f6f8fb;color:#193345;max-width:1000px;margin:2rem auto;padding:1rem}details{background:white;border:1px solid #cbd5df;border-radius:8px;padding:1rem;margin:1rem 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}svg{max-width:100%;height:auto}</style><body><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fieldwork paths" viewBox="0 0 864 382" width="864" height="382" font-family="Arial, sans-serif" fill="#193345"><title>Fieldwork paths</title><rect width="100%" height="100%" fill="#f6f8fb"/><text x="24" y="36" font-size="23" font-weight="600" >Fieldwork / Paths</text><text x="24" y="62" font-size="13" font-weight="400" >8 evaluated rows · saved evidence</text><rect x="20" y="92" width="820" height="80" rx="7" fill="#ffffff" stroke="#cbd5df" /><text x="34" y="116" font-size="14" font-weight="600" >modality → site → exam_id</text><text x="34" y="136" font-size="12" font-weight="400" >score: 2.25 · prefix_cost: 0.25 · overflow: 0 · nesting_inversions: 0 · redundant_steps: 1 ·</text><text x="34" y="153" font-size="12" font-weight="400" >alias_steps: 0 · target_impurity_sum: 0 · availability_impurity_sum: 0</text><rect x="20" y="182" width="820" height="80" rx="7" fill="#ffffff" stroke="#cbd5df" /><text x="34" y="206" font-size="14" font-weight="600" >site → modality → exam_id</text><text x="34" y="226" font-size="12" font-weight="400" >score: 2.25 · prefix_cost: 0.25 · overflow: 0 · nesting_inversions: 0 · redundant_steps: 1 ·</text><text x="34" y="243" font-size="12" font-weight="400" >alias_steps: 0 · target_impurity_sum: 0 · availability_impurity_sum: 0</text><rect x="20" y="272" width="820" height="80" rx="7" fill="#ffffff" stroke="#cbd5df" /><text x="34" y="296" font-size="14" font-weight="600" >modality → exam_id → site</text><text x="34" y="316" font-size="12" font-weight="400" >score: 10.2 · prefix_cost: 0.25 · overflow: 0 · nesting_inversions: 1 · redundant_steps: 1 ·</text><text x="34" y="333" font-size="12" font-weight="400" >alias_steps: 0 · target_impurity_sum: 0 · availability_impurity_sum: 0</text></svg><h1>Inspect findings</h1><details><summary>modality → site → exam_id</summary><pre>{
+  &quot;pattern&quot;: &quot;census_path&quot;,
+  &quot;statement&quot;: &quot;modality → site → exam_id&quot;,
+  &quot;features&quot;: [
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;modality&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;site&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;exam_id&quot;
+    }
+  ],
+  &quot;measurements&quot;: {
+    &quot;score&quot;: 2.25,
+    &quot;prefix_counts&quot;: [
+      2,
+      4,
+      4
+    ],
+    &quot;prefix_cost&quot;: 0.25,
+    &quot;overflow&quot;: 0.0,
+    &quot;nesting_inversions&quot;: 0,
+    &quot;redundant_steps&quot;: 1,
+    &quot;alias_steps&quot;: 0,
+    &quot;target_impurity_sum&quot;: 0.0,
+    &quot;availability_impurity_sum&quot;: 0.0
+  },
+  &quot;counting_unit&quot;: &quot;rows&quot;,
+  &quot;examples&quot;: {
+    &quot;positions&quot;: [
+      0,
+      1,
+      2
+    ],
+    &quot;total&quot;: 8,
+    &quot;omitted&quot;: 5,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  },
+  &quot;exceptions&quot;: {
+    &quot;positions&quot;: [],
+    &quot;total&quot;: 0,
+    &quot;omitted&quot;: 0,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  }
+}</pre></details><details><summary>site → modality → exam_id</summary><pre>{
+  &quot;pattern&quot;: &quot;census_path&quot;,
+  &quot;statement&quot;: &quot;site → modality → exam_id&quot;,
+  &quot;features&quot;: [
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;site&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;modality&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;exam_id&quot;
+    }
+  ],
+  &quot;measurements&quot;: {
+    &quot;score&quot;: 2.25,
+    &quot;prefix_counts&quot;: [
+      2,
+      4,
+      4
+    ],
+    &quot;prefix_cost&quot;: 0.25,
+    &quot;overflow&quot;: 0.0,
+    &quot;nesting_inversions&quot;: 0,
+    &quot;redundant_steps&quot;: 1,
+    &quot;alias_steps&quot;: 0,
+    &quot;target_impurity_sum&quot;: 0.0,
+    &quot;availability_impurity_sum&quot;: 0.0
+  },
+  &quot;counting_unit&quot;: &quot;rows&quot;,
+  &quot;examples&quot;: {
+    &quot;positions&quot;: [
+      0,
+      1,
+      2
+    ],
+    &quot;total&quot;: 8,
+    &quot;omitted&quot;: 5,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  },
+  &quot;exceptions&quot;: {
+    &quot;positions&quot;: [],
+    &quot;total&quot;: 0,
+    &quot;omitted&quot;: 0,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  }
+}</pre></details><details><summary>modality → exam_id → site</summary><pre>{
+  &quot;pattern&quot;: &quot;census_path&quot;,
+  &quot;statement&quot;: &quot;modality → exam_id → site&quot;,
+  &quot;features&quot;: [
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;modality&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;exam_id&quot;
+    },
+    {
+      &quot;table&quot;: &quot;table&quot;,
+      &quot;column&quot;: &quot;site&quot;
+    }
+  ],
+  &quot;measurements&quot;: {
+    &quot;score&quot;: 10.25,
+    &quot;prefix_counts&quot;: [
+      2,
+      4,
+      4
+    ],
+    &quot;prefix_cost&quot;: 0.25,
+    &quot;overflow&quot;: 0.0,
+    &quot;nesting_inversions&quot;: 1,
+    &quot;redundant_steps&quot;: 1,
+    &quot;alias_steps&quot;: 0,
+    &quot;target_impurity_sum&quot;: 0.0,
+    &quot;availability_impurity_sum&quot;: 0.0
+  },
+  &quot;counting_unit&quot;: &quot;rows&quot;,
+  &quot;examples&quot;: {
+    &quot;positions&quot;: [
+      0,
+      1,
+      2
+    ],
+    &quot;total&quot;: 8,
+    &quot;omitted&quot;: 5,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  },
+  &quot;exceptions&quot;: {
+    &quot;positions&quot;: [],
+    &quot;total&quot;: 0,
+    &quot;omitted&quot;: 0,
+    &quot;method&quot;: &quot;first_in_source_order&quot;,
+    &quot;limit&quot;: 3
+  }
+}</pre></details></body></html>
