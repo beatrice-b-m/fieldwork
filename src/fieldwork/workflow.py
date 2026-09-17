@@ -143,8 +143,19 @@ def compare(before, after):
     if before.kind != "missingness" or after.kind != "missingness":
         raise ValueError("compare accepts two missingness results")
 
+    def analysis_unit(analysis):
+        return analysis.payload.get(
+            "analysis_unit",
+            {
+                "counting_unit": "rows",
+                "entity_keys": [],
+                "denominator": analysis["scope"]["evaluated_rows"],
+                "presence_aggregation": "per_row",
+            },
+        )
+
     def counting(analysis):
-        unit = analysis.payload.get("analysis_unit", {})
+        unit = analysis_unit(analysis)
         if unit.get("counting_unit", "rows") == "rows":
             return ("rows",)
         return ("entities", unit["entity_keys"], unit["presence_aggregation"])
@@ -167,24 +178,21 @@ def compare(before, after):
         "scope": after["scope"],
         "before_source": before["source"],
         "after_source": after["source"],
+        "before_scope": before["scope"],
+        "after_scope": after["scope"],
+        "before_analysis_unit": analysis_unit(before),
+        "after_analysis_unit": analysis_unit(after),
         "before_convention": before["missing_convention"],
         "after_convention": after["missing_convention"],
         "changes": records,
-        "analysis_unit": after.payload.get(
-            "analysis_unit",
-            {
-                "counting_unit": "rows",
-                "denominator": after["scope"]["evaluated_rows"],
-                "presence_aggregation": "per_row",
-            },
-        ),
+        "analysis_unit": analysis_unit(after),
         "findings": [],
     }
     for record in records:
         finding(
             base,
             "availability_change",
-            f"{record['feature']}: availability across deliveries",
+            f"{record['feature']}: availability before → after",
             [record["feature"]],
             record,
             [],

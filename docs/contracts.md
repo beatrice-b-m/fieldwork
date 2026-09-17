@@ -90,6 +90,12 @@ scope as a run override, not as a persisted recipe parameter. Composite grain
 `compare` compares two missingness results by feature name, preserving both source
 identities and conventions. Its delta is after minus before populated fraction;
 empty populations and added/removed features have an undefined delta.
+Saved comparisons retain `before_scope`, `after_scope`, `before_analysis_unit`,
+and `after_analysis_unit`, including each scope's name, positions and lineage and
+each unit's denominator and exclusions. The existing `scope` and `analysis_unit`
+fields continue to describe the after population. Presentations label both sides;
+topology keeps scope names/parent names and qualitative units, omitting positions
+and quantities.
 
 ## Recommendation handoff
 

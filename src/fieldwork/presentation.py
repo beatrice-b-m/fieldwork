@@ -100,6 +100,17 @@ def visualization_data(result, *, section=None, detail="full"):
         output["findings"].append(row)
     if "analysis_unit" in data:
         output["analysis_unit"] = _qualitative_unit(data["analysis_unit"])
+    for side in ("before", "after"):
+        scope = data.get(f"{side}_scope")
+        unit = data.get(f"{side}_analysis_unit")
+        if scope is not None:
+            output[f"{side}_scope"] = (
+                scope
+                if detail == "full"
+                else {k: scope[k] for k in ("name", "parent") if k in scope}
+            )
+        if unit is not None:
+            output[f"{side}_analysis_unit"] = unit if detail == "full" else _qualitative_unit(unit)
     if detail == "full":
         for key in (
             "analysis_unit",
@@ -199,6 +210,22 @@ def _unit_label(unit):
     return label
 
 
+def _comparison_labels(data):
+    labels = []
+    for side in ("before", "after"):
+        scope = data.get(f"{side}_scope")
+        if scope is None:
+            continue
+        label = f"{side.title()}: {scope['name']}"
+        if "evaluated_rows" in scope:
+            label += f"; {scope['evaluated_rows']} evaluated rows"
+        labels.append(label)
+        unit = data.get(f"{side}_analysis_unit")
+        if unit:
+            labels.append(f"  {side.title()} analysis: " + _unit_label(unit))
+    return labels
+
+
 def render_plaintext(
     result,
     *,
@@ -229,9 +256,10 @@ def render_plaintext(
     lines = [f"Fieldwork · {data['kind']}"]
     if detail == "topology":
         lines.append("Topology only · quantitative evidence suppressed")
-    else:
+    elif data["kind"] != "comparison":
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
-    if "analysis_unit" in data:
+    lines.extend(_comparison_labels(data))
+    if "analysis_unit" in data and data["kind"] != "comparison":
         lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
     if data["kind"] == "overview":
         overview = data["overview"]
@@ -309,6 +337,8 @@ def render_svg(
         62,
         "Topology only"
         if detail == "topology"
+        else "Availability comparison · before → after"
+        if data["kind"] == "comparison"
         else (
             f"{data.get('scope', {}).get('evaluated_rows', 0)} evaluated rows · "
             + (
@@ -320,8 +350,11 @@ def render_svg(
         size=13,
     )
     y = 92
-    if "analysis_unit" in data:
-        for line in _wrap("Analysis: " + _unit_label(data["analysis_unit"]), 102):
+    context_labels = _comparison_labels(data)
+    if "analysis_unit" in data and data["kind"] != "comparison":
+        context_labels.append("Analysis: " + _unit_label(data["analysis_unit"]))
+    for label in context_labels:
+        for line in _wrap(label, 102):
             svg.text(24, y, line, size=13)
             y += 20
     if detail == "full" and "availability" in data:
@@ -396,7 +429,19 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
         render_svg(data, detail=detail, max_findings=min(12, max_findings)),
         "<h1>Inspect findings</h1>",
     ]
-    if "analysis_unit" in projected:
+    if projected["kind"] == "comparison":
+        for side in ("before", "after"):
+            if f"{side}_scope" in projected:
+                parts.append(
+                    f"<h2>{side.title()} population</h2>"
+                    + _html_evidence(
+                        {
+                            "scope": projected[f"{side}_scope"],
+                            "analysis_unit": projected.get(f"{side}_analysis_unit", {}),
+                        }
+                    )
+                )
+    elif "analysis_unit" in projected:
         parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
     if "feature_network" in projected:
         parts.append("<h2>Browse feature connections</h2>")

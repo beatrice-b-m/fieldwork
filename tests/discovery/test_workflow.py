@@ -327,3 +327,50 @@ def test_overview_displays_all_orientation_sections(frame):
     topology = fw.visualization_data(overview, detail="topology")
     assert "repeated_groups" not in json.dumps(topology)
     assert "count" not in json.dumps(topology["overview"]["signatures"])
+
+
+@pytest.mark.parametrize("unit", ["rows", "entities"])
+def test_saved_comparison_preserves_both_scopes_and_units(unit):
+    df = pd.DataFrame({"e": [1, 1, 2, 3, 3, None], "a": [1, None, 1, None, None, 1]})
+    parent = fw.Scope.from_positions(df, range(len(df)), name="delivery")
+    before_scope = parent.refine(df, [0, 1, 2], name="baseline cohort")
+    after_scope = parent.refine(df, [3, 4, 5], name="followup cohort")
+    config = {"features": ["a"], "unit": unit, "entity": "e"}
+    before = fw.missingness(df, scope=before_scope, **config)
+    after = fw.missingness(df, scope=after_scope, **config)
+    saved = json.loads(json.dumps(fw.compare(before, after).to_dict(), allow_nan=False))
+    restored = fw.InvestigationResult.from_dict(saved)
+    assert saved["before_source"] == saved["after_source"]
+    for side, analysis in (("before", before), ("after", after)):
+        assert restored[f"{side}_scope"] == analysis["scope"]
+        assert restored[f"{side}_analysis_unit"] == analysis["analysis_unit"]
+    assert saved["scope"] == saved["after_scope"]
+    assert saved["analysis_unit"] == saved["after_analysis_unit"]
+    if unit == "entities":
+        assert saved["before_analysis_unit"]["denominator"] == 2
+        assert saved["after_analysis_unit"]["denominator"] == 1
+        assert saved["after_analysis_unit"]["missing_key_excluded_rows"] == 1
+    full = fw.visualization_data(restored)
+    assert full["before_scope"]["selection_positions"] == [0, 1, 2]
+    assert full["after_scope"]["selection_positions"] == [3, 4, 5]
+    for detail in ("full", "topology"):
+        for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
+            rendered = render(saved, detail=detail)
+            assert "Before: baseline cohort" in rendered
+            assert "After: followup cohort" in rendered
+        projected = fw.visualization_data(saved, detail=detail)
+        assert projected["before_scope"]["parent"] == "delivery"
+    serialized = json.dumps(fw.visualization_data(saved, detail="topology"))
+    for key in ("selection_positions", "evaluated_rows", "denominator", "dataset_id"):
+        assert key not in serialized
+
+
+def test_comparison_restores_legacy_row_unit_metadata():
+    df = pd.DataFrame({"a": [1, None]})
+    before = fw.missingness(df)
+    before.payload.pop("analysis_unit")
+    after = fw.missingness(df, scope=fw.Scope.from_positions(df, [0]))
+    comparison = fw.compare(before, after)
+    assert comparison["before_analysis_unit"]["denominator"] == 2
+    assert comparison["before_analysis_unit"]["counting_unit"] == "rows"
+    assert comparison["after_analysis_unit"]["denominator"] == 1
