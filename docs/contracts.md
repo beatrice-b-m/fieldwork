@@ -12,6 +12,10 @@ frozen top-level attributes, but nested payload containers are mutable.
 Discovery currently requires unique string column names. Foundation operations
 also support integer and recursively tuple-valued labels. Unsupported cell types
 raise `TypeError`; no arbitrary object stringification is used to merge values.
+Foundation context (`scope`, `missing`, `table_id`) preserves those labels. When
+columns include typed labels, `analysis_context.missing_convention` stores
+`sentinels_by_column` records with tagged `column` identities and sentinel `values`,
+so JSON exports preserve integer and tuple labels without converting them to strings.
 
 `InvestigationResult.from_dict` restores schema 1.0 saved evidence. `to_frame()`
 normalizes findings; pass a section such as `availability`, `dependencies`,

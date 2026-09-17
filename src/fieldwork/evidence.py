@@ -239,6 +239,12 @@ def limit(name, value, *, minimum=0):
 
 def prepare(df, *, scope=None, missing=None, table_id="table"):
     columns(df)
+    return prepare_context(df, scope=scope, missing=missing, table_id=table_id)
+
+
+def prepare_context(df, *, scope=None, missing=None, table_id="table"):
+    """Prepare source context independently of discovery's column-label contract."""
+    validate_frame(df)
     if not isinstance(table_id, str) or not table_id:
         raise ValueError("table_id must be a nonempty string")
     identity = fingerprint(df)
@@ -249,7 +255,10 @@ def prepare(df, *, scope=None, missing=None, table_id="table"):
     positions = np.array(scope.positions if scope else range(len(df)), dtype=np.int64)
     frame = df.iloc[positions]
     missing = missing or {}
-    columns(df, missing)
+    labels = {normalize_scalar(c, label=True) for c in df.columns}
+    for c in missing:
+        if normalize_scalar(c, label=True) not in labels:
+            raise KeyError(c)
     encoded, available = {}, {}
     conventions = {}
     for c in df:
@@ -385,7 +394,16 @@ def saved_context(base):
 
 def foundation_context(df, operation, *args, scope=None, missing=None, table_id="table", **options):
     """Normalize a private frame and retain original-source accounting in every derived scope."""
-    frame, _, _, present, base = prepare(df, scope=scope, missing=missing, table_id=table_id)
+    frame, _, _, present, base = prepare_context(
+        df, scope=scope, missing=missing, table_id=table_id
+    )
+    if not all(isinstance(c, str) for c in df.columns):
+        # JSON object keys cannot preserve integer identities or encode tuples.
+        conventions = base["missing_convention"]
+        conventions["sentinels_by_column"] = [
+            {"column": normalize_scalar(c, label=True).to_dict(), "values": values}
+            for c, values in conventions.pop("sentinels").items()
+        ]
     normalized = frame.copy()
     for c in normalized:
         normalized[c] = normalized[c].astype(object).where(present[c], None)
