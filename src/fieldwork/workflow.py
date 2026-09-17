@@ -33,19 +33,16 @@ def explore(df, dimensions=None, *, discovery=None, **options):
         if context:
             return foundation_context(df, explicit_explore, dimensions, **context, **options)
         return explicit_explore(df, dimensions, **options)
-    if options:
+    if options.keys() - {"scope", "missing", "table_id", "features"}:
         raise TypeError("With omitted dimensions, configure search with discovery dictionary")
-    config = dict(discovery or {})
+    # Run-time population overrides retain all other configured search settings.
+    config = {**(discovery or {}), **options}
+    shared = {k: v for k, v in config.items() if k in {"scope", "missing", "table_id", "features"}}
     availability_options = {
         k: config.pop(k) for k in ("entity", "unit", "entity_presence") if k in config
     }
     contexts = config.pop("by", None)
     paths = suggest_paths(df, **config)
-    shared = {
-        k: v
-        for k, v in (discovery or {}).items()
-        if k in {"scope", "missing", "table_id", "features"}
-    }
     availability = missingness(df, by=contexts, **availability_options, **shared)
     dependencies = discover_dependencies(
         df, by=contexts, max_key_size=1, max_candidates=20, **shared

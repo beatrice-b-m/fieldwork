@@ -374,3 +374,60 @@ def test_comparison_restores_legacy_row_unit_metadata():
     assert comparison["before_analysis_unit"]["denominator"] == 2
     assert comparison["before_analysis_unit"]["counting_unit"] == "rows"
     assert comparison["after_analysis_unit"]["denominator"] == 1
+
+
+def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path):
+    df = pd.DataFrame({"e": [1, 1, 2, 3], "site": ["A", "B", "B", "B"], "a": [1, -999, 2, 3]})
+    scope = fw.Scope.from_positions(df, [0, 1], name="selected cohort")
+    recipe = fw.Recipe(
+        "explore",
+        {
+            "discovery": {
+                "features": ["site", "a"],
+                "missing": {"a": [-999]},
+                "table_id": "configured",
+                "entity": "e",
+                "unit": "entities",
+                "entity_presence": "all",
+                "by": ["site"],
+                "max_candidates": 1,
+                "max_dimensions": 2,
+                "start_with": ["site"],
+            }
+        },
+    )
+    path = tmp_path / "overview.json"
+    recipe.save(path)
+    configured = json.loads(path.read_text())
+    loaded = fw.Recipe.load(path)
+    baseline = loaded.run(df)
+    overview = loaded.run(df, scope=scope, table_id="selected delivery")
+    assert loaded.to_dict() == configured
+    assert overview["analysis_unit"]["denominator"] == 1
+    assert overview["analysis_unit"]["presence_aggregation"] == "all"
+    assert baseline["scope"]["evaluated_rows"] == 4
+    for name in ("missingness", "dependencies", "paths", "value_patterns"):
+        section = overview["sections"][name]
+        assert section["scope"]["selection_positions"] == [0, 1]
+        assert section["scope"]["name"] == "selected cohort"
+        assert section["source"]["table_id"] == "selected delivery"
+        assert section["parameters"]["features"] == ["site", "a"]
+        assert section["missing_convention"] == baseline["sections"][name]["missing_convention"]
+    missingness = overview["sections"]["missingness"]
+    assert missingness["parameters"]["by"] == ["site"]
+    assert missingness["availability"][1]["populated"] == 0
+    paths = overview["sections"]["paths"]
+    assert paths["parameters"]["max_candidates"] == 1
+    assert paths["parameters"]["start_with"] == ["site"]
+    assert paths["coverage"]["paths_evaluated"] == 1
+    assert overview["sections"]["census"]["analysis_context"]["scope"]["selection_positions"] == [
+        0,
+        1,
+    ]
+    overridden = loaded.run(df, scope=scope, missing={}, features=["site"])
+    assert overridden["sections"]["missingness"]["parameters"]["features"] == ["site"]
+    assert overridden["missing_convention"]["sentinels"]["a"] == []
+    assert loaded.to_dict() == configured
+    assert fw.Recipe("explore").run(df, scope=scope)["scope"]["selection_positions"] == [0, 1]
+    with pytest.raises(TypeError, match="discovery dictionary"):
+        loaded.run(df, max_candidates=2)

@@ -96,6 +96,19 @@ next_evidence = fw.Recipe.load("availability-recipe.json").run(next_delivery)
 
 Results preserve source-bound evidence; recipes reapply settings to new deliveries.
 Pass a source-bound scope as a run override rather than storing it in a recipe.
+This also works for a configured automatic overview:
+
+```python
+overview_recipe = fw.Recipe(
+    "explore",
+    {"discovery": {"max_candidates": 10, "entity": "exam_id", "unit": "entities"}},
+)
+selected_overview = overview_recipe.run(df, scope=scope)
+```
+
+The run uses the selected population in every section and retains the recipe's
+search and entity settings. Common run overrides (`scope`, `missing`, `table_id`,
+`features`) take precedence over their configured `discovery` values.
 Saved path results restore `best.census` as well. Topology exports retain feature
 labels, relation types and context predicates while suppressing measurements,
 source positions and population identifiers. Related-table discovery remains deferred.

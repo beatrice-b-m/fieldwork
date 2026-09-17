@@ -87,6 +87,11 @@ network resources, or dataframe are needed to view an export.
 new deliveries, while source-bound positions remain in results/scopes. Supply a
 scope as a run override, not as a persisted recipe parameter. Composite grain
 `KeySpec` objects and non-JSON sentinels cannot be stored directly in recipes.
+Automatic overview recipes accept top-level `scope`, `missing`, `table_id`, and
+`features` run overrides. These replace the corresponding `discovery` settings
+while preserving other discovery configuration, including search budgets,
+constraints, entity aggregation and context grouping. The recipe is not modified.
+Search-only options still belong in `discovery`.
 `compare` compares two missingness results by feature name, preserving both source
 identities and conventions. Its delta is after minus before populated fraction;
 empty populations and added/removed features have an undefined delta.
