@@ -27,11 +27,13 @@ jobs:
       - name: Verify tagged images and README match the release
         run: git diff --exit-code -- docs/assets README.pypi.md
       - run: uv build
+      - name: Smoke-test the installed wheel
+        run: uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py
       - run: tar -czf fieldwork-documentation-assets.tar.gz docs/assets
       - name: Attach distributions and generated documentation assets
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" dist/* fieldwork-documentation-assets.tar.gz
+        run: gh release upload "$RELEASE_TAG" dist/* fieldwork-documentation-assets.tar.gz --clobber
       - name: Publish through PyPI trusted publishing
         run: uv publish --trusted-publishing always

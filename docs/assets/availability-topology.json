@@ -11,7 +11,15 @@
           "column": "dose"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability",
@@ -22,7 +30,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability",
@@ -33,7 +49,15 @@
           "column": "image_1"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability",
@@ -44,7 +68,15 @@
           "column": "image_2"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability",
@@ -55,7 +87,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability",
@@ -66,7 +106,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability_family",
@@ -85,7 +133,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "availability_signature",
@@ -127,6 +183,14 @@
           "image_1",
           "image_2"
         ]
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -169,6 +233,14 @@
         "absent": [
           "dose"
         ]
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -211,6 +283,14 @@
           "image_2",
           "dose"
         ]
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -233,6 +313,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -255,6 +343,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -277,6 +373,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -299,6 +403,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -321,6 +433,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -343,6 +463,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -365,6 +493,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -387,6 +523,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -409,6 +553,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -431,6 +583,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -449,6 +609,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -467,6 +635,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -505,6 +681,14 @@
             "value": "North"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -543,6 +727,14 @@
             "value": "South"
           }
         }
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
       }
     },
     {
@@ -563,6 +755,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -583,6 +782,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -603,6 +809,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -623,6 +836,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -643,6 +863,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -659,6 +886,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -675,6 +909,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -691,6 +932,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -707,6 +955,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -723,6 +978,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -743,6 +1005,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -763,6 +1032,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -783,6 +1059,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -803,6 +1086,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -823,6 +1113,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -843,6 +1140,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -863,6 +1167,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -883,6 +1194,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -903,6 +1221,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -923,6 +1248,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -943,6 +1275,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -963,6 +1302,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -983,6 +1329,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1003,6 +1356,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1023,6 +1383,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1043,6 +1410,13 @@
           "exam_id"
         ],
         "presence_pattern": "all"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1063,6 +1437,13 @@
           "exam_id"
         ],
         "presence_pattern": "any"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1083,6 +1464,13 @@
           "exam_id"
         ],
         "presence_pattern": "none"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1103,6 +1491,13 @@
           "exam_id"
         ],
         "presence_pattern": "one"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1123,6 +1518,13 @@
           "exam_id"
         ],
         "presence_pattern": "some"
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1142,6 +1544,13 @@
         "entity_keys": [
           "exam_id"
         ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1154,6 +1563,13 @@
         }
       ],
       "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
         "entity_keys": [
           "exam_id"
         ]
@@ -1176,6 +1592,13 @@
         "entity_keys": [
           "exam_id"
         ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1192,6 +1615,13 @@
         }
       ],
       "structure": {
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
         "entity_keys": [
           "exam_id"
         ]
@@ -1214,6 +1644,13 @@
         "entity_keys": [
           "exam_id"
         ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1233,6 +1670,13 @@
         "entity_keys": [
           "exam_id"
         ]
+      },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
       }
     },
     {
@@ -1248,7 +1692,15 @@
           "column": "dose"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "mutually_exclusive",
@@ -1263,7 +1715,15 @@
           "column": "dose"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1278,7 +1738,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1293,7 +1761,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1308,7 +1784,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1323,7 +1807,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1338,7 +1830,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1353,7 +1853,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1368,7 +1876,15 @@
           "column": "image_2"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1383,7 +1899,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1398,7 +1922,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1413,7 +1945,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1428,7 +1968,15 @@
           "column": "image_1"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1443,7 +1991,15 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1458,7 +2014,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1473,7 +2037,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1488,7 +2060,15 @@
           "column": "site"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1503,7 +2083,15 @@
           "column": "exam_id"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     },
     {
       "pattern": "presence_implication",
@@ -1518,7 +2106,22 @@
           "column": "modality"
         }
       ],
-      "structure": {}
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      }
     }
-  ]
+  ],
+  "analysis_unit": {
+    "counting_unit": "rows",
+    "entity_keys": [
+      "exam_id"
+    ],
+    "presence_aggregation": "per_row"
+  }
 }

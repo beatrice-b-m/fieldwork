@@ -5,13 +5,13 @@ investigations. Fieldwork is a Python toolkit for researchers working with panda
 dataframes: find availability families, examine dependencies and candidate grains,
 then choose a useful census path through the data.
 
-**Development version — not yet published.** Python 3.11–3.14; pandas and NumPy are
-the only runtime dependencies.
+**Alpha release.** Python 3.11–3.14; pandas and NumPy are the only required runtime
+dependencies.
 
 ![Availability in the worked example](https://raw.githubusercontent.com/beatrice-b-m/fieldwork/v0.1.0/docs/assets/availability.png)
 
 ```bash
-uv add "fieldwork @ git+https://github.com/beatrice-b-m/fieldwork"
+pip install fieldwork
 ```
 
 ```python

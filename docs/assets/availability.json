@@ -12,6 +12,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f0",
       "measurements": {
         "populated": 8,
@@ -19,7 +27,6 @@
         "denominator": 8,
         "populated_fraction": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -51,6 +58,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f1",
       "measurements": {
         "populated": 8,
@@ -58,7 +73,6 @@
         "denominator": 8,
         "populated_fraction": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -90,6 +104,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f2",
       "measurements": {
         "populated": 8,
@@ -97,7 +119,6 @@
         "denominator": 8,
         "populated_fraction": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -129,6 +150,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f3",
       "measurements": {
         "populated": 4,
@@ -136,7 +165,6 @@
         "denominator": 8,
         "populated_fraction": 0.5
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -172,6 +200,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f4",
       "measurements": {
         "populated": 3,
@@ -179,7 +215,6 @@
         "denominator": 8,
         "populated_fraction": 0.375
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -215,6 +250,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f5",
       "measurements": {
         "populated": 4,
@@ -222,7 +265,6 @@
         "denominator": 8,
         "populated_fraction": 0.5
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -289,12 +331,19 @@
           "image_2"
         ]
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f6",
       "measurements": {
         "count": 4,
         "denominator": 8
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -356,12 +405,19 @@
           "dose"
         ]
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f7",
       "measurements": {
         "count": 3,
         "denominator": 8
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -422,12 +478,19 @@
           "dose"
         ]
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f8",
       "measurements": {
         "count": 1,
         "denominator": 8
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           5
@@ -463,12 +526,19 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f9",
       "measurements": {
         "denominator": 8,
         "populated": 8
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -504,6 +574,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f10",
       "measurements": {
         "both_present": 8,
@@ -517,7 +595,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -553,6 +630,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f11",
       "measurements": {
         "both_present": 8,
@@ -566,7 +651,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -602,6 +686,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f12",
       "measurements": {
         "both_present": 8,
@@ -615,7 +707,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -651,6 +742,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f13",
       "measurements": {
         "both_present": 8,
@@ -664,7 +763,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -700,6 +798,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f14",
       "measurements": {
         "both_present": 4,
@@ -713,7 +819,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -748,6 +853,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f15",
       "measurements": {
         "both_present": 3,
@@ -761,7 +874,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -795,6 +907,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f16",
       "measurements": {
         "both_present": 4,
@@ -808,7 +928,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -843,6 +962,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f17",
       "measurements": {
         "both_present": 8,
@@ -856,7 +983,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -892,6 +1018,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f18",
       "measurements": {
         "both_present": 8,
@@ -905,7 +1039,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -941,6 +1074,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f19",
       "measurements": {
         "both_present": 4,
@@ -954,7 +1095,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -989,6 +1129,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f20",
       "measurements": {
         "both_present": 3,
@@ -1002,7 +1150,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1036,6 +1183,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f21",
       "measurements": {
         "both_present": 4,
@@ -1049,7 +1204,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -1084,6 +1238,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f22",
       "measurements": {
         "both_present": 4,
@@ -1097,7 +1259,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1132,6 +1293,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f23",
       "measurements": {
         "both_present": 3,
@@ -1145,7 +1314,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1179,6 +1347,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f24",
       "measurements": {
         "both_present": 4,
@@ -1192,7 +1368,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 1.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -1227,6 +1402,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f25",
       "measurements": {
         "both_present": 3,
@@ -1240,7 +1423,6 @@
         "exception_rate": 0.25,
         "baseline_presence": 0.375
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1276,6 +1458,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f26",
       "measurements": {
         "both_present": 3,
@@ -1289,7 +1479,6 @@
         "exception_rate": 0.0,
         "baseline_presence": 0.5
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1323,6 +1512,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f27",
       "measurements": {
         "both_present": 0,
@@ -1332,7 +1529,6 @@
         "presence_jaccard": 0.0,
         "agreement": 0.0
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1368,6 +1564,14 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f28",
       "measurements": {
         "both_present": 0,
@@ -1377,7 +1581,6 @@
         "presence_jaccard": 0.0,
         "agreement": 0.125
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1416,13 +1619,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f29",
       "measurements": {
         "feature": "site",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1464,13 +1674,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f30",
       "measurements": {
         "feature": "exam_id",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1512,13 +1729,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f31",
       "measurements": {
         "feature": "modality",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1560,13 +1784,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f32",
       "measurements": {
         "feature": "image_1",
         "populated": 2,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1609,13 +1840,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f33",
       "measurements": {
         "feature": "image_2",
         "populated": 2,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1658,13 +1896,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f34",
       "measurements": {
         "feature": "dose",
         "populated": 2,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           2,
@@ -1723,6 +1968,14 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f35",
       "measurements": {
         "source_rows": 4,
@@ -1760,7 +2013,6 @@
           }
         ]
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -1798,13 +2050,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f36",
       "measurements": {
         "feature": "site",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4,
@@ -1846,13 +2105,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f37",
       "measurements": {
         "feature": "exam_id",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4,
@@ -1894,13 +2160,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f38",
       "measurements": {
         "feature": "modality",
         "populated": 4,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4,
@@ -1942,13 +2215,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f39",
       "measurements": {
         "feature": "image_1",
         "populated": 2,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4,
@@ -1991,13 +2271,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f40",
       "measurements": {
         "feature": "image_2",
         "populated": 1,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4
@@ -2040,13 +2327,20 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f41",
       "measurements": {
         "feature": "dose",
         "populated": 2,
         "denominator": 4
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           6,
@@ -2105,6 +2399,14 @@
           }
         }
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [
+          "exam_id"
+        ],
+        "presence_aggregation": "per_row"
+      },
       "id": "f42",
       "measurements": {
         "source_rows": 4,
@@ -2142,7 +2444,6 @@
           }
         ]
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           4,
@@ -2182,12 +2483,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f43",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2228,12 +2535,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f44",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2274,12 +2587,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f45",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2314,12 +2633,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f46",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2354,12 +2679,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f47",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2393,6 +2724,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f48",
       "measurements": {
         "feature": "site",
@@ -2403,7 +2741,6 @@
         "some": 0,
         "none": 0
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2440,12 +2777,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f49",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2482,12 +2825,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f50",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2524,12 +2873,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f51",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2560,12 +2915,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f52",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2596,12 +2957,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f53",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2631,6 +2998,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f54",
       "measurements": {
         "feature": "exam_id",
@@ -2641,7 +3015,6 @@
         "some": 0,
         "none": 0
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2682,12 +3055,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f55",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2728,12 +3107,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f56",
       "measurements": {
         "entities": 4,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2774,12 +3159,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f57",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2814,12 +3205,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f58",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2854,12 +3251,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f59",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -2893,6 +3296,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f60",
       "measurements": {
         "feature": "modality",
@@ -2903,7 +3313,6 @@
         "some": 0,
         "none": 0
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2944,12 +3353,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f61",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -2989,12 +3404,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f62",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3034,12 +3455,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f63",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -3074,12 +3501,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f64",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -3114,12 +3547,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f65",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           2,
@@ -3158,6 +3597,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f66",
       "measurements": {
         "feature": "image_1",
@@ -3168,7 +3614,6 @@
         "some": 0,
         "none": 2
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3209,12 +3654,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f67",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3254,12 +3705,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f68",
       "measurements": {
         "entities": 1,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3297,12 +3754,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f69",
       "measurements": {
         "entities": 1,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           4,
@@ -3340,12 +3803,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f70",
       "measurements": {
         "entities": 1,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           4,
@@ -3383,12 +3852,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f71",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           2,
@@ -3427,6 +3902,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f72",
       "measurements": {
         "feature": "image_2",
@@ -3437,7 +3919,6 @@
         "some": 1,
         "none": 2
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3478,12 +3959,18 @@
         ],
         "presence_pattern": "any"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f73",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           2,
@@ -3523,12 +4010,18 @@
         ],
         "presence_pattern": "all"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f74",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           2,
@@ -3568,12 +4061,18 @@
         ],
         "presence_pattern": "one"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f75",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -3608,12 +4107,18 @@
         ],
         "presence_pattern": "some"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f76",
       "measurements": {
         "entities": 0,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [],
         "total": 0,
@@ -3648,12 +4153,18 @@
         ],
         "presence_pattern": "none"
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f77",
       "measurements": {
         "entities": 2,
         "denominator": 4
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,
@@ -3692,6 +4203,13 @@
           "exam_id"
         ]
       },
+      "counting_unit": "entities",
+      "analysis_unit": {
+        "counting_unit": "entities",
+        "entity_keys": [
+          "exam_id"
+        ]
+      },
       "id": "f78",
       "measurements": {
         "feature": "dose",
@@ -3702,7 +4220,6 @@
         "some": 0,
         "none": 2
       },
-      "counting_unit": "entities",
       "examples": {
         "positions": [
           0,

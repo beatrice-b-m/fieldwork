@@ -20,6 +20,12 @@
         }
       ],
       "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [],
+        "presence_aggregation": "per_row"
+      },
       "id": "f0",
       "measurements": {
         "score": 5.2,
@@ -93,7 +99,6 @@
           }
         ]
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,
@@ -129,12 +134,17 @@
       "structure": {
         "relation": "equivalent_value_partitions"
       },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [],
+        "presence_aggregation": "per_row"
+      },
       "id": "f1",
       "measurements": {
         "evaluated_rows": 4,
         "groups": 2
       },
-      "counting_unit": "rows",
       "examples": {
         "positions": [
           0,

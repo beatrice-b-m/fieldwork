@@ -21,6 +21,8 @@ jobs:
       - run: uv run ruff check src tests scripts examples
       - run: uv run ruff format --check src tests scripts examples
       - run: uv build
+      - name: Smoke-test the installed wheel
+        run: uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py
   assets:
     runs-on: macos-latest
     steps:

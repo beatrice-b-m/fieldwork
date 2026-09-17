@@ -11,17 +11,43 @@
    The generated `README.pypi.md` uses version-tagged absolute image/link URLs.
 4. Visually inspect the generated availability, census, grain, path and topology
    images. Run the generator with `--check` to detect stale assets or README.
-5. Run `uv build`; install the wheel in a clean environment and exercise imports
-   and the worked investigation. Commit the release's source and generated assets.
+5. Run `uv build`, then smoke-test the wheel in an isolated environment with
+   `uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py`.
+   This exercises the worked investigation using the built package and its runtime
+   dependencies. Commit the release's source and generated assets.
 6. Tag the commit `v<version>` and publish a GitHub release after CI passes.
 
 Publishing a release triggers `.github/workflows/release.yml`: verify tag/version,
 run tests, regenerate images and reject an uncommitted difference, build sdist/wheel,
-attach distributions plus the documentation asset archive, and publish via PyPI
-trusted publishing. Configure the GitHub `pypi` environment and PyPI trusted
-publisher for this repository/workflow before the first release. PyPI project-name
-availability and publishing credentials must be established by the maintainer.
-No release has been published by repository initialization.
+smoke-test the installed wheel, attach distributions plus the documentation asset
+archive, and publish via PyPI trusted publishing. CI runs the same wheel smoke test
+on each supported Python version.
+
+If publishing fails after attachments have uploaded, rerun the workflow for the
+same unchanged tag. The attachment upload uses `--clobber` to replace existing
+files instead of failing on duplicate names.
+
+## Configure trusted publishing before the first release
+
+Create the GitHub environment `pypi`. On PyPI, add a GitHub Actions publisher with
+the following values (use a pending publisher if the project does not exist yet):
+
+| Field | Value |
+| --- | --- |
+| PyPI project name | `fieldwork` |
+| GitHub owner | `beatrice-b-m` |
+| Repository | `fieldwork` |
+| Workflow filename | `release.yml` |
+| Environment | `pypi` |
+
+The workflow filename is entered without `.github/workflows/`. The environment
+name must match exactly. No PyPI API-token secret is needed: the workflow already
+requests `id-token: write` and uses `uv publish --trusted-publishing always`.
+See [PyPI's pending-publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
+Project-name availability must be established by the maintainer.
+
+After preparation and CI pass, publish a GitHub release for `v0.1.0` to trigger
+the initial upload. Creating the publisher alone does not publish the package.
 
 ## Two documentation audiences
 
