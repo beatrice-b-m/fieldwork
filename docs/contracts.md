@@ -92,6 +92,11 @@ The handoff validates source identity and rejects context overrides. To choose a
 new population, rerun discovery. `census(df, dimensions, scope=..., missing=...)`
 also supports explicit context. Derived foundation scopes account against the
 original source, separating scope restrictions from missing-value exclusions.
+Context adaptation updates dataset metadata only at result roots and analytical
+section roots; graph `source`/`target` references retain their node identities.
+Shared population records are rebased once by object identity. In pre-filter
+exploration, census scopes reused by pair or grain lineage retain the original
+input total, disjoint exclusions, and a single added scope-lineage entry.
 
 With explicit dimensions, `explore` accepts common `scope`, `missing`, `table_id`
 and `features` settings in `discovery`; search-only settings raise `ValueError`.

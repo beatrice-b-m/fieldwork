@@ -403,22 +403,35 @@ def contextual_result(analysis, df, base):
     excluded = base["scope"]["restriction_excluded_rows"]
     source = {**_source(df), **base["source"]}
 
+    def rebase_sources(result_payload):
+        # Only result roots and their analytical sections own dataset metadata.
+        # Elsewhere, `source` can be a graph node reference or a feature name.
+        if "source" in result_payload:
+            result_payload["source"] = deepcopy(source)
+        for section in result_payload.get("sections", {}).values():
+            rebase_sources(section)
+
+    visited = set()
+
     def rebase(value):
+        if not isinstance(value, (dict, list)) or id(value) in visited:
+            return
+        # deepcopy preserves aliases, including the census scope shared by pair
+        # and grain lineage metadata. Rebase each container once, not each path.
+        visited.add(id(value))
         if isinstance(value, dict):
             if "scope_id" in value and "input_rows" in value:
                 value["input_rows"] += excluded
                 value["restriction_excluded_rows"] += excluded
                 value["conditional"] = value["conditional"] or bool(excluded)
                 value["lineage"] = [base["scope"]["name"], *value["lineage"]]
-            for key, child in list(value.items()):
-                if key == "source":
-                    value[key] = deepcopy(source)
-                else:
-                    rebase(child)
-        elif isinstance(value, list):
+            for child in value.values():
+                rebase(child)
+        else:
             for child in value:
                 rebase(child)
 
+    rebase_sources(payload)
     rebase(payload)
     payload["analysis_context"] = {k: base[k] for k in ("source", "scope", "missing_convention")}
     return ExplorerResult(analysis.kind, payload, schema_version=analysis.schema_version)
