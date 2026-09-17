@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "examples"))
 from investigation import investigate
+from wide_table import investigate as investigate_wide_table
 
 import fieldwork as fw
 
@@ -20,8 +21,10 @@ def generate(output: Path):
 
     output.mkdir(parents=True, exist_ok=True)
     df, availability, exceptions, paths, tree = investigate()
+    _, wide_graph = investigate_wide_table()
     assert exceptions["exam_id"].tolist() == ["S01"]
     results = {
+        "wide-table": wide_graph,
         "availability": availability,
         "census": tree,
         "grain": fw.grain(df, ["site", "exam_id", "modality"]),
@@ -53,6 +56,9 @@ def generate(output: Path):
         for filename, content in files.items():
             (output / filename).write_bytes(content)
             manifest["files"][filename] = hashlib.sha256(content).hexdigest()
+    example = (ROOT / "examples/wide_table.py").read_bytes()
+    (output / "wide-table.py").write_bytes(example)
+    manifest["files"]["wide-table.py"] = hashlib.sha256(example).hexdigest()
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     readme = (ROOT / "README.md").read_text()
     readme = readme.replace(

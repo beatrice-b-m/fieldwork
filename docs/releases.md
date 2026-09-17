@@ -9,8 +9,9 @@
    renders public SVG/HTML/visualization-data APIs, rasterizes SVGs with pinned
    resvg and bundled OFL-licensed Lato fonts, and writes a SHA-256 asset manifest.
    The generated `README.pypi.md` uses version-tagged absolute image/link URLs.
-4. Visually inspect the generated availability, census, grain, path and topology
-   images. Run the generator with `--check` to detect stale assets or README.
+4. Visually inspect the generated wide-table hero, availability, census, grain,
+   path and topology images. Run the generator with `--check` to detect stale
+   assets or README.
 5. Run `uv build`, then smoke-test the wheel in an isolated environment with
    `uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py`.
    This exercises the worked investigation using the built package and its runtime

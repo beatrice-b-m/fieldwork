@@ -64,3 +64,18 @@ user journey/reference pages in fieldwork-docs when interfaces change. Regenerat
 assets and inspect PNGs for clipping, layout, and useful evidence. Treat intentional
 presentation changes separately from analytical regressions. Plans belong in
 `temp-docs/`; retire them once behavior is described in durable documentation.
+
+The README and documentation homepage use `wide-table` assets generated from
+`examples/wide_table.py`. This seeded synthetic laboratory table has 960 rows and
+43 columns: participant, specimen, instrument, assay, run and specimen–assay
+attributes are flattened alongside technical replicates. Six explicit candidate
+keys yield a branching observed grain graph; the renderer's edges and attribute
+placements come from `grain()`, not a hand-drawn schema. Replicate numbers and raw
+signals intentionally remain unplaced by those candidates. To inspect it alone:
+
+```bash
+uv run python examples/wide_table.py /tmp/fieldwork-wide-table
+```
+
+Asset generation also bundles the executable source as `wide-table.py`, so the
+documentation site can offer the exact example alongside its SVG/HTML/JSON exports.

@@ -8,7 +8,14 @@ then choose a useful census path through the data.
 **Alpha release.** Python 3.11–3.14; pandas and NumPy are the only required runtime
 dependencies.
 
-![Availability in the worked example](docs/assets/availability.png)
+![Observed grain graph of a 960-row, 43-column laboratory table, with participant and specimen structure joining assay and instrument runs at a composite specimen–assay key](docs/assets/wide-table.png)
+
+One wide table, several overlapping levels of detail. In this
+[executable synthetic example](examples/wide_table.py), Fieldwork tests six candidate
+keys and places attributes at their coarsest observed grouping. Participant and
+specimen structure meets assay and instrument runs at a composite specimen–assay
+key; replicate-level signals remain unplaced. This is an estimated map of the
+table's structure based on observed dependencies, not a declared or proven schema.
 
 ```bash
 pip install fieldwork
