@@ -87,3 +87,25 @@ an allclose grid check. Offset and ratio checks require at least two finite pair
 rows; ratios exclude zero denominators. Tolerances are rtol 1e-5 and atol 1e-8.
 They are simple measured relationships, not fitted latent models. Context constancy
 reports how many populated context groups have a single populated target value.
+
+### Population-compatible grain views
+
+Discovery builds one view per distinct, nonempty candidate complete-case mask.
+Each view includes candidates whose supported rows contain that mask. The anchor
+candidate guarantees their common complete-case population is exactly that mask;
+the foundation still recomputes and checks every combined relationship on it.
+Views are ordered by descending population, then candidate enumeration order.
+`exact_grain` is the first view; `grain_views` retains every view, candidate IDs,
+source positions and population accounting. No relation is composed across views.
+All candidates remain in `candidates`, with view membership; unsupported candidates
+also appear in `graph_selection.excluded` with `no_evaluated_support`. With
+`dropna=False`, all candidates share the scoped population.
+
+Presentation ranks supported repeated groupings before unique identifiers,
+constants, and candidates without evaluated support. Within each class, more exact
+determined targets and repeated rows rank first, with shorter keys and lexical
+order breaking ties. A one-group candidate is a constant, including a singleton
+population. Ranking changes presentation only; the complete evaluated set remains
+available in enumeration order. Conditional findings carry typed context predicates
+in `structure.context`; readable statements name the feature, value and scalar type.
+Topology retains these predicates while suppressing measurements and selectors.

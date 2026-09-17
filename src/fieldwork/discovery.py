@@ -10,7 +10,7 @@ import numpy as np
 
 from ._explore import KeySpec, grain
 from ._explore.encoding import normalize_scalar
-from .evidence import columns, finding, limit, prepare, result
+from .evidence import columns, context_statement, contextual_result, finding, limit, prepare, result
 
 
 def discover_dependencies(
@@ -70,12 +70,14 @@ def discover_dependencies(
                 )
             )
     base["candidates"], base["dependencies"] = [], []
+    candidate_masks = []
     tests = 0
     for key in candidates:
         key_mask = np.ones(len(frame), dtype=bool)
         if dropna:
             for c in key:
                 key_mask &= present[c]
+        candidate_masks.append(key_mask)
         key_groups = Counter(tuple(int(codes[c][i]) for c in key) for i in np.flatnonzero(key_mask))
         candidate = {
             "columns": list(key),
@@ -158,12 +160,13 @@ def discover_dependencies(
                         base,
                         "exact_dependency" if record["exact"] else "approximate_dependency",
                         f"{', '.join(key)} determines {target}"
-                        + (" within context" if context else ""),
-                        [*key, target],
+                        + (" within " + context_statement(context) if context else ""),
+                        list(dict.fromkeys([*key, target, *(context or {})])),
                         record,
                         positions[sorted(typical)],
                         exceptions=positions[sorted(exceptions)],
                         example_limit=example_limit,
+                        structure={"context": context} if context is not None else {},
                         selector={
                             "operation": "dependency",
                             "determinant": list(key),
@@ -177,15 +180,54 @@ def discover_dependencies(
     graph_frame = frame[selected].copy()
     for c in selected:
         graph_frame[c] = graph_frame[c].astype(object).where(present[c], None)
-    base["exact_grain"] = (
-        grain(
-            graph_frame,
-            [KeySpec(f"key{i}", key) for i, key in enumerate(candidates)],
-            dropna=dropna,
-        ).to_dict()
-        if candidates
-        else None
-    )
+    # Each supported candidate supplies a population anchor. Candidates with a
+    # superset of those rows can be compared on that anchor without shrinking it.
+    anchors = {}
+    for i, mask in enumerate(candidate_masks):
+        if mask.any():
+            anchors.setdefault(mask.tobytes(), (i, mask))
+    views = []
+    for _, mask in sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0])):
+        members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
+        analysis = grain(
+            graph_frame, [KeySpec(f"key{i}", candidates[i]) for i in members], dropna=dropna
+        )
+        views.append(
+            {
+                "id": f"g{len(views)}",
+                "candidate_ids": [f"key{i}" for i in members],
+                "population": {
+                    "input_rows": len(df),
+                    "scope_rows": len(frame),
+                    "evaluated_rows": int(mask.sum()),
+                    "restriction_excluded_rows": len(df) - len(frame),
+                    "missing_excluded_rows": int((~mask).sum()),
+                    "positions": positions[mask].tolist(),
+                    "rule": "complete_cases_of_candidate_components"
+                    if dropna
+                    else "missing_as_category",
+                },
+                "grain": contextual_result(analysis, df, base).to_dict(),
+            }
+        )
+    base["grain_views"] = views
+    base["exact_grain"] = views[0]["grain"] if views else None
+    base["graph_selection"] = {
+        "strategy": "candidate_population_anchors_with_superset_candidates",
+        "primary_view": views[0]["id"] if views else None,
+        "excluded": [],
+    }
+    for i, candidate in enumerate(base["candidates"]):
+        candidate["id"] = f"key{i}"
+        candidate["graph_views"] = [v["id"] for v in views if f"key{i}" in v["candidate_ids"]]
+        if not candidate["graph_views"]:
+            base["graph_selection"]["excluded"].append(
+                {
+                    "candidate_id": f"key{i}",
+                    "columns": candidate["columns"],
+                    "reason": "no_evaluated_support",
+                }
+            )
     base["coverage"] = {
         "candidate_space": sum(
             comb(len(selected), k) for k in range(1, min(max_key_size, len(selected)) + 1)

@@ -138,11 +138,12 @@ class InvestigationResult(ExplorerResult):
     def from_dict(cls, data: Mapping[str, Any]):
         if data.get("schema_version") != "1.0":
             raise ValueError("Unsupported investigation schema version")
+        result_class = cls
         if data["kind"] == "paths":
             from .navigation import PathResult
 
-            cls = PathResult
-        return cls(
+            result_class = PathResult
+        return result_class(
             data["kind"],
             {k: v for k, v in data.items() if k not in {"kind", "schema_version", "stability"}},
             schema_version="1.0",
@@ -253,6 +254,7 @@ def finding(
     example_limit=5,
     unit="rows",
     selector=None,
+    structure=None,
 ):
     record = {
         "id": f"f{len(base['findings'])}",
@@ -260,6 +262,7 @@ def finding(
         "statement": statement,
         "features": [{"table": base["source"]["table_id"], "column": c} for c in features],
         "counting_unit": unit,
+        "structure": structure or {},
         "measurements": metrics,
         "examples": selection(positions, len(positions), example_limit),
         "exceptions": selection(exceptions, len(exceptions), example_limit),
@@ -322,16 +325,22 @@ def saved_context(base):
 
 def foundation_context(df, operation, *args, scope=None, missing=None, table_id="table", **options):
     """Normalize a private frame and retain original-source accounting in every derived scope."""
-    from copy import deepcopy
-    from ._explore.census import _source
-
     frame, _, _, present, base = prepare(df, scope=scope, missing=missing, table_id=table_id)
     normalized = frame.copy()
     for c in normalized:
         normalized[c] = normalized[c].astype(object).where(present[c], None)
     analysis = operation(normalized, *args, **options)
+    return contextual_result(analysis, df, base)
+
+
+def contextual_result(analysis, df, base):
+    """Attach discovery lineage to a foundation result computed on its prepared frame."""
+    from copy import deepcopy
+
+    from ._explore.census import _source
+
     payload = deepcopy(analysis.payload)
-    excluded = len(df) - len(frame)
+    excluded = base["scope"]["restriction_excluded_rows"]
     source = {**_source(df), **base["source"]}
 
     def rebase(value):
@@ -353,3 +362,10 @@ def foundation_context(df, operation, *args, scope=None, missing=None, table_id=
     rebase(payload)
     payload["analysis_context"] = {k: base[k] for k in ("source", "scope", "missing_convention")}
     return ExplorerResult(analysis.kind, payload, schema_version=analysis.schema_version)
+
+
+def context_statement(context):
+    return ", ".join(
+        f"{feature} = {_restore_scalar(value)!r} ({value['type']})"
+        for feature, value in context.items()
+    )

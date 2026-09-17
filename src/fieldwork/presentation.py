@@ -13,6 +13,33 @@ from ._explore.render import render_plaintext as foundation_text
 from ._explore.visual_data import visualization_data as foundation_data
 from .evidence import limit
 
+
+def candidate_role(candidate):
+    if not candidate["evaluated_rows"] or not candidate["groups"]:
+        return "no evaluated support"
+    if candidate["groups"] == 1:
+        return "constant"
+    if candidate["unique"]:
+        return "unique identifier"
+    return "repeated grouping"
+
+
+def candidate_priority(candidate):
+    roles = {
+        "repeated grouping": 0,
+        "unique identifier": 1,
+        "constant": 2,
+        "no evaluated support": 3,
+    }
+    return (
+        roles[candidate_role(candidate)],
+        -len(candidate["determines"]),
+        -candidate["repeated_rows"],
+        len(candidate["columns"]),
+        tuple(candidate["columns"]),
+    )
+
+
 KINDS = {"missingness", "dependencies", "paths", "value_patterns", "overview", "comparison"}
 
 
@@ -45,6 +72,7 @@ def visualization_data(result, *, section=None, detail="full"):
             "pattern": record["pattern"],
             "statement": record["statement"],
             "features": record["features"],
+            "structure": record.get("structure", {}),
         }
         if detail == "full":
             row.update(
@@ -74,14 +102,14 @@ def visualization_data(result, *, section=None, detail="full"):
             "grains": [
                 {
                     "columns": c["columns"],
-                    "role": "unique identifier" if c["unique"] else "repeated grouping",
+                    "role": candidate_role(c),
                     **(
                         {"groups": c["groups"], "repeated_groups": c["repeated_groups"]}
                         if detail == "full"
                         else {}
                     ),
                 }
-                for c in sections["dependencies"]["candidates"]
+                for c in sorted(sections["dependencies"]["candidates"], key=candidate_priority)
             ],
             "signatures": [
                 {
