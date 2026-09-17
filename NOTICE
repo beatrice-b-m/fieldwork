@@ -1,0 +1,6 @@
+Fieldwork exploration foundation, tests and benchmark extracted from bea-tools
+by Beatrice Brown-Mulry, declared MIT in its pyproject.toml.
+Source: https://github.com/beatrice-b-m/bea-tools
+Commit: 4e4f1704cbca91a314652b0c99f86d8f4a2c4f90
+The source repository contained no standalone license text at extraction.
+No DICOM, sampling code, or compatibility accessors were migrated.
