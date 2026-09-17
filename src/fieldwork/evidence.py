@@ -352,6 +352,27 @@ def result(kind, base):
     return InvestigationResult(kind, base, schema_version="1.0")
 
 
+def qualitative_analysis_unit(base, record):
+    """Describe a finding's own unit without exporting support or population sizes."""
+    section = record.get("selector", {}).get("analysis_section")
+    if section:
+        base = base["sections"][section]
+    unit = record["counting_unit"]
+    analysis = base.get("analysis_unit", {})
+    output = {"counting_unit": unit}
+    if unit == analysis.get("counting_unit"):
+        output.update(
+            {k: analysis[k] for k in ("entity_keys", "presence_aggregation") if k in analysis}
+        )
+    elif unit == "rows":
+        output.update(entity_keys=[], presence_aggregation="per_row")
+    else:
+        output["entity_keys"] = record.get("structure", {}).get("entity_keys", [])
+    if record["pattern"] in {"entity_availability", "entity_summary"}:
+        output.pop("presence_aggregation", None)
+    return output
+
+
 def _restore_scalar(value):
     kind = value["type"]
     raw = value.get("value")

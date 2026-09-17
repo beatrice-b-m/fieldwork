@@ -71,6 +71,10 @@ identifiers, scope counts, and distribution values, and canonicalize ordering of
 new findings. Topology does not anonymize feature names or value labels already
 present in structural foundation outputs. Renderers escape HTML/SVG and terminal
 control characters. Display truncation is reported separately from search coverage.
+Topology retains qualitative analysis units: rows or entities, entity keys, and
+any/all presence aggregation. Each finding and feature-network connection carries
+its own unit, so an overview can distinguish entity availability from row-based
+dependencies and value patterns without disclosing quantities.
 
 Standalone HTML uses native disclosure controls for discovery findings and the
 migrated interactive graph/census controls for foundation results. No server,

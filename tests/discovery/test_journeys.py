@@ -267,7 +267,7 @@ def test_connected_feature_relationships_preserve_evidence_types():
     assert "inspect evidence</a>" in fw.render_html(saved)
     topology = fw.visualization_data(saved, detail="topology")["feature_network"]
     serialized = json.dumps(topology)
-    for key in ("population_ref", "overview_finding_id", "counting_unit", "measurements"):
+    for key in ("population_ref", "overview_finding_id", "denominator", "measurements"):
         assert key not in serialized
     assert "indexed_name" in serialized and "exact_dependency" in serialized
 
@@ -311,3 +311,55 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
     entity = next(f for f in saved["findings"] if f["pattern"] == "entity_summary")
     assert saved.select(df, entity["id"]).positions == (0, 1)
     assert "x: 1/2 populated rows" in fw.render_plaintext(saved)
+
+
+@pytest.mark.parametrize("aggregation", ["any", "all"])
+def test_topology_retains_entity_relationship_meaning(aggregation):
+    df = pd.DataFrame({"e": [1, 1, 2, 2], "a": [1, None, 1, None], "b": [None, 1, None, 1]})
+    config = {
+        "features": ["a", "b", "e"],
+        "entity": "e",
+        "unit": "entities",
+        "entity_presence": aggregation,
+    }
+    rows = fw.visualization_data(fw.missingness(df, features=["a", "b"]), detail="topology")
+    assert any(f["pattern"] == "mutually_exclusive" for f in rows["findings"])
+    expected = {
+        "counting_unit": "entities",
+        "entity_keys": ["e"],
+        "presence_aggregation": aggregation,
+    }
+    for result in (fw.missingness(df, **config), fw.explore(df, discovery=config)):
+        saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
+        topology = fw.visualization_data(saved, detail="topology")
+        family = next(f for f in topology["findings"] if f["pattern"] == "availability_family")
+        assert family["analysis_unit"] == expected
+        assert family["counting_unit"] == "entities"
+        assert topology["analysis_unit"] == expected
+        if result.kind == "overview":
+            edge = next(
+                e
+                for e in topology["feature_network"]["relationships"]
+                if e["kind"] == "identical_availability"
+            )
+            assert edge["analysis_unit"] == expected
+            row_evidence = [f for f in topology["findings"] if f["pattern"] == "exact_dependency"]
+            assert row_evidence
+            assert all(f["analysis_unit"]["counting_unit"] == "rows" for f in row_evidence)
+            for edge in saved["feature_network"]["relationships"]:
+                edge.pop("analysis_unit")
+            # Older exports can recover connection context from their linked findings.
+            assert fw.visualization_data(saved, detail="topology") == topology
+        for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
+            text = render(saved, detail="topology")
+            assert "entities; keys=e; presence=" + aggregation in text
+        serialized = json.dumps(topology)
+        for key in (
+            "denominator",
+            "positions",
+            "dataset_id",
+            "measurements",
+            "source_rows",
+            "evaluated_rows",
+        ):
+            assert key not in serialized

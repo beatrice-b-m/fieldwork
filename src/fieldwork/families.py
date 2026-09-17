@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .evidence import qualitative_analysis_unit
+
 RELATIONS = {
     "availability_family": "identical_availability",
     "similar_availability": "similar_availability",
@@ -31,6 +33,7 @@ def feature_network(base):
             "kind": kind,
             "features": record["features"],
             "structure": record.get("structure", {}),
+            "analysis_unit": qualitative_analysis_unit(base, record),
             "evidence": {
                 "section": section,
                 "finding_id": selector["finding_id"],

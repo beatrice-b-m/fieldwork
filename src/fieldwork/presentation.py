@@ -11,7 +11,7 @@ from ._explore.graphics import render_svg as foundation_svg
 from ._explore.render import _clip, _safe
 from ._explore.render import render_plaintext as foundation_text
 from ._explore.visual_data import visualization_data as foundation_data
-from .evidence import limit
+from .evidence import limit, qualitative_analysis_unit
 
 
 def structural_evidence(structure):
@@ -19,6 +19,12 @@ def structural_evidence(structure):
         k: structure[k]
         for k in ("context", "present", "absent", "entity_keys", "presence_pattern", "relation")
         if k in structure
+    }
+
+
+def _qualitative_unit(unit):
+    return {
+        k: unit[k] for k in ("counting_unit", "entity_keys", "presence_aggregation") if k in unit
     }
 
 
@@ -81,16 +87,19 @@ def visualization_data(result, *, section=None, detail="full"):
             "statement": record["statement"],
             "features": record["features"],
             "structure": structural_evidence(record.get("structure", {})),
+            "counting_unit": record["counting_unit"],
+            "analysis_unit": qualitative_analysis_unit(data, record),
         }
         if detail == "full":
             row.update(
                 id=record["id"],
                 measurements=record["measurements"],
-                counting_unit=record["counting_unit"],
                 examples=record["examples"],
                 exceptions=record["exceptions"],
             )
         output["findings"].append(row)
+    if "analysis_unit" in data:
+        output["analysis_unit"] = _qualitative_unit(data["analysis_unit"])
     if detail == "full":
         for key in (
             "analysis_unit",
@@ -105,7 +114,14 @@ def visualization_data(result, *, section=None, detail="full"):
             if key in data:
                 output[key] = data[key]
     if "feature_network" in data:
-        network = data["feature_network"]
+        network = dict(data["feature_network"])
+        findings = {record["id"]: record for record in data.get("findings", [])}
+        network["relationships"] = []
+        for edge in data["feature_network"]["relationships"]:
+            record = findings.get(edge.get("evidence", {}).get("overview_finding_id"))
+            if "analysis_unit" not in edge and record is not None:
+                edge = {**edge, "analysis_unit": qualitative_analysis_unit(data, record)}
+            network["relationships"].append(edge)
         output["feature_network"] = (
             network
             if detail == "full"
@@ -115,9 +131,14 @@ def visualization_data(result, *, section=None, detail="full"):
                 "relationships": sorted(
                     [
                         {
-                            k: structural_evidence(edge[k]) if k == "structure" else edge[k]
+                            k: structural_evidence(edge[k])
+                            if k == "structure"
+                            else _qualitative_unit(edge[k])
+                            if k == "analysis_unit"
+                            else edge[k]
                             for k in (
                                 "kind",
+                                "analysis_unit",
                                 "features",
                                 "structure",
                                 "determinant",
@@ -167,6 +188,17 @@ def visualization_data(result, *, section=None, detail="full"):
     return output
 
 
+def _unit_label(unit):
+    label = unit["counting_unit"]
+    if "denominator" in unit:
+        label = f"{unit['denominator']} {label}"
+    if unit.get("entity_keys"):
+        label += "; keys=" + ", ".join(unit["entity_keys"])
+    if "presence_aggregation" in unit:
+        label += "; presence=" + unit["presence_aggregation"]
+    return label
+
+
 def render_plaintext(
     result,
     *,
@@ -199,11 +231,8 @@ def render_plaintext(
         lines.append("Topology only · quantitative evidence suppressed")
     else:
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
-    if detail == "full" and "analysis_unit" in data:
-        unit = data["analysis_unit"]
-        lines.append(
-            f"Analysis: {unit['denominator']} {unit['counting_unit']}; presence={unit['presence_aggregation']}"
-        )
+    if "analysis_unit" in data:
+        lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
     if data["kind"] == "overview":
         overview = data["overview"]
         lines.append("Availability families")
@@ -231,6 +260,7 @@ def render_plaintext(
         )
     for row in [] if data["kind"] == "overview" else data["findings"][:max_nodes]:
         lines.append((f"[{row['id']}] " if detail == "full" else "") + row["statement"])
+        lines.append("  Analysis: " + _unit_label(row["analysis_unit"]))
         if detail == "full":
             if "explanation" in row["measurements"]:
                 lines.extend(
@@ -290,6 +320,10 @@ def render_svg(
         size=13,
     )
     y = 92
+    if "analysis_unit" in data:
+        for line in _wrap("Analysis: " + _unit_label(data["analysis_unit"]), 102):
+            svg.text(24, y, line, size=13)
+            y += 20
     if detail == "full" and "availability" in data:
         for row in data["availability"][:max_findings]:
             for line in _wrap(row["feature"], 28):
@@ -304,7 +338,7 @@ def render_svg(
     else:
         for row in data["findings"][:max_findings]:
             lines = _wrap(row["statement"], 90)
-            metrics = ""
+            metrics = _unit_label(row["analysis_unit"])
             if detail == "full":
                 metrics = (
                     row["counting_unit"]
@@ -362,7 +396,7 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
         render_svg(data, detail=detail, max_findings=min(12, max_findings)),
         "<h1>Inspect findings</h1>",
     ]
-    if detail == "full" and "analysis_unit" in projected:
+    if "analysis_unit" in projected:
         parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
     if "feature_network" in projected:
         parts.append("<h2>Browse feature connections</h2>")
@@ -378,6 +412,8 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
                 )
                 if edge.get("determinant"):
                     label += " (" + ", ".join(edge["determinant"]) + " → " + edge["target"] + ")"
+                if edge.get("analysis_unit"):
+                    label += " · " + _unit_label(edge["analysis_unit"])
                 parts.append("<li>" + html.escape(label))
                 if detail == "full":
                     finding_id = edge["evidence"]["overview_finding_id"]
@@ -398,6 +434,7 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
         parts.append(
             "<details" + anchor + "><summary>" + html.escape(row["statement"]) + "</summary>"
         )
+        parts.append("<p>Analysis: " + html.escape(_unit_label(row["analysis_unit"])) + "</p>")
         if detail == "full":
             parts.append(
                 "<p>Finding "
