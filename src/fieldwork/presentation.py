@@ -14,6 +14,14 @@ from ._explore.visual_data import visualization_data as foundation_data
 from .evidence import limit
 
 
+def structural_evidence(structure):
+    return {
+        k: structure[k]
+        for k in ("context", "present", "absent", "entity_keys", "presence_pattern", "relation")
+        if k in structure
+    }
+
+
 def candidate_role(candidate):
     if not candidate["evaluated_rows"] or not candidate["groups"]:
         return "no evaluated support"
@@ -72,7 +80,7 @@ def visualization_data(result, *, section=None, detail="full"):
             "pattern": record["pattern"],
             "statement": record["statement"],
             "features": record["features"],
-            "structure": record.get("structure", {}),
+            "structure": structural_evidence(record.get("structure", {})),
         }
         if detail == "full":
             row.update(
@@ -96,6 +104,34 @@ def visualization_data(result, *, section=None, detail="full"):
         ):
             if key in data:
                 output[key] = data[key]
+    if "feature_network" in data:
+        network = data["feature_network"]
+        output["feature_network"] = (
+            network
+            if detail == "full"
+            else {
+                "nodes": network["nodes"],
+                "components": network["components"],
+                "relationships": sorted(
+                    [
+                        {
+                            k: edge[k]
+                            for k in (
+                                "kind",
+                                "features",
+                                "structure",
+                                "determinant",
+                                "source",
+                                "target",
+                            )
+                            if k in edge
+                        }
+                        for edge in network["relationships"]
+                    ],
+                    key=lambda edge: json.dumps(edge, sort_keys=True),
+                ),
+            }
+        )
     if data["kind"] == "overview":
         sections = data["sections"]
         output["overview"] = {
@@ -186,12 +222,20 @@ def render_plaintext(
             lines.append(text)
         lines.append("Suggested census paths")
         lines.extend("  " + " > ".join(path) for path in overview["paths"][:max_nodes])
+        if "feature_network" in data:
+            lines.append("Connected feature evidence")
+            for group in data["feature_network"]["components"][: min(5, max_nodes)]:
+                lines.append("  " + ", ".join(group))
         lines.append(
             "Summary lists are limited; individual sections retain complete evidence and coverage."
         )
     for row in [] if data["kind"] == "overview" else data["findings"][:max_nodes]:
         lines.append((f"[{row['id']}] " if detail == "full" else "") + row["statement"])
         if detail == "full":
+            if "explanation" in row["measurements"]:
+                lines.extend(
+                    "  " + reason for reason in row["measurements"]["explanation"].split("; ")
+                )
             metrics = ", ".join(
                 f"{k}={v}"
                 for k, v in row["measurements"].items()
@@ -303,6 +347,35 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
     ]
     if detail == "full" and "analysis_unit" in projected:
         parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
+    if "feature_network" in projected:
+        parts.append("<h2>Browse feature connections</h2>")
+        for node in projected["feature_network"]["nodes"]:
+            parts.append("<details><summary>" + html.escape(node["column"]) + "</summary><ul>")
+            for edge in projected["feature_network"]["relationships"]:
+                if node not in edge["features"]:
+                    continue
+                label = (
+                    edge["kind"].replace("_", " ")
+                    + ": "
+                    + ", ".join(f["column"] for f in edge["features"])
+                )
+                if edge.get("determinant"):
+                    label += " (" + ", ".join(edge["determinant"]) + " → " + edge["target"] + ")"
+                parts.append("<li>" + html.escape(label))
+                if detail == "full":
+                    finding_id = edge["evidence"]["overview_finding_id"]
+                    if any(f["id"] == finding_id for f in projected["findings"][:max_findings]):
+                        parts.append(
+                            ' · <a href="#'
+                            + html.escape(finding_id, quote=True)
+                            + '">inspect evidence</a>'
+                        )
+                    else:
+                        parts.append(" · evidence outside display limit")
+                if edge.get("structure"):
+                    parts.append(_html_evidence(edge["structure"]))
+                parts.append("</li>")
+            parts.append("</ul></details>")
     for row in projected["findings"][:max_findings]:
         anchor = f' id="{html.escape(row["id"], quote=True)}"' if detail == "full" else ""
         parts.append(

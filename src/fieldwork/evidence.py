@@ -76,6 +76,18 @@ class InvestigationResult(ExplorerResult):
     def to_frame(self, section: str = "findings") -> pd.DataFrame:
         return pd.json_normalize(self.payload.get(section, []))
 
+    def relationships(self, feature=None, *, kinds=None):
+        """Browse typed feature connections, with finding IDs for evidence inspection."""
+        records = self.payload.get("feature_network", {}).get("relationships", [])
+        return pd.json_normalize(
+            [
+                record
+                for record in records
+                if (feature is None or any(f["column"] == feature for f in record["features"]))
+                and (kinds is None or record["kind"] in kinds)
+            ]
+        )
+
     def _finding(self, df, finding):
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs from the ordered analysis source")
@@ -112,7 +124,27 @@ class InvestigationResult(ExplorerResult):
                 analysis["scope"]["name"],
             )
         replay = analysis.recompute(df, example_limit=len(df))
-        complete = replay._finding(df, selector["finding_id"])
+        # Match semantic selectors, not ordinal IDs: older saved results can have
+        # different finding orders after new evidence types are introduced.
+        bookkeeping = {
+            "dataset_id",
+            "scope_ref",
+            "parameters_ref",
+            "missing_convention_ref",
+            "finding_id",
+            "analysis_section",
+        }
+        predicate = {k: v for k, v in selector.items() if k not in bookkeeping}
+        matches = [
+            f
+            for f in replay["findings"]
+            if f["pattern"] == record["pattern"]
+            and (predicate or f["features"] == record["features"])
+            and all(f["selector"].get(k) == v for k, v in predicate.items())
+        ]
+        if len(matches) != 1:
+            raise ValueError("Saved finding does not resolve to one matching population")
+        complete = matches[0]
         positions = complete["exceptions" if exceptions else "examples"]["positions"]
         return Scope(
             self["source"]["dataset_id"], tuple(positions), name, analysis["scope"]["name"]

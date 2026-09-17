@@ -110,3 +110,36 @@ population. Ranking changes presentation only; the complete evaluated set remain
 available in enumeration order. Conditional findings carry typed context predicates
 in `structure.context`; readable statements name the feature, value and scalar type.
 Topology retains these predicates while suppressing measurements and selectors.
+
+### Recommendation reasons and diversity
+
+Every path stores `reasons` for observed prefix branching/overflow, supported
+nesting, redundant dimensions and equivalent partitions, and availability
+separation. Target searches also report target separation. Separation is the
+within-prefix nonmodal row fraction at each depth; explanations quote these
+measured values and the actual feature names. Numerical reasons stay in full
+presentations; topology retains only structural path and alias findings.
+
+At each search depth the beam keeps the best order per selected feature set,
+reserving slots for different browsing choices. Future extensions depend on that
+set, while accumulated prefix costs retain the ordering evidence. Returned paths
+also collapse alias substitutions. Fewer than `n_paths` are returned when no
+meaningfully different evaluated feature sets exist; reverse permutations are not
+advertised as alternatives. Explicit start order and precedence remain binding.
+
+### Connected feature evidence
+
+The overview includes value-pattern discovery and a `feature_network` with
+feature nodes, typed relationships, and connected components. Availability
+identity/similarity/implication/exclusion, indexed names, equivalent value
+partitions and exact/approximate dependencies remain separate relationship types.
+A connected component means reachability through this evidence, not equivalence
+or a composed functional dependency. Composite determinants and typed context
+predicates remain explicit. Each relationship links to its section finding,
+overview finding, counting unit and population reference. Pair-specific FD
+populations stay in the referenced finding; the network does not replace the
+compatible exact grain views. `overview.relationships(feature, kinds=[...])`
+returns a dataframe for filtering and following evidence to `inspect`/`select`.
+Saved HTML provides feature disclosures and links to the supporting findings.
+Topology removes evidence pointers and populations while retaining relation types,
+direction and context. Its relationship order is canonical.

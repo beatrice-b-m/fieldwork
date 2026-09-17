@@ -11,6 +11,7 @@ from ._explore.orchestration import explore as explicit_explore
 from .availability import missingness
 from .discovery import discover_dependencies
 from .evidence import finding, foundation_context, result
+from .families import feature_network
 from .navigation import suggest_paths
 from .patterns import value_patterns
 
@@ -34,20 +35,29 @@ def explore(df, dimensions=None, *, discovery=None, **options):
         return explicit_explore(df, dimensions, **options)
     if options:
         raise TypeError("With omitted dimensions, configure search with discovery dictionary")
-    paths = suggest_paths(df, **(discovery or {}))
+    config = dict(discovery or {})
+    availability_options = {
+        k: config.pop(k) for k in ("entity", "unit", "entity_presence") if k in config
+    }
+    contexts = config.pop("by", None)
+    paths = suggest_paths(df, **config)
     shared = {
         k: v
         for k, v in (discovery or {}).items()
         if k in {"scope", "missing", "table_id", "features"}
     }
-    availability = missingness(df, **shared)
-    dependencies = discover_dependencies(df, max_key_size=1, max_candidates=20, **shared)
+    availability = missingness(df, by=contexts, **availability_options, **shared)
+    dependencies = discover_dependencies(
+        df, by=contexts, max_key_size=1, max_candidates=20, **shared
+    )
+    patterns = value_patterns(df, by=contexts, max_pairs=20, **shared)
     base = {
         **availability.payload,
         "sections": {
             "missingness": availability.to_dict(),
             "dependencies": dependencies.to_dict(),
             "paths": paths.to_dict(),
+            "value_patterns": patterns.to_dict(),
         },
     }
     if paths.best:
@@ -57,6 +67,7 @@ def explore(df, dimensions=None, *, discovery=None, **options):
         ("missingness", availability),
         ("dependencies", dependencies),
         ("paths", paths),
+        ("value_patterns", patterns),
     ]:
         for record in analysis["findings"]:
             base["findings"].append(
@@ -72,6 +83,7 @@ def explore(df, dimensions=None, *, discovery=None, **options):
                     },
                 }
             )
+    base["feature_network"] = feature_network(base)
     return result("overview", base)
 
 

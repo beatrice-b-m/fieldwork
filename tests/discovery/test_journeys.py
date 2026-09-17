@@ -199,3 +199,87 @@ def test_equal_entity_weights_and_aggregation():
     with pytest.raises(ValueError, match="requires entity"):
         fw.missingness(mixed, unit="entities")
     assert "2 entities" in fw.render_plaintext(any_present)
+
+
+def test_recommendations_explain_evidence_and_diversify_feature_choices():
+    df = pd.DataFrame(
+        {
+            "site": ["A"] * 4 + ["B"] * 4,
+            "exam": [1, 1, 2, 2, 3, 3, 4, 4],
+            "mode": ["x", "y"] * 4,
+            "optional": [None] * 4 + [1, 2, 3, 4],
+        }
+    )
+    paths = fw.suggest_paths(df, max_dimensions=2, n_paths=3)
+    assert len(paths["paths"]) == 3
+    assert len({frozenset(p["dimensions"]) for p in paths["paths"]}) == 3
+    for path in paths["paths"]:
+        assert "Observed prefix groups" in path["explanation"]
+        assert {r["kind"] for r in path["reasons"]} >= {
+            "branching",
+            "nesting",
+            "redundancy",
+            "availability_separation",
+        }
+    nested = fw.suggest_paths(df, features=["site", "exam"], max_dimensions=2)
+    assert nested.best.dimensions == ("site", "exam")
+    assert len(nested["paths"]) == 1  # The reverse permutation is not a new investigation.
+    assert "site → exam" in nested["paths"][0]["explanation"]
+    target = fw.suggest_paths(df, objective="target", target="site", max_dimensions=1)
+    assert any(r["kind"] == "target_separation" for r in target["paths"][0]["reasons"])
+    constrained = fw.suggest_paths(
+        df, start_with=["mode"], before=[("site", "exam")], max_dimensions=3
+    )
+    assert all(p["dimensions"] == ["mode", "site", "exam"] for p in constrained["paths"])
+    assert "Observed prefix groups" in fw.render_plaintext(paths)
+
+
+def test_connected_feature_relationships_preserve_evidence_types():
+    df = pd.DataFrame(
+        {
+            "a_1": [1, 2, 3, 4, 5, None],
+            "a_2": [10, 20, 30, 40, None, None],
+            "mirror": [1, 2, 3, 4, 5, None],
+        }
+    )
+    overview = fw.explore(df)
+    network = overview["feature_network"]
+    assert {r["kind"] for r in network["relationships"]} >= {
+        "identical_availability",
+        "similar_availability",
+        "indexed_name",
+        "equivalent_value_partitions",
+        "exact_dependency",
+    }
+    connections = overview.relationships("a_1", kinds=["indexed_name"])
+    assert len(connections) == 1
+    finding_id = connections.iloc[0]["evidence.overview_finding_id"]
+    assert overview.inspect(df, finding_id).equals(df.iloc[:5])
+    assert overview.select(df, finding_id).positions == tuple(range(6))
+    for relationship in network["relationships"]:
+        evidence = relationship["evidence"]
+        assert any(
+            f["id"] == evidence["finding_id"]
+            for f in overview["sections"][evidence["section"]]["findings"]
+        )
+    saved = json.loads(json.dumps(overview.to_dict(), allow_nan=False))
+    assert "Browse feature connections" in fw.render_html(saved)
+    assert "inspect evidence</a>" in fw.render_html(saved)
+    topology = fw.visualization_data(saved, detail="topology")["feature_network"]
+    serialized = json.dumps(topology)
+    for key in ("population_ref", "overview_finding_id", "counting_unit", "measurements"):
+        assert key not in serialized
+    assert "indexed_name" in serialized and "exact_dependency" in serialized
+
+
+def test_overview_entity_context_configuration_and_selection():
+    df = pd.DataFrame({"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]})
+    overview = fw.explore(df, discovery={"by": ["site"], "entity": "entity", "unit": "entities"})
+    assert overview["sections"]["missingness"]["analysis_unit"]["denominator"] == 2
+    assert overview["sections"]["dependencies"]["coverage"]["contexts_evaluated"] == 2
+    signature = next(
+        f
+        for f in overview["findings"]
+        if f["pattern"] == "availability_signature" and "x" in f["structure"]["present"]
+    )
+    assert overview.select(df, signature["id"]).positions == (0, 1)

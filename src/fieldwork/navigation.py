@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from functools import cache
 from itertools import combinations
 
 import numpy as np
@@ -148,9 +149,10 @@ def suggest_paths(
             counts.setdefault(group, {})[value] = counts.setdefault(group, {}).get(value, 0) + 1
         return sum(sum(v.values()) - max(v.values()) for v in counts.values()) / len(labels)
 
+    @cache
     def measure(path):
         prefixes, keys, previous, redundancy = [], [()] * len(frame), 1, 0
-        target_loss, availability_loss = 0.0, 0.0
+        target_losses, availability_losses = [], []
         for c in path:
             keys = [(*key, int(value)) for key, value in zip(keys, encoded[c])]
             count = len(set(keys))
@@ -158,9 +160,8 @@ def suggest_paths(
             redundancy += count == previous
             previous = count
             if target_codes is not None:
-                target_loss += impurity(target_codes, keys)
-            if objective == "availability":
-                availability_loss += impurity(availability_codes, keys)
+                target_losses.append(impurity(target_codes, keys))
+            availability_losses.append(impurity(availability_codes, keys))
         inversions = sum(
             a in path and b in path and path.index(a) > path.index(b) for a, b in edges
         )
@@ -172,9 +173,9 @@ def suggest_paths(
         if objective in {"structure", "context"}:
             score += 8 * inversions
         if objective == "target":
-            score += 12 * target_loss
+            score += 12 * sum(target_losses)
         if objective == "availability":
-            score += 12 * availability_loss
+            score += 12 * sum(availability_losses)
         return {
             "score": score,
             "prefix_counts": prefixes,
@@ -183,8 +184,10 @@ def suggest_paths(
             "nesting_inversions": inversions,
             "redundant_steps": redundancy,
             "alias_steps": alias_steps,
-            "target_impurity_sum": target_loss,
-            "availability_impurity_sum": availability_loss,
+            "target_impurity_sum": sum(target_losses),
+            "target_impurity_by_depth": target_losses,
+            "availability_impurity_sum": sum(availability_losses),
+            "availability_impurity_by_depth": availability_losses,
         }
 
     width = min(max_dimensions, len(active))
@@ -207,13 +210,29 @@ def suggest_paths(
                 break
         if not expanded:
             break
-        beam = [path for _, path in sorted(expanded)[:beam_width]]
+        # Future extensions depend on the selected set, so keep its best order.
+        # This reserves beam slots for different feature choices, not permutations.
+        best_sets = {}
+        for _, path in sorted(expanded):
+            best_sets.setdefault(frozenset(path), path)
+        beam = list(best_sets.values())[:beam_width]
     beam = [p for p in beam if required <= set(p)]
+    alias_representative = {c: c for c in active}
+    for a, b in aliases:
+        old, new = alias_representative[b], alias_representative[a]
+        alias_representative = {
+            c: new if representative == old else representative
+            for c, representative in alias_representative.items()
+        }
+    diverse = {}
+    for path in sorted(beam, key=lambda p: (measure(p)["score"], p)):
+        diverse.setdefault(frozenset(alias_representative[c] for c in path), path)
     base["paths"] = []
-    for path in sorted(beam, key=lambda p: (measure(p)["score"], p))[:n_paths]:
+    for path in list(diverse.values())[:n_paths]:
         if not path:
             continue
         metrics = measure(path)
+        reasons, explanation = path_reasons(path, metrics, edges, aliases, target)
         preview = census(
             df,
             path,
@@ -227,11 +246,31 @@ def suggest_paths(
             {
                 "dimensions": list(path),
                 "measurements": metrics,
-                "explanation": f"{objective}: prefix cost, redundancy, branching and supported nesting",
+                "explanation": explanation,
+                "reasons": reasons,
                 "preview": preview,
             }
         )
-        finding(base, "census_path", " → ".join(path), path, metrics, positions, example_limit=3)
+        finding(
+            base,
+            "census_path",
+            " → ".join(path),
+            path,
+            {**metrics, "explanation": explanation, "reasons": reasons},
+            positions,
+            example_limit=3,
+        )
+    for a, b in aliases:
+        finding(
+            base,
+            "value_alias",
+            f"{a} and {b}: equivalent value partitions",
+            [a, b],
+            {"evaluated_rows": len(frame), "groups": cardinality[a]},
+            positions,
+            example_limit=3,
+            structure={"relation": "equivalent_value_partitions"},
+        )
     base["aliases"] = aliases
     base["nesting"] = [list(e) for e in sorted(edges)]
     base["coverage"] = {
@@ -241,6 +280,8 @@ def suggest_paths(
         "pairs_evaluated": tested_pairs,
         "pair_candidates": math.comb(len(active), 2),
         "paths_evaluated": evaluated,
+        "distinct_alternatives": len(diverse),
+        "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
         "search_exhausted_budget": evaluated >= max_candidates,
         "requested_depth": width,
         "returned_depth": max((len(p["dimensions"]) for p in base["paths"]), default=0),
@@ -261,3 +302,59 @@ def suggest_paths(
         "display_budget": display_budget,
     }
     return PathResult("paths", base, schema_version="1.0")
+
+
+def path_reasons(path, metrics, edges, aliases, target):
+    """Name observed evidence contributing to a path's score."""
+    counts = metrics["prefix_counts"]
+    nesting = [list(edge) for edge in sorted(edges) if all(c in path for c in edge)]
+    redundant = [
+        c for c, previous, current in zip(path, [1, *counts], counts) if previous == current
+    ]
+    alias_pairs = [pair for pair in aliases if all(c in path for c in pair)]
+    reasons = [
+        {
+            "kind": "branching",
+            "dimensions": list(path),
+            "prefix_groups": counts,
+            "overflow_cost": metrics["overflow"],
+        },
+        {
+            "kind": "nesting",
+            "coarse_to_fine": nesting,
+            "reversed_edges": metrics["nesting_inversions"],
+        },
+        {"kind": "redundancy", "no_new_groups": redundant, "equivalent_pairs": alias_pairs},
+        {
+            "kind": "availability_separation",
+            "nonmodal_fraction_by_depth": metrics["availability_impurity_by_depth"],
+        },
+    ]
+    text = ["Observed prefix groups: " + " → ".join(f"{c}: {n}" for c, n in zip(path, counts))]
+    if nesting:
+        text.append(
+            "Supported coarse-to-fine nesting: " + ", ".join(f"{a} → {b}" for a, b in nesting)
+        )
+    if redundant:
+        text.append("Adds no groups: " + ", ".join(redundant))
+    if alias_pairs:
+        text.append(
+            "Equivalent value partitions: " + ", ".join(f"{a} / {b}" for a, b in alias_pairs)
+        )
+    text.append(
+        "Availability nonmodal fractions: "
+        + ", ".join(f"{v:.3g}" for v in metrics["availability_impurity_by_depth"])
+    )
+    if target is not None:
+        reasons.append(
+            {
+                "kind": "target_separation",
+                "target": target,
+                "nonmodal_fraction_by_depth": metrics["target_impurity_by_depth"],
+            }
+        )
+        text.append(
+            f"{target} nonmodal fractions: "
+            + ", ".join(f"{v:.3g}" for v in metrics["target_impurity_by_depth"])
+        )
+    return reasons, "; ".join(text)
