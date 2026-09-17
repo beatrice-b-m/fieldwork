@@ -1,0 +1,2242 @@
+{
+  "environment": {
+    "python": "3.11.14",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6",
+    "fieldwork": "0.1.0"
+  },
+  "configuration": {
+    "rows": 300000,
+    "columns": 150,
+    "fixture": "sparse",
+    "progress": true,
+    "compact": true,
+    "seed": 721,
+    "operations": [
+      "explore"
+    ],
+    "features": null,
+    "candidates": null,
+    "timeout": 180.0,
+    "repeats": 3,
+    "output": "/tmp/fieldwork-after-sparse-300k-progress-compact.json",
+    "profile": null
+  },
+  "results": [
+    {
+      "status": "completed",
+      "analysis_seconds": 9.15358770795865,
+      "fixture_seconds": 0.36954679095651954,
+      "frame_bytes": 360000132,
+      "progress_events": 208,
+      "phases": [
+        {
+          "phase": "fingerprinting",
+          "phase_id": 2,
+          "parent_id": 1,
+          "seconds": 2.0177722080261447,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 3,
+          "parent_id": 1,
+          "seconds": 0.031878125038929284,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "path nesting",
+          "phase_id": 4,
+          "parent_id": 1,
+          "seconds": 0.33124225004576147,
+          "completed": 190,
+          "total": 190
+        },
+        {
+          "phase": "path search",
+          "phase_id": 5,
+          "parent_id": 1,
+          "seconds": 0.3335824169917032,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 7,
+          "parent_id": 6,
+          "seconds": 3.0829687602818012e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 8,
+          "parent_id": 6,
+          "seconds": 0.007906624989118427,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 6,
+          "parent_id": 1,
+          "seconds": 0.014692500000819564,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 10,
+          "parent_id": 9,
+          "seconds": 2.6669586077332497e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 11,
+          "parent_id": 9,
+          "seconds": 0.007986249984242022,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 9,
+          "parent_id": 1,
+          "seconds": 0.014357957988977432,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 13,
+          "parent_id": 12,
+          "seconds": 2.5840126909315586e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 14,
+          "parent_id": 12,
+          "seconds": 0.008061082975473255,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 12,
+          "parent_id": 1,
+          "seconds": 0.014436500030569732,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "paths",
+          "phase_id": 1,
+          "parent_id": 0,
+          "seconds": 3.0692475420073606,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 16,
+          "parent_id": 15,
+          "seconds": 0.010211291024461389,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "availability masks",
+          "phase_id": 17,
+          "parent_id": 15,
+          "seconds": 5.0083035603165627e-05,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "packing availability",
+          "phase_id": 18,
+          "parent_id": 15,
+          "seconds": 0.018306124955415726,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "availability signatures",
+          "phase_id": 19,
+          "parent_id": 15,
+          "seconds": 0.16335495898965746,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "availability pairs",
+          "phase_id": 20,
+          "parent_id": 15,
+          "seconds": 0.07759137498214841,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "missingness",
+          "phase_id": 15,
+          "parent_id": 0,
+          "seconds": 0.3288871659897268,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 22,
+          "parent_id": 21,
+          "seconds": 0.21882691700011492,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "dependency tests",
+          "phase_id": 23,
+          "parent_id": 21,
+          "seconds": 3.6109485409688205,
+          "completed": 2980,
+          "total": 2980
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 26,
+          "parent_id": 25,
+          "seconds": 0.023777624999638647,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 27,
+          "parent_id": 25,
+          "seconds": 0.032444459036923945,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 25,
+          "parent_id": 24,
+          "seconds": 0.06614187499508262,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 29,
+          "parent_id": 28,
+          "seconds": 0.022563375008758157,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 30,
+          "parent_id": 28,
+          "seconds": 0.032565166999120265,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 28,
+          "parent_id": 24,
+          "seconds": 0.0654776250012219,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 32,
+          "parent_id": 31,
+          "seconds": 0.022372249979525805,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 33,
+          "parent_id": 31,
+          "seconds": 0.03300304204458371,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 31,
+          "parent_id": 24,
+          "seconds": 0.06518504198174924,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 35,
+          "parent_id": 34,
+          "seconds": 0.022420749999582767,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 36,
+          "parent_id": 34,
+          "seconds": 0.033139417006168514,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 34,
+          "parent_id": 24,
+          "seconds": 0.06553641601931304,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 38,
+          "parent_id": 37,
+          "seconds": 0.02262770797824487,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 39,
+          "parent_id": 37,
+          "seconds": 0.032645917031913996,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 37,
+          "parent_id": 24,
+          "seconds": 0.0656696250080131,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 41,
+          "parent_id": 40,
+          "seconds": 0.0225877080229111,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 42,
+          "parent_id": 40,
+          "seconds": 0.03254262497648597,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 40,
+          "parent_id": 24,
+          "seconds": 0.064928375009913,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 44,
+          "parent_id": 43,
+          "seconds": 0.022560208977665752,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 45,
+          "parent_id": 43,
+          "seconds": 0.03254879196174443,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 43,
+          "parent_id": 24,
+          "seconds": 0.06487620802363381,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 47,
+          "parent_id": 46,
+          "seconds": 0.02262533298926428,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 48,
+          "parent_id": 46,
+          "seconds": 0.032510582997929305,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 46,
+          "parent_id": 24,
+          "seconds": 0.0649309580330737,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 50,
+          "parent_id": 49,
+          "seconds": 0.02235608297633007,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 51,
+          "parent_id": 49,
+          "seconds": 0.0323123749694787,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 49,
+          "parent_id": 24,
+          "seconds": 0.06434824998723343,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 53,
+          "parent_id": 52,
+          "seconds": 0.02236045798053965,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 54,
+          "parent_id": 52,
+          "seconds": 0.032349125016480684,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 52,
+          "parent_id": 24,
+          "seconds": 0.0644060829654336,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 56,
+          "parent_id": 55,
+          "seconds": 0.022790583956521004,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 57,
+          "parent_id": 55,
+          "seconds": 0.032354833965655416,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 55,
+          "parent_id": 24,
+          "seconds": 0.06501999997999519,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 59,
+          "parent_id": 58,
+          "seconds": 0.022406124975532293,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 60,
+          "parent_id": 58,
+          "seconds": 0.03273437498137355,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 58,
+          "parent_id": 24,
+          "seconds": 0.06537120800931007,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 62,
+          "parent_id": 61,
+          "seconds": 0.022645207995083183,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 63,
+          "parent_id": 61,
+          "seconds": 0.03335625003091991,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 61,
+          "parent_id": 24,
+          "seconds": 0.0657614580122754,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 65,
+          "parent_id": 64,
+          "seconds": 0.022624832985457033,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 66,
+          "parent_id": 64,
+          "seconds": 0.03316920797806233,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 64,
+          "parent_id": 24,
+          "seconds": 0.06555045797722414,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 68,
+          "parent_id": 67,
+          "seconds": 0.022225834021810442,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 69,
+          "parent_id": 67,
+          "seconds": 0.03216775000328198,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 67,
+          "parent_id": 24,
+          "seconds": 0.06449966598302126,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 71,
+          "parent_id": 70,
+          "seconds": 0.022434459009673446,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 72,
+          "parent_id": 70,
+          "seconds": 0.03241758298827335,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 70,
+          "parent_id": 24,
+          "seconds": 0.0644209579913877,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 74,
+          "parent_id": 73,
+          "seconds": 0.022332332970108837,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 75,
+          "parent_id": 73,
+          "seconds": 0.03225449996534735,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 73,
+          "parent_id": 24,
+          "seconds": 0.06411566701717675,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 77,
+          "parent_id": 76,
+          "seconds": 0.022308750019874424,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 78,
+          "parent_id": 76,
+          "seconds": 0.0322339580161497,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 76,
+          "parent_id": 24,
+          "seconds": 0.06407249998301268,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 80,
+          "parent_id": 79,
+          "seconds": 0.022317874943837523,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 81,
+          "parent_id": 79,
+          "seconds": 0.032279540959279984,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 79,
+          "parent_id": 24,
+          "seconds": 0.06414354202570394,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 83,
+          "parent_id": 82,
+          "seconds": 0.0223416670341976,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 84,
+          "parent_id": 82,
+          "seconds": 0.032247541996184736,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 82,
+          "parent_id": 24,
+          "seconds": 0.06413237500237301,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "grain views",
+          "phase_id": 24,
+          "parent_id": 21,
+          "seconds": 1.7470538329798728,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "dependencies",
+          "phase_id": 21,
+          "parent_id": 0,
+          "seconds": 5.614443333004601,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 86,
+          "parent_id": 85,
+          "seconds": 2.500019036233425e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "value summaries",
+          "phase_id": 87,
+          "parent_id": 85,
+          "seconds": 0.11505566700361669,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "value patterns",
+          "phase_id": 85,
+          "parent_id": 0,
+          "seconds": 0.1359121670247987,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "assembling overview",
+          "phase_id": 88,
+          "parent_id": 0,
+          "seconds": 0.0008547910256311297,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "overview",
+          "phase_id": 0,
+          "parent_id": null,
+          "seconds": 9.149709792050999,
+          "completed": 0,
+          "total": null
+        }
+      ],
+      "serialization_seconds": 0.47316245798720047,
+      "result_bytes": 24219506,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 300000,
+        "signatures_shown": 50,
+        "signature_omitted_units": 299950,
+        "signature_omitted_rows": 299950,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1453948928,
+      "operation": "explore",
+      "repeat": 1,
+      "process_seconds": 10.168384583026636
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 9.08910325000761,
+      "fixture_seconds": 0.3723971250001341,
+      "frame_bytes": 360000132,
+      "progress_events": 208,
+      "phases": [
+        {
+          "phase": "fingerprinting",
+          "phase_id": 2,
+          "parent_id": 1,
+          "seconds": 2.015062708000187,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 3,
+          "parent_id": 1,
+          "seconds": 0.0318161670002155,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "path nesting",
+          "phase_id": 4,
+          "parent_id": 1,
+          "seconds": 0.31738483300432563,
+          "completed": 190,
+          "total": 190
+        },
+        {
+          "phase": "path search",
+          "phase_id": 5,
+          "parent_id": 1,
+          "seconds": 0.31795387499732897,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 7,
+          "parent_id": 6,
+          "seconds": 3.2090465538203716e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 8,
+          "parent_id": 6,
+          "seconds": 0.008008125005289912,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 6,
+          "parent_id": 1,
+          "seconds": 0.014992041978985071,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 10,
+          "parent_id": 9,
+          "seconds": 2.6249908842146397e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 11,
+          "parent_id": 9,
+          "seconds": 0.007840292004402727,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 9,
+          "parent_id": 1,
+          "seconds": 0.014174000010825694,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 13,
+          "parent_id": 12,
+          "seconds": 2.4579931050539017e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 14,
+          "parent_id": 12,
+          "seconds": 0.00796895899111405,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 12,
+          "parent_id": 1,
+          "seconds": 0.014411457988899201,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "paths",
+          "phase_id": 1,
+          "parent_id": 0,
+          "seconds": 3.0383913340047,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 16,
+          "parent_id": 15,
+          "seconds": 0.010255458008032292,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "availability masks",
+          "phase_id": 17,
+          "parent_id": 15,
+          "seconds": 5.3750001825392246e-05,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "packing availability",
+          "phase_id": 18,
+          "parent_id": 15,
+          "seconds": 0.018361833004746586,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "availability signatures",
+          "phase_id": 19,
+          "parent_id": 15,
+          "seconds": 0.16980366699863225,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "availability pairs",
+          "phase_id": 20,
+          "parent_id": 15,
+          "seconds": 0.07822545798262581,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "missingness",
+          "phase_id": 15,
+          "parent_id": 0,
+          "seconds": 0.3367979589966126,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 22,
+          "parent_id": 21,
+          "seconds": 0.21912750002229586,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "dependency tests",
+          "phase_id": 23,
+          "parent_id": 21,
+          "seconds": 3.5616034580161795,
+          "completed": 2980,
+          "total": 2980
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 26,
+          "parent_id": 25,
+          "seconds": 0.02319224999519065,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 27,
+          "parent_id": 25,
+          "seconds": 0.032671375025529414,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 25,
+          "parent_id": 24,
+          "seconds": 0.06597937498008832,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 29,
+          "parent_id": 28,
+          "seconds": 0.022856249997857958,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 30,
+          "parent_id": 28,
+          "seconds": 0.032562665990553796,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 28,
+          "parent_id": 24,
+          "seconds": 0.06569395796395838,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 32,
+          "parent_id": 31,
+          "seconds": 0.022551374975591898,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 33,
+          "parent_id": 31,
+          "seconds": 0.033069875033106655,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 31,
+          "parent_id": 24,
+          "seconds": 0.06537566700717434,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 35,
+          "parent_id": 34,
+          "seconds": 0.022598750016186386,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 36,
+          "parent_id": 34,
+          "seconds": 0.03319725004257634,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 34,
+          "parent_id": 24,
+          "seconds": 0.06552904099225998,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 38,
+          "parent_id": 37,
+          "seconds": 0.022602249984629452,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 39,
+          "parent_id": 37,
+          "seconds": 0.032650166016537696,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 37,
+          "parent_id": 24,
+          "seconds": 0.06555262499023229,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 41,
+          "parent_id": 40,
+          "seconds": 0.02273483300814405,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 42,
+          "parent_id": 40,
+          "seconds": 0.0326748329680413,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 40,
+          "parent_id": 24,
+          "seconds": 0.06508249999023974,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 44,
+          "parent_id": 43,
+          "seconds": 0.022737582970876247,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 45,
+          "parent_id": 43,
+          "seconds": 0.032794500002637506,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 43,
+          "parent_id": 24,
+          "seconds": 0.06520054099382833,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 47,
+          "parent_id": 46,
+          "seconds": 0.022210415976587683,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 48,
+          "parent_id": 46,
+          "seconds": 0.03230845899088308,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 46,
+          "parent_id": 24,
+          "seconds": 0.06411199999274686,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 50,
+          "parent_id": 49,
+          "seconds": 0.022379415982868522,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 51,
+          "parent_id": 49,
+          "seconds": 0.032321332953870296,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 49,
+          "parent_id": 24,
+          "seconds": 0.06429854198358953,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 53,
+          "parent_id": 52,
+          "seconds": 0.022323417011648417,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 54,
+          "parent_id": 52,
+          "seconds": 0.03257241699611768,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 52,
+          "parent_id": 24,
+          "seconds": 0.06449845799943432,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 56,
+          "parent_id": 55,
+          "seconds": 0.023298916989006102,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 57,
+          "parent_id": 55,
+          "seconds": 0.03281504102051258,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 55,
+          "parent_id": 24,
+          "seconds": 0.06594020797638223,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 59,
+          "parent_id": 58,
+          "seconds": 0.022444709029514343,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 60,
+          "parent_id": 58,
+          "seconds": 0.03243358398322016,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 58,
+          "parent_id": 24,
+          "seconds": 0.06507787498412654,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 62,
+          "parent_id": 61,
+          "seconds": 0.02242266701068729,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 63,
+          "parent_id": 61,
+          "seconds": 0.032861792016774416,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 61,
+          "parent_id": 24,
+          "seconds": 0.06494312500581145,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 65,
+          "parent_id": 64,
+          "seconds": 0.022318499977700412,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 66,
+          "parent_id": 64,
+          "seconds": 0.03277429100126028,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 64,
+          "parent_id": 24,
+          "seconds": 0.06473454099614173,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 68,
+          "parent_id": 67,
+          "seconds": 0.022348917031195015,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 69,
+          "parent_id": 67,
+          "seconds": 0.032662208017427474,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 67,
+          "parent_id": 24,
+          "seconds": 0.06524287501815706,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 71,
+          "parent_id": 70,
+          "seconds": 0.02236212504794821,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 72,
+          "parent_id": 70,
+          "seconds": 0.032344541978091,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 70,
+          "parent_id": 24,
+          "seconds": 0.06423675001133233,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 74,
+          "parent_id": 73,
+          "seconds": 0.02240529202390462,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 75,
+          "parent_id": 73,
+          "seconds": 0.03219170798547566,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 73,
+          "parent_id": 24,
+          "seconds": 0.06420220900326967,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 77,
+          "parent_id": 76,
+          "seconds": 0.022616416041273624,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 78,
+          "parent_id": 76,
+          "seconds": 0.032654874958097935,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 76,
+          "parent_id": 24,
+          "seconds": 0.06489479204174131,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 80,
+          "parent_id": 79,
+          "seconds": 0.022543583007063717,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 81,
+          "parent_id": 79,
+          "seconds": 0.032694749999791384,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 79,
+          "parent_id": 24,
+          "seconds": 0.06492849998176098,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 83,
+          "parent_id": 82,
+          "seconds": 0.0224417089484632,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 84,
+          "parent_id": 82,
+          "seconds": 0.03256466699531302,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 82,
+          "parent_id": 24,
+          "seconds": 0.06490320898592472,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "grain views",
+          "phase_id": 24,
+          "parent_id": 21,
+          "seconds": 1.754659082973376,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "dependencies",
+          "phase_id": 21,
+          "parent_id": 0,
+          "seconds": 5.572936541982926,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 86,
+          "parent_id": 85,
+          "seconds": 2.541986759752035e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "value summaries",
+          "phase_id": 87,
+          "parent_id": 85,
+          "seconds": 0.11558587499894202,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "value patterns",
+          "phase_id": 85,
+          "parent_id": 0,
+          "seconds": 0.1365553749492392,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "assembling overview",
+          "phase_id": 88,
+          "parent_id": 0,
+          "seconds": 0.0008595000253990293,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "overview",
+          "phase_id": 0,
+          "parent_id": null,
+          "seconds": 9.085889958019834,
+          "completed": 0,
+          "total": null
+        }
+      ],
+      "serialization_seconds": 0.48007683304604143,
+      "result_bytes": 24219506,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 300000,
+        "signatures_shown": 50,
+        "signature_omitted_units": 299950,
+        "signature_omitted_rows": 299950,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1453916160,
+      "operation": "explore",
+      "repeat": 2,
+      "process_seconds": 10.119428582955152
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 9.162349291960709,
+      "fixture_seconds": 0.3742016250034794,
+      "frame_bytes": 360000132,
+      "progress_events": 208,
+      "phases": [
+        {
+          "phase": "fingerprinting",
+          "phase_id": 2,
+          "parent_id": 1,
+          "seconds": 2.045336999988649,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 3,
+          "parent_id": 1,
+          "seconds": 0.03283237497089431,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "path nesting",
+          "phase_id": 4,
+          "parent_id": 1,
+          "seconds": 0.3159632090246305,
+          "completed": 190,
+          "total": 190
+        },
+        {
+          "phase": "path search",
+          "phase_id": 5,
+          "parent_id": 1,
+          "seconds": 0.3189287920249626,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 7,
+          "parent_id": 6,
+          "seconds": 3.374996595084667e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 8,
+          "parent_id": 6,
+          "seconds": 0.008006750023923814,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 6,
+          "parent_id": 1,
+          "seconds": 0.01515412499429658,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 10,
+          "parent_id": 9,
+          "seconds": 2.9170187190175056e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 11,
+          "parent_id": 9,
+          "seconds": 0.008199208008591086,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 9,
+          "parent_id": 1,
+          "seconds": 0.01462500001071021,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 13,
+          "parent_id": 12,
+          "seconds": 2.666027285158634e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "census tree",
+          "phase_id": 14,
+          "parent_id": 12,
+          "seconds": 0.008056958031374961,
+          "completed": 9,
+          "total": null
+        },
+        {
+          "phase": "census",
+          "phase_id": 12,
+          "parent_id": 1,
+          "seconds": 0.014770417008548975,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "paths",
+          "phase_id": 1,
+          "parent_id": 0,
+          "seconds": 3.068623083992861,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 16,
+          "parent_id": 15,
+          "seconds": 0.010426833992823958,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "availability masks",
+          "phase_id": 17,
+          "parent_id": 15,
+          "seconds": 5.729100666940212e-05,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "packing availability",
+          "phase_id": 18,
+          "parent_id": 15,
+          "seconds": 0.018422332999762148,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "availability signatures",
+          "phase_id": 19,
+          "parent_id": 15,
+          "seconds": 0.16377254202961922,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "availability pairs",
+          "phase_id": 20,
+          "parent_id": 15,
+          "seconds": 0.07833891600603238,
+          "completed": 200,
+          "total": 200
+        },
+        {
+          "phase": "missingness",
+          "phase_id": 15,
+          "parent_id": 0,
+          "seconds": 0.33102070895256475,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 22,
+          "parent_id": 21,
+          "seconds": 0.22374366701114923,
+          "completed": 130,
+          "total": 130
+        },
+        {
+          "phase": "dependency tests",
+          "phase_id": 23,
+          "parent_id": 21,
+          "seconds": 3.5969583329861052,
+          "completed": 2980,
+          "total": 2980
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 26,
+          "parent_id": 25,
+          "seconds": 0.022997416963335127,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 27,
+          "parent_id": 25,
+          "seconds": 0.03294199996162206,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 25,
+          "parent_id": 24,
+          "seconds": 0.06618120800703764,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 29,
+          "parent_id": 28,
+          "seconds": 0.022677915985696018,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 30,
+          "parent_id": 28,
+          "seconds": 0.032882167026400566,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 28,
+          "parent_id": 24,
+          "seconds": 0.06592129199998453,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 32,
+          "parent_id": 31,
+          "seconds": 0.022856833005789667,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 33,
+          "parent_id": 31,
+          "seconds": 0.03337666700826958,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 31,
+          "parent_id": 24,
+          "seconds": 0.06620775000192225,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 35,
+          "parent_id": 34,
+          "seconds": 0.022604124969802797,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 36,
+          "parent_id": 34,
+          "seconds": 0.03296829102328047,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 34,
+          "parent_id": 24,
+          "seconds": 0.06522045796737075,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 38,
+          "parent_id": 37,
+          "seconds": 0.02257804200053215,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 39,
+          "parent_id": 37,
+          "seconds": 0.032587625028099865,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 37,
+          "parent_id": 24,
+          "seconds": 0.06527416600147262,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 41,
+          "parent_id": 40,
+          "seconds": 0.022723292000591755,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 42,
+          "parent_id": 40,
+          "seconds": 0.0325828330242075,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 40,
+          "parent_id": 24,
+          "seconds": 0.06502199999522418,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 44,
+          "parent_id": 43,
+          "seconds": 0.02263316698372364,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 45,
+          "parent_id": 43,
+          "seconds": 0.03261595801450312,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 43,
+          "parent_id": 24,
+          "seconds": 0.06492458301363513,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 47,
+          "parent_id": 46,
+          "seconds": 0.022542082995641977,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 48,
+          "parent_id": 46,
+          "seconds": 0.032605333952233195,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 46,
+          "parent_id": 24,
+          "seconds": 0.064830916991923,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 50,
+          "parent_id": 49,
+          "seconds": 0.022590457985643297,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 51,
+          "parent_id": 49,
+          "seconds": 0.032619708974380046,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 49,
+          "parent_id": 24,
+          "seconds": 0.06488883297424763,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 53,
+          "parent_id": 52,
+          "seconds": 0.0225755829596892,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 54,
+          "parent_id": 52,
+          "seconds": 0.032599582977127284,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 52,
+          "parent_id": 24,
+          "seconds": 0.06486608303384855,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 56,
+          "parent_id": 55,
+          "seconds": 0.023543791030533612,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 57,
+          "parent_id": 55,
+          "seconds": 0.033406667003873736,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 55,
+          "parent_id": 24,
+          "seconds": 0.06718995905248448,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 59,
+          "parent_id": 58,
+          "seconds": 0.022616041998844594,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 60,
+          "parent_id": 58,
+          "seconds": 0.03268808400025591,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 58,
+          "parent_id": 24,
+          "seconds": 0.06553608301328495,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 62,
+          "parent_id": 61,
+          "seconds": 0.022685999982059002,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 63,
+          "parent_id": 61,
+          "seconds": 0.0335985419806093,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 61,
+          "parent_id": 24,
+          "seconds": 0.06622329202946275,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 65,
+          "parent_id": 64,
+          "seconds": 0.02277579199289903,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 66,
+          "parent_id": 64,
+          "seconds": 0.033497209020424634,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 64,
+          "parent_id": 24,
+          "seconds": 0.06616325001232326,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 68,
+          "parent_id": 67,
+          "seconds": 0.02279075002297759,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 69,
+          "parent_id": 67,
+          "seconds": 0.03292516601504758,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 67,
+          "parent_id": 24,
+          "seconds": 0.06607758300378919,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 71,
+          "parent_id": 70,
+          "seconds": 0.022920000017620623,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 72,
+          "parent_id": 70,
+          "seconds": 0.03251220897072926,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 70,
+          "parent_id": 24,
+          "seconds": 0.06531241699121892,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 74,
+          "parent_id": 73,
+          "seconds": 0.022616458008997142,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 75,
+          "parent_id": 73,
+          "seconds": 0.03258508298313245,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 73,
+          "parent_id": 24,
+          "seconds": 0.06491475005168468,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 77,
+          "parent_id": 76,
+          "seconds": 0.02264254103647545,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 78,
+          "parent_id": 76,
+          "seconds": 0.03301237500272691,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 76,
+          "parent_id": 24,
+          "seconds": 0.06551300000865012,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 80,
+          "parent_id": 79,
+          "seconds": 0.02259079203940928,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 81,
+          "parent_id": 79,
+          "seconds": 0.032491082965862006,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 79,
+          "parent_id": 24,
+          "seconds": 0.06478808302199468,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "exact dependencies",
+          "phase_id": 83,
+          "parent_id": 82,
+          "seconds": 0.0226511670043692,
+          "completed": 149,
+          "total": 149
+        },
+        {
+          "phase": "grain graph evidence",
+          "phase_id": 84,
+          "parent_id": 82,
+          "seconds": 0.032967832987196743,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "grain",
+          "phase_id": 82,
+          "parent_id": 24,
+          "seconds": 0.0654037090134807,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "grain views",
+          "phase_id": 24,
+          "parent_id": 21,
+          "seconds": 1.7630607080063783,
+          "completed": 20,
+          "total": 20
+        },
+        {
+          "phase": "dependencies",
+          "phase_id": 21,
+          "parent_id": 0,
+          "seconds": 5.620842167001683,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "encoding",
+          "phase_id": 86,
+          "parent_id": 85,
+          "seconds": 2.5830231606960297e-06,
+          "completed": 0,
+          "total": 0
+        },
+        {
+          "phase": "value summaries",
+          "phase_id": 87,
+          "parent_id": 85,
+          "seconds": 0.11633562500355765,
+          "completed": 150,
+          "total": 150
+        },
+        {
+          "phase": "value patterns",
+          "phase_id": 85,
+          "parent_id": 0,
+          "seconds": 0.13739104103296995,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "assembling overview",
+          "phase_id": 88,
+          "parent_id": 0,
+          "seconds": 0.0008509590406902134,
+          "completed": 0,
+          "total": null
+        },
+        {
+          "phase": "overview",
+          "phase_id": 0,
+          "parent_id": null,
+          "seconds": 9.159074833034538,
+          "completed": 0,
+          "total": null
+        }
+      ],
+      "serialization_seconds": 0.47313462500460446,
+      "result_bytes": 24219506,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 300000,
+        "signatures_shown": 50,
+        "signature_omitted_units": 299950,
+        "signature_omitted_rows": 299950,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1456144384,
+      "operation": "explore",
+      "repeat": 3,
+      "process_seconds": 10.18261604203144
+    }
+  ]
+}

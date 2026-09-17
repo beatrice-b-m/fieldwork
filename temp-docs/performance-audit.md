@@ -1,5 +1,10 @@
 # Large-dataframe performance and progress audit
 
+> Historical baseline audit at `d0a4d9f`. Its proposed implementation is now
+> described in [the durable performance guide](../docs/performance.md) and
+> [implementation measurements](../docs/performance-results.md). Statements about
+> missing controls and current hot paths below describe the baseline only.
+
 Date: 2026-09-17. Baseline: `039d88c2ec33bedc11572348c43fb5118f41d641`.
 Scope: the public analytical tools, overview composition, evidence inspection,
 memory use, search budgets, and runtime feedback. This audit adds reproducible

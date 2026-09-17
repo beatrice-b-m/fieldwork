@@ -1,0 +1,97 @@
+{
+  "environment": {
+    "python": "3.11.14",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6",
+    "fieldwork": "0.1.0"
+  },
+  "configuration": {
+    "rows": 300000,
+    "columns": 150,
+    "fixture": "structured",
+    "progress": false,
+    "compact": false,
+    "seed": 721,
+    "operations": [
+      "explore"
+    ],
+    "features": null,
+    "candidates": null,
+    "timeout": 180.0,
+    "repeats": 3,
+    "output": "/tmp/fieldwork-after-structured-300k.json",
+    "profile": null
+  },
+  "results": [
+    {
+      "status": "completed",
+      "analysis_seconds": 38.87952374998713,
+      "fixture_seconds": 0.27958187501644716,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.14487941598054022,
+      "result_bytes": 36383129,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 7,
+        "signatures_shown": 7,
+        "signature_omitted_units": 0,
+        "signature_omitted_rows": 0,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1530560512,
+      "operation": "explore",
+      "repeat": 1,
+      "process_seconds": 39.518629166006576
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 38.79819841700373,
+      "fixture_seconds": 0.275688124995213,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.14105295803165063,
+      "result_bytes": 36383129,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 7,
+        "signatures_shown": 7,
+        "signature_omitted_units": 0,
+        "signature_omitted_rows": 0,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1522089984,
+      "operation": "explore",
+      "repeat": 2,
+      "process_seconds": 39.434175958973356
+    },
+    {
+      "status": "completed",
+      "analysis_seconds": 38.757028458989225,
+      "fixture_seconds": 0.2762827080441639,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.14197904197499156,
+      "result_bytes": 36383129,
+      "coverage": {
+        "pair_candidates": 11175,
+        "pairs_evaluated": 200,
+        "signatures_total": 7,
+        "signatures_shown": 7,
+        "signature_omitted_units": 0,
+        "signature_omitted_rows": 0,
+        "contexts_total": 0,
+        "contexts_shown": 0,
+        "entity_missing_key_rows": 0
+      },
+      "process_peak_rss_bytes": 1532231680,
+      "operation": "explore",
+      "repeat": 3,
+      "process_seconds": 39.39015624998137
+    }
+  ]
+}

@@ -1,4 +1,6 @@
-"""Audit-only kernel experiment, not a proposed public API or production patch.
+"""Historical audit prototype; run against baseline d0a4d9f, not current code.
+
+Audit-only kernel experiment, not a proposed public API or production patch.
 
 Run after (not concurrently with) benchmarks/scaling.py. Verifies exact fingerprint
 equality and row-presence array equality on three seeded synthetic fixtures.

@@ -1,0 +1,39 @@
+{
+  "environment": {
+    "python": "3.11.14",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6",
+    "fieldwork": "0.1.0"
+  },
+  "configuration": {
+    "rows": 300000,
+    "columns": 150,
+    "fixture": "sparse",
+    "seed": 721,
+    "operations": [
+      "grain"
+    ],
+    "features": null,
+    "candidates": null,
+    "timeout": 180.0,
+    "repeats": 1,
+    "output": "/tmp/fieldwork-perf/grain-300000.json",
+    "profile": null
+  },
+  "results": [
+    {
+      "status": "completed",
+      "analysis_seconds": 1.3675034590414725,
+      "fixture_seconds": 0.38177529198583215,
+      "frame_bytes": 360000132,
+      "serialization_seconds": 0.0018172910204157233,
+      "result_bytes": 444146,
+      "coverage": null,
+      "process_peak_rss_bytes": 916848640,
+      "operation": "grain",
+      "repeat": 1,
+      "process_seconds": 1.9167254170170054
+    }
+  ]
+}
