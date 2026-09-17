@@ -66,6 +66,8 @@ def _data(result, section=None):
     if section and data.get("kind") == "overview":
         if section not in data["sections"]:
             raise ValueError(f"Unknown section: {section}")
+        if data["sections"][section].get("status") == "not_requested":
+            raise ValueError(f"Section {section!r} was not requested")
         return data["sections"][section]
     return data
 
@@ -166,9 +168,13 @@ def visualization_data(result, *, section=None, detail="full"):
         )
     if data["kind"] == "overview":
         sections = data["sections"]
+        if "section_selection" in data:
+            output["section_selection"] = data["section_selection"]
         output["overview"] = {
-            "families": [family["features"] for family in sections["missingness"]["families"]],
-            "paths": [path["dimensions"] for path in sections["paths"]["paths"]],
+            "families": [
+                family["features"] for family in sections["missingness"].get("families", [])
+            ],
+            "paths": [path["dimensions"] for path in sections["paths"].get("paths", [])],
             "grains": [
                 {
                     "columns": c["columns"],
@@ -179,7 +185,9 @@ def visualization_data(result, *, section=None, detail="full"):
                         else {}
                     ),
                 }
-                for c in sorted(sections["dependencies"]["candidates"], key=candidate_priority)
+                for c in sorted(
+                    sections["dependencies"].get("candidates", []), key=candidate_priority
+                )
             ],
             "signatures": [
                 {
@@ -187,7 +195,7 @@ def visualization_data(result, *, section=None, detail="full"):
                     "absent": sig["absent"],
                     **({"count": sig["count"]} if detail == "full" else {}),
                 }
-                for sig in sections["missingness"]["signatures"]
+                for sig in sections["missingness"].get("signatures", [])
             ],
         }
         if detail == "topology":
@@ -258,6 +266,8 @@ def render_plaintext(
         lines.append("Topology only · quantitative evidence suppressed")
     elif data["kind"] != "comparison":
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
+    if data.get("section_selection", {}).get("omitted"):
+        lines.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
     lines.extend(_comparison_labels(data))
     if "analysis_unit" in data and data["kind"] != "comparison":
         lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
@@ -351,6 +361,8 @@ def render_svg(
     )
     y = 92
     context_labels = _comparison_labels(data)
+    if data.get("section_selection", {}).get("omitted"):
+        context_labels.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
     if "analysis_unit" in data and data["kind"] != "comparison":
         context_labels.append("Analysis: " + _unit_label(data["analysis_unit"]))
     for label in context_labels:
@@ -443,6 +455,12 @@ def render_html(result, *, section=None, detail="full", max_findings=100):
                 )
     elif "analysis_unit" in projected:
         parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
+    if projected.get("section_selection", {}).get("omitted"):
+        parts.append(
+            "<p>Not requested: "
+            + html.escape(", ".join(projected["section_selection"]["omitted"]))
+            + "</p>"
+        )
     if "feature_network" in projected:
         parts.append("<h2>Browse feature connections</h2>")
         for node in projected["feature_network"]["nodes"]:

@@ -17,14 +17,19 @@ from .evidence import InvestigationResult, Scope
 from .navigation import PathResult, suggest_paths
 from .patterns import value_patterns
 from .presentation import render_html, render_plaintext, render_svg, visualization_data
+from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
 from .workflow import Recipe, compare, explore
 
 __version__ = "0.1.0"
 __all__ = [
+    "AnalysisCancelled",
+    "CancellationToken",
     "ExplorerResult",
     "InvestigationResult",
     "KeySpec",
     "PathResult",
+    "ProgressDisplay",
+    "ProgressEvent",
     "Recipe",
     "SchemaProposal",
     "Scope",

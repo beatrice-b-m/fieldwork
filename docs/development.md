@@ -60,11 +60,16 @@ incremental analysis memory. Timeouts include startup and fixture construction.
 Use `--repeats 3` for multiple measurements, `--fixture dense` or `--fixture mixed`
 to vary data characteristics, and `--rows 300000` for a larger case. The default
 sparse fixture uses 70% missingness and eight populated values per column.
+`--fixture structured` includes unique IDs, repeated entities/contexts, and nested
+missingness masks. `--progress` records callback counts and inclusive phase
+durations (nested phases overlap; do not sum them). `--compact` measures the
+optional shared-container JSON envelope, separately from analysis.
 
 For comparable overview components, its `dependencies` workload uses 20
 single-column candidates and `patterns` uses 20 pairs. `--candidates` changes
 standalone dependency/path budgets; for `explore` it changes path search only,
-matching the current public API. `--features` restricts analytical features but
+matching the backward-compatible `discovery` configuration. New `section_options`
+can configure dependency work independently in application code. `--features` restricts analytical features but
 does not project the source frame. `--profile /tmp/overview.prof` supports one
 operation/repeat with cProfile; keep these diagnostic timings separate from
 unprofiled measurements. The harness uses Unix `resource` RSS reporting (macOS
@@ -98,3 +103,25 @@ uv run python examples/wide_table.py /tmp/fieldwork-wide-table
 
 Asset generation also bundles the executable source as `wide-table.py`, so the
 documentation site can offer the exact example alongside its SVG/HTML/JSON exports.
+
+## Performance regression workflow
+
+[Current performance controls](performance.md) document runtime APIs and cache
+bounds; [implementation measurements](performance-results.md) record representative
+before/after runs. `tests/discovery/test_performance_contracts.py`, `test_runtime.py`,
+and `test_scaling_controls.py` check canonical fingerprint bytes, vectorized group
+oracles, scoped/entity selections, cache populations/lifetimes/bounds, cancellation,
+callback errors, ETA/throttling, omitted work and compact round-trips.
+
+For a revision-to-revision default-output check, run the same parity script with
+both source trees and identical pandas/NumPy versions:
+
+```bash
+PYTHONPATH=/tmp/baseline/src .venv/bin/python benchmarks/parity.py --output /tmp/before.json
+.venv/bin/python benchmarks/parity.py --output /tmp/after.json --compare /tmp/before.json
+```
+
+The corpus covers 100 seeded scoped/unscoped cases, duplicate indexes, sentinels,
+entity/context summaries, composite/conditional dependencies, all scored path
+objectives and full overviews. It compares all exported analytical fields, not
+only top-level counts. Keep parity runs separate from performance measurements.

@@ -7,8 +7,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .._runtime import checkpoint, phase
+from ._kernels import same_mask
 from .census import _scope
-from .encoding import MISSING, normalize_scalar
+from .encoding import missing_code, normalize_scalar
 from .result import KeySpec
 
 
@@ -30,8 +32,9 @@ def build_grain_graph(
     if dropna:
         for column in components:
             values, codes = encoded[column]
-            if MISSING in values:
-                mask &= codes != values.index(MISSING)
+            absent = missing_code(values)
+            if absent is not None:
+                mask &= codes != absent
     scope_id = "s3:graph"
     metadata = scope_metadata or {}
     scope = _scope(
@@ -46,57 +49,62 @@ def build_grain_graph(
     evidence = []
     truth = {}
     support = {}
-    for spec in specs:
-        key_table = pd.DataFrame({i: encoded[c][1][mask] for i, c in enumerate(spec.columns)})
-        sizes = key_table.groupby(list(key_table.columns), sort=False, observed=True).size()
-        support[spec.name] = {
-            "evaluated_rows": int(mask.sum()),
-            "evaluated_groups": len(sizes),
-            "singleton_groups": int((sizes == 1).sum()),
-            "repeated_groups": int((sizes > 1).sum()),
-        }
-        for target in df.columns:
-            token = normalize_scalar(target, label=True).to_dict()
-            if target in spec.columns:
-                record = {
-                    "key_name": spec.name,
-                    "target": token,
-                    "holds": True if mask.any() else None,
-                    "undefined_reason": None if mask.any() else "no_evaluated_groups",
-                    **support[spec.name],
-                    "violating_groups": 0,
-                    "affected_rows": 0,
-                    "group_rate": 0.0 if mask.any() else None,
-                    "row_rate": 0.0 if mask.any() else None,
-                }
-                evaluated = mask
-            elif np.array_equal(evaluated_sets[(spec.name, target)], mask):
-                record = dict(lookup[(spec.name, str(token))])
-                evaluated = mask
-            else:
-                record, evaluated = _fd_record(
-                    df,
-                    spec,
-                    target,
-                    dropna=dropna,
-                    scope_prefix=scope_id,
-                    encoded=encoded,
-                    row_mask=mask,
+    with phase("grain graph evidence", len(specs) * len(df.columns), "tests") as progress:
+        for spec in specs:
+            key_table = pd.DataFrame({i: encoded[c][1][mask] for i, c in enumerate(spec.columns)})
+            sizes = key_table.groupby(list(key_table.columns), sort=False, observed=True).size()
+            support[spec.name] = {
+                "evaluated_rows": int(mask.sum()),
+                "evaluated_groups": len(sizes),
+                "singleton_groups": int((sizes == 1).sum()),
+                "repeated_groups": int((sizes > 1).sum()),
+            }
+            for target in df.columns:
+                token = normalize_scalar(target, label=True).to_dict()
+                if target in spec.columns:
+                    record = {
+                        "key_name": spec.name,
+                        "target": token,
+                        "holds": True if mask.any() else None,
+                        "undefined_reason": None if mask.any() else "no_evaluated_groups",
+                        **support[spec.name],
+                        "violating_groups": 0,
+                        "affected_rows": 0,
+                        "group_rate": 0.0 if mask.any() else None,
+                        "row_rate": 0.0 if mask.any() else None,
+                    }
+                    evaluated = mask
+                elif same_mask(evaluated_sets[(spec.name, target)], mask):
+                    record = dict(lookup[(spec.name, str(token))])
+                    evaluated = mask
+                else:
+                    record, evaluated = _fd_record(
+                        df,
+                        spec,
+                        target,
+                        dropna=dropna,
+                        scope_prefix=scope_id,
+                        encoded=encoded,
+                        row_mask=mask,
+                    )
+                    record.pop("scope")
+                compatible = same_mask(evaluated, mask)
+                record["scope_id"] = (
+                    scope_id if compatible else f"{scope_id}:target:{len(evidence)}"
                 )
-                record.pop("scope")
-            compatible = np.array_equal(evaluated, mask)
-            record["scope_id"] = scope_id if compatible else f"{scope_id}:target:{len(evidence)}"
-            record["scope_compatible"] = compatible
-            record["scope"] = _scope(
-                record["scope_id"],
-                len(df),
-                int((~evaluated).sum()),
-                0,
-                bool(metadata.get("conditional")),
-                parent_scope=metadata.get("scope"),
-            )
-            evidence.append(record)
-            truth[(spec.name, target)] = record["holds"] if compatible else None
+                record["scope_compatible"] = compatible
+                record["scope"] = _scope(
+                    record["scope_id"],
+                    len(df),
+                    int((~evaluated).sum()),
+                    0,
+                    bool(metadata.get("conditional")),
+                    parent_scope=metadata.get("scope"),
+                )
+                evidence.append(record)
+                truth[(spec.name, target)] = record["holds"] if compatible else None
+
+                progress.advance(detail=f"{spec.name} → {target}")
 
     def determines(left: KeySpec, right: KeySpec) -> bool | None:
         outcomes = [truth[(left.name, column)] for column in right.columns]
@@ -105,6 +113,7 @@ def build_grain_graph(
     relations = []
     finer = set()
     for left in specs:
+        checkpoint()
         for right in specs:
             if left == right:
                 continue

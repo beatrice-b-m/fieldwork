@@ -42,9 +42,10 @@ each. `inspect` returns those saved representative rows, not every matching row;
 `result.inspect(df, finding_id, all_matches=True)` recovers the entire matching
 source population. `result.select(df, finding_id, exceptions=False, name=...)`
 returns that population as a reusable `Scope` with parent lineage. Selection
-recomputes saved analysis parameters on the verified source with unbounded examples;
-no display limit changes the matching population. This works for overview findings
-by replaying their owning section. Recomputation applies to individual discovery sections, not an overview/comparison. Dependency exception groups
+evaluates the saved predicate directly on the verified source, with saved scope and
+missing conventions; no display limit changes the matching population. Overview
+findings resolve through their owning section. Unsupported future selector types
+can fall back to section recomputation. Recomputation applies to individual discovery sections, not an overview/comparison. Dependency exception groups
 also report omitted groups and rows. Findings never embed entire source rows.
 
 ## Missing conventions
@@ -91,7 +92,9 @@ Automatic overview recipes accept top-level `scope`, `missing`, `table_id`, and
 `features` run overrides. These replace the corresponding `discovery` settings
 while preserving other discovery configuration, including search budgets,
 constraints, entity aggregation and context grouping. The recipe is not modified.
-Search-only options still belong in `discovery`.
+Search-only path options still belong in `discovery`; `sections` and
+`section_options` configure independent overview components. Runtime controls are
+run overrides, never saved recipe parameters.
 `compare` compares two missingness results by feature name, preserving both source
 identities and conventions. Its delta is after minus before populated fraction;
 empty populations and added/removed features have an undefined delta.
@@ -147,3 +150,15 @@ entities (within the analyzed scope/context), including rows where the feature i
 absent. Examples and exception totals always count source rows, separately from
 unit support. Comparisons require compatible units and entity aggregation; recipes
 persist these settings. HTML renders named evidence tables and source selections.
+
+## Runtime controls and optional envelopes
+
+[Performance controls](performance.md) specify progress event ordering, phase ETA,
+cooperative cancellation, call-scoped cache lifetimes, independent overview sections,
+and dependency/graph budgets. Defaults preserve the analytical payload. Explicit
+omissions carry coverage or `not_requested` status and remain visible in presentations.
+
+`to_dict(compact=True)` returns a versioned `fieldwork.compact` envelope preserving
+all evidence through shared-container references. Both result classes accept their
+ordinary and compact exports in `from_dict`; ordinary schemas 0.3/1.0 are unchanged.
+Compact exports do not apply topology disclosure filtering.

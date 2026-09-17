@@ -9,9 +9,12 @@ from itertools import combinations, islice
 import numpy as np
 import pandas as pd
 
-from .evidence import columns, finding, limit, prepare, result
+from ._explore._kernels import group_ids, modal_groups
+from ._runtime import checkpoint, operation, phase
+from .evidence import bounded_rows, columns, finding, limit, prepare, result
 
 
+@operation("value patterns")
 def value_patterns(
     df,
     *,
@@ -33,68 +36,86 @@ def value_patterns(
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
-        df, missing=missing, scope=scope, table_id=table_id
+        df,
+        missing=missing,
+        scope=scope,
+        table_id=table_id,
+        features=[*selected, *contexts] if contexts else [],
+        presence_features=selected,
     )
     families = defaultdict(list)
     base["summaries"] = []
-    for c in selected:
-        values = frame[c].iloc[np.flatnonzero(present[c])]
-        record = {"feature": c, "populated": len(values), "missing": len(frame) - len(values)}
-        examples = positions[present[c]]
-        if len(values) and all(isinstance(v, str) for v in values):
-            formats = Counter(re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", v)) for v in values)
-            lengths = Counter(len(v) for v in values)
-            prefixes = Counter(v[:3] for v in values)
-            record.update(
-                formats=formats.most_common(max_patterns),
-                lengths=lengths.most_common(max_patterns),
-                prefixes=prefixes.most_common(max_patterns),
-                format_count=len(formats),
-                omitted_format_rows=sum(n for _, n in formats.most_common()[max_patterns:]),
-            )
-            finding(
-                base,
-                "string_patterns",
-                f"{c}: string formats, lengths and prefixes",
-                [c],
-                record,
-                examples,
-                example_limit=example_limit,
-            )
-        if pd.api.types.is_numeric_dtype(values.dtype) and not pd.api.types.is_bool_dtype(
-            values.dtype
-        ):
-            numeric = values.to_numpy(dtype=float)
-            finite = np.sort(np.unique(numeric[np.isfinite(numeric)]))
-            differences = np.diff(finite)
-            step = float(differences.min()) if len(differences) else None
-            quantized = (
-                bool(
-                    np.allclose((finite - finite[0]) / step, np.round((finite - finite[0]) / step))
+    with phase("value summaries", len(selected), "columns") as progress:
+        for c in selected:
+            values = frame[c].iloc[np.flatnonzero(present[c])]
+            record = {"feature": c, "populated": len(values), "missing": len(frame) - len(values)}
+            examples = bounded_rows(positions, present[c], example_limit)
+            if (
+                len(values)
+                and pd.api.types.infer_dtype(values.to_numpy(copy=False), skipna=True) == "string"
+            ):
+                ids, uniques = pd.factorize(values, sort=False)
+                counts = np.bincount(ids)
+                formats, lengths, prefixes = Counter(), Counter(), Counter()
+                for i, (v, count) in enumerate(zip(uniques, counts)):
+                    if i % 8192 == 0:
+                        checkpoint()
+                    formats[re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", v))] += int(count)
+                    lengths[len(v)] += int(count)
+                    prefixes[v[:3]] += int(count)
+                record.update(
+                    formats=formats.most_common(max_patterns),
+                    lengths=lengths.most_common(max_patterns),
+                    prefixes=prefixes.most_common(max_patterns),
+                    format_count=len(formats),
+                    omitted_format_rows=sum(n for _, n in formats.most_common()[max_patterns:]),
                 )
-                if step
-                else None
-            )
-            record.update(
-                minimum=float(finite[0]) if len(finite) else None,
-                maximum=float(finite[-1]) if len(finite) else None,
-                nonfinite=int((~np.isfinite(numeric)).sum()),
-                observed_step=step,
-                on_observed_step_grid=quantized,
-            )
-            finding(
-                base,
-                "numeric_range",
-                f"{c}: numeric range and observed spacing",
-                [c],
-                record,
-                examples,
-                example_limit=example_limit,
-            )
-        base["summaries"].append(record)
-        match = re.match(r"^(.*?)[_\-]?\d+$", c)
-        if match:
-            families[match.group(1)].append(c)
+                finding(
+                    base,
+                    "string_patterns",
+                    f"{c}: string formats, lengths and prefixes",
+                    [c],
+                    record,
+                    examples,
+                    example_limit=example_limit,
+                )
+            if pd.api.types.is_numeric_dtype(values.dtype) and not pd.api.types.is_bool_dtype(
+                values.dtype
+            ):
+                numeric = values.to_numpy(dtype=float)
+                finite = np.sort(np.unique(numeric[np.isfinite(numeric)]))
+                differences = np.diff(finite)
+                step = float(differences.min()) if len(differences) else None
+                quantized = (
+                    bool(
+                        np.allclose(
+                            (finite - finite[0]) / step, np.round((finite - finite[0]) / step)
+                        )
+                    )
+                    if step
+                    else None
+                )
+                record.update(
+                    minimum=float(finite[0]) if len(finite) else None,
+                    maximum=float(finite[-1]) if len(finite) else None,
+                    nonfinite=int((~np.isfinite(numeric)).sum()),
+                    observed_step=step,
+                    on_observed_step_grid=quantized,
+                )
+                finding(
+                    base,
+                    "numeric_range",
+                    f"{c}: numeric range and observed spacing",
+                    [c],
+                    record,
+                    examples,
+                    example_limit=example_limit,
+                )
+            base["summaries"].append(record)
+            match = re.match(r"^(.*?)[_\-]?\d+$", c)
+            if match:
+                families[match.group(1)].append(c)
+            progress.advance(detail=c)
     base["families"] = []
     for prefix, group in families.items():
         if len(group) > 1:
@@ -113,6 +134,7 @@ def value_patterns(
             )
     tested = 0
     for a, b in islice(combinations(selected, 2), max_pairs):
+        checkpoint()
         tested += 1
         eligible = present[a] & present[b]
         if not eligible.any():
@@ -147,34 +169,33 @@ def value_patterns(
                     example_limit=example_limit,
                 )
     if contexts:
-        # Evaluate exactly the declared context, without enumerating its subsets.
-        grouped = defaultdict(list)
-        for i in range(len(frame)):
-            if all(present[c][i] for c in contexts):
-                grouped[tuple(int(codes[c][i]) for c in contexts)].append(i)
-        for c in selected:
-            valid = [rows for rows in grouped.values() if any(present[c][i] for i in rows)]
-            constant = [
-                rows
-                for rows in valid
-                if len({int(codes[c][i]) for i in rows if present[c][i]}) == 1
-            ]
-            finding(
-                base,
-                "context_constancy",
-                f"{c}: constancy within {', '.join(contexts)}",
-                [*contexts, c],
-                {
-                    "evaluated_groups": len(valid),
-                    "constant_groups": len(constant),
-                    "constant_group_fraction": len(constant) / len(valid) if valid else None,
-                },
-                positions[sorted(i for rows in constant for i in rows)],
-                exceptions=positions[
-                    sorted(i for rows in valid if rows not in constant for i in rows)
-                ],
-                example_limit=example_limit,
-            )
+        valid_rows = np.flatnonzero(np.logical_and.reduce([present[c] for c in contexts]))
+        context_ids = group_ids(codes[c][valid_rows] for c in contexts)
+        with phase("context constancy", len(selected), "columns") as progress:
+            for c in selected:
+                populated = present[c][valid_rows]
+                valid_contexts = pd.unique(context_ids[populated])
+                _, sizes, _, _, distinct = modal_groups(
+                    context_ids[populated], codes[c][valid_rows[populated]]
+                )
+                constant = np.isin(context_ids, valid_contexts[distinct == 1])
+                nonconstant = np.isin(context_ids, valid_contexts[distinct > 1])
+                nconstant = int(np.count_nonzero(distinct == 1))
+                finding(
+                    base,
+                    "context_constancy",
+                    f"{c}: constancy within {', '.join(contexts)}",
+                    [*contexts, c],
+                    {
+                        "evaluated_groups": len(sizes),
+                        "constant_groups": nconstant,
+                        "constant_group_fraction": nconstant / len(sizes) if len(sizes) else None,
+                    },
+                    bounded_rows(positions[valid_rows], constant, example_limit),
+                    exceptions=bounded_rows(positions[valid_rows], nonconstant, example_limit),
+                    example_limit=example_limit,
+                )
+                progress.advance(detail=c)
     base["coverage"] = {
         "pair_candidates": len(selected) * (len(selected) - 1) // 2,
         "pairs_evaluated": tested,

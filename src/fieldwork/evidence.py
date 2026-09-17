@@ -13,15 +13,30 @@ import pandas as pd
 
 from ._explore.encoding import MISSING, encode_series, normalize_scalar, validate_frame
 from ._explore.result import ExplorerResult
+from ._runtime import checkpoint, current_session, operation, phase
 
 
 def fingerprint(df: pd.DataFrame) -> str:
     """Identify ordered source values and labels, including duplicate indexes."""
     validate_frame(df)
+    session = current_session()
+    if session and id(df) in session.fingerprints:
+        checkpoint()
+        return session.fingerprints[id(df)][1]
+    with phase("fingerprinting", len(df.columns), "columns") as progress:
+        identity = _fingerprint(df, progress)
+    if session:
+        session.fingerprints[id(df)] = (df, identity)
+    return identity
+
+
+def _fingerprint(df, progress):
     digest = hashlib.sha256()
-    for values in (df.columns, df.index, *[df[c].array for c in df.columns]):
+    for values in (df.columns, df.index):
         digest.update(b"[")
-        for value in values:
+        for i, value in enumerate(values):
+            if i % 8192 == 0:
+                checkpoint()
             digest.update(
                 json.dumps(
                     normalize_scalar(value, label=isinstance(value, tuple)).to_dict(),
@@ -31,6 +46,39 @@ def fingerprint(df: pd.DataFrame) -> str:
             )
             digest.update(b"\n")
         digest.update(b"]")
+    # Bound allocation even for continuous/unique columns. Serialize canonical
+    # values once per chunk; preserve the original byte stream and saved IDs.
+    for column in df:
+        digest.update(b"[")
+        for start in range(0, len(df), 8192):
+            checkpoint()
+            chunk = df[column].iloc[start : start + 8192]
+            try:
+                values, codes = encode_series(chunk)
+            except TypeError:
+                # Fingerprints historically allow tuple-valued labels/cells even
+                # where the analytical scalar encoder rejects tuple cells.
+                serialized = [
+                    json.dumps(
+                        normalize_scalar(v, label=isinstance(v, tuple)).to_dict(),
+                        sort_keys=True,
+                        allow_nan=False,
+                    ).encode()
+                    + b"\n"
+                    for v in chunk.array
+                ]
+            else:
+                dictionary = np.array(
+                    [
+                        json.dumps(v.to_dict(), sort_keys=True, allow_nan=False).encode() + b"\n"
+                        for v in values
+                    ],
+                    dtype=object,
+                )
+                serialized = dictionary[codes].tolist()
+            digest.update(b"".join(serialized))
+        digest.update(b"]")
+        progress.advance(detail=str(column))
     return digest.hexdigest()
 
 
@@ -52,6 +100,7 @@ class Scope:
         object.__setattr__(self, "positions", tuple(sorted(int(p) for p in positions)))
 
     @classmethod
+    @operation("scope selection")
     def from_positions(cls, df: pd.DataFrame, positions: Iterable[int], *, name="selection"):
         selected = tuple(positions)
         if any(
@@ -63,6 +112,7 @@ class Scope:
             raise ValueError("Scope positions must not repeat")
         return cls(fingerprint(df), tuple(sorted(int(p) for p in selected)), name)
 
+    @operation("scope refinement")
     def refine(self, df: pd.DataFrame, positions: Iterable[int], *, name="refined"):
         child = Scope.from_positions(df, positions, name=name)
         if child.dataset_id != self.dataset_id or not set(child.positions) <= set(self.positions):
@@ -101,6 +151,7 @@ class InvestigationResult(ExplorerResult):
             raise KeyError(finding)
         return record
 
+    @operation("inspection")
     def inspect(self, df: pd.DataFrame, finding: str | int, *, exceptions=False, all_matches=False):
         """Return saved examples, or recompute the complete matching source population."""
         record = self._finding(df, finding)
@@ -108,6 +159,7 @@ class InvestigationResult(ExplorerResult):
             return df.iloc[list(self.select(df, finding, exceptions=exceptions).positions)].copy()
         return df.iloc[record["exceptions" if exceptions else "examples"]["positions"]].copy()
 
+    @operation("selection")
     def select(self, df, finding, *, exceptions=False, name="finding selection"):
         """Recover all matching source positions as a reusable, source-bound Scope."""
         record = self._finding(df, finding)
@@ -122,6 +174,13 @@ class InvestigationResult(ExplorerResult):
                 tuple(selected if selected is not None else range(len(df))),
                 name,
                 analysis["scope"]["name"],
+            )
+        from ._selection import select_rows
+
+        selected = select_rows(df, analysis, record, exceptions)
+        if selected is not None:
+            return Scope(
+                self["source"]["dataset_id"], tuple(selected), name, analysis["scope"]["name"]
             )
         replay = analysis.recompute(df, example_limit=len(df))
         # Match semantic selectors, not ordinal IDs: older saved results can have
@@ -150,6 +209,7 @@ class InvestigationResult(ExplorerResult):
             self["source"]["dataset_id"], tuple(positions), name, analysis["scope"]["name"]
         )
 
+    @operation("recomputation")
     def recompute(self, df: pd.DataFrame, **overrides):
         """Reapply saved conventions and scope to the same source, with explicit budget overrides."""
         from .availability import missingness
@@ -196,6 +256,9 @@ class InvestigationResult(ExplorerResult):
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]):
+        from ._serialization import expand_result
+
+        data = expand_result(data)
         if data.get("schema_version") != "1.0":
             raise ValueError("Unsupported investigation schema version")
         result_class = cls
@@ -237,12 +300,21 @@ def limit(name, value, *, minimum=0):
         raise ValueError(f"{name} must be an integer >= {minimum}")
 
 
-def prepare(df, *, scope=None, missing=None, table_id="table"):
+def prepare(df, *, scope=None, missing=None, table_id="table", features=None, presence_features=()):
     columns(df)
-    return prepare_context(df, scope=scope, missing=missing, table_id=table_id)
+    return prepare_context(
+        df,
+        scope=scope,
+        missing=missing,
+        table_id=table_id,
+        features=features,
+        presence_features=presence_features,
+    )
 
 
-def prepare_context(df, *, scope=None, missing=None, table_id="table"):
+def prepare_context(
+    df, *, scope=None, missing=None, table_id="table", features=None, presence_features=()
+):
     """Prepare source context independently of discovery's column-label contract."""
     validate_frame(df)
     if not isinstance(table_id, str) or not table_id:
@@ -252,33 +324,74 @@ def prepare_context(df, *, scope=None, missing=None, table_id="table"):
         raise ValueError("Scope belongs to a different ordered dataset")
     if scope is not None and any(p >= len(df) for p in scope.positions):
         raise ValueError("Scope positions exceed the source population")
-    positions = np.array(scope.positions if scope else range(len(df)), dtype=np.int64)
-    frame = df.iloc[positions]
     missing = missing or {}
     labels = {normalize_scalar(c, label=True) for c in df.columns}
     for c in missing:
         if normalize_scalar(c, label=True) not in labels:
             raise KeyError(c)
-    encoded, available = {}, {}
-    conventions = {}
-    for c in df:
-        values, codes = encode_series(frame[c])
-        sentinels = {normalize_scalar(v) for v in missing.get(c, [])}
+    sentinel_values = {
+        c: sorted({normalize_scalar(v) for v in missing.get(c, [])}, key=lambda v: v.sort_key())
+        for c in df
+    }
+    conventions = {c: [v.to_dict() for v in values] for c, values in sentinel_values.items()}
+    cache_key = (
+        id(df),
+        scope.positions if scope else None,
+        tuple(
+            (normalize_scalar(c, label=True), tuple(values))
+            for c, values in sentinel_values.items()
+        ),
+    )
+    session = current_session()
+    cached = session.prepared.get(cache_key) if session else None
+    if cached is None:
+        positions = np.array(scope.positions, dtype=np.int64) if scope else np.arange(len(df))
+        frame = df.iloc[positions] if scope else df
+        cached = (df, frame, positions, {}, {})
+        if session:
+            session.prepared[cache_key] = cached
+    _, frame, positions, all_encoded, all_available = cached
+    selected = list(dict.fromkeys(df.columns if features is None else features))
+    presence_columns = list(dict.fromkeys([*selected, *presence_features]))
+    needed = [
+        c
+        for c in presence_columns
+        if c not in all_available or (c in selected and c not in all_encoded)
+    ]
 
-        def sentinel_key(v):
-            if v.kind == "integer":
-                return ("number", int(v.value))
-            if v.kind == "float":
-                return ("number", float.fromhex(v.value))
-            return v
+    def sentinel_key(v):
+        if v.kind == "integer":
+            return ("number", int(v.value))
+        if v.kind == "float":
+            return ("number", float.fromhex(v.value))
+        return v
 
-        sentinel_keys = {sentinel_key(v) for v in sentinels}
-        mask = np.array(
-            [v != MISSING and sentinel_key(v) not in sentinel_keys for v in values], dtype=bool
-        )
-        available[c] = mask[codes]
-        encoded[c] = codes
-        conventions[c] = [v.to_dict() for v in sorted(sentinels, key=lambda v: v.sort_key())]
+    with phase("encoding", len(needed), "columns") as progress:
+        for c in needed:
+            dtype = frame[c].dtype
+            native_only = (
+                pd.api.types.is_numeric_dtype(dtype)
+                or pd.api.types.is_datetime64_any_dtype(dtype)
+                or pd.api.types.is_timedelta64_dtype(dtype)
+                or isinstance(dtype, pd.StringDtype)
+            )
+            if c not in selected and not sentinel_values[c] and native_only:
+                all_available[c] = frame[c].notna().to_numpy(dtype=bool)
+                progress.advance(detail=str(c))
+                continue
+            values, codes = encode_series(frame[c])
+            sentinel_keys = {sentinel_key(v) for v in sentinel_values[c]}
+            mask = np.array(
+                [v != MISSING and sentinel_key(v) not in sentinel_keys for v in values], dtype=bool
+            )
+            all_available[c] = mask[codes]
+            if c in selected:
+                all_encoded[c] = codes
+                if session:
+                    session.remember_encoding((id(frame), c), (frame, values, codes))
+            progress.advance(detail=str(c))
+    encoded = {c: all_encoded[c] for c in selected}
+    available = {c: all_available[c] for c in presence_columns}
     base = {
         "status": "computed" if len(frame) else "empty",
         "source": {"dataset_id": identity, "table_id": table_id, "input_rows": len(df)},
@@ -301,6 +414,34 @@ def prepare_context(df, *, scope=None, missing=None, table_id="table"):
     return frame, positions, encoded, available, base
 
 
+def normalized_encoding(frame, codes, present):
+    """Foundation dictionaries with native/sentinel absence in one missing level."""
+    session = current_session()
+    output = {}
+    for c, code in codes.items():
+        checkpoint()
+        cached = session.encodings.get((id(frame), c)) if session else None
+        values = cached[1] if cached else encode_series(frame[c])[0]
+        absent = np.unique(code[~present[c]])
+        if all(values[i] == MISSING for i in absent):
+            output[c] = (values, code)
+            continue
+        cache_key = (id(frame), c, id(present[c]))
+        normalized = session.encodings.get(cache_key) if session else None
+        if normalized is None:
+            tokens = list(values)
+            for i in absent:
+                tokens[i] = MISSING
+            dictionary = sorted(set(tokens), key=lambda v: v.sort_key())
+            lookup = {v: i for i, v in enumerate(dictionary)}
+            remap = np.fromiter((lookup[v] for v in tokens), dtype=np.int64)
+            normalized = (frame, dictionary, remap[code])
+            if session:
+                session.remember_encoding(cache_key, normalized)
+        output[c] = normalized[1:]
+    return output
+
+
 def selection(positions, total, example_limit):
     return {
         "positions": [int(p) for p in positions[:example_limit]],
@@ -309,6 +450,26 @@ def selection(positions, total, example_limit):
         "method": "first_in_source_order",
         "limit": example_limit,
     }
+
+
+@dataclass(frozen=True)
+class EvidenceRows:
+    """Bounded examples with the full source-row count, private to finding assembly."""
+
+    positions: Any
+    total: int
+
+    def __len__(self):
+        return self.total
+
+    def __getitem__(self, key):
+        return self.positions[key]
+
+
+def bounded_rows(positions, mask, limit):
+    from ._explore._kernels import first_indices
+
+    return EvidenceRows(positions[first_indices(mask, limit)], int(np.count_nonzero(mask)))
 
 
 def finding(
@@ -415,8 +576,17 @@ def saved_context(base):
 
 def foundation_context(df, operation, *args, scope=None, missing=None, table_id="table", **options):
     """Normalize a private frame and retain original-source accounting in every derived scope."""
-    frame, _, _, present, base = prepare_context(
-        df, scope=scope, missing=missing, table_id=table_id
+    from ._explore.census import _census
+
+    if operation is _census:
+        # Consume a dimensions generator once, before both preparation and census.
+        args = (tuple(args[0]), *args[1:])
+    frame, _, codes, present, base = prepare_context(
+        df,
+        scope=scope,
+        missing=missing,
+        table_id=table_id,
+        features=args[0] if operation is _census else None,
     )
     if not all(isinstance(c, str) for c in df.columns):
         # JSON object keys cannot preserve integer identities or encode tuples.
@@ -425,10 +595,16 @@ def foundation_context(df, operation, *args, scope=None, missing=None, table_id=
             {"column": normalize_scalar(c, label=True).to_dict(), "values": values}
             for c, values in conventions.pop("sentinels").items()
         ]
-    normalized = frame.copy()
-    for c in normalized:
-        normalized[c] = normalized[c].astype(object).where(present[c], None)
-    analysis = operation(normalized, *args, **options)
+    if operation is _census:
+        analysis = operation(
+            frame, *args, _encoded=normalized_encoding(frame, codes, present), **options
+        )
+    else:
+        normalized = frame.copy()
+        for c in normalized:
+            checkpoint()
+            normalized[c] = normalized[c].astype(object).where(present[c], None)
+        analysis = operation(normalized, *args, **options)
     return contextual_result(analysis, df, base)
 
 

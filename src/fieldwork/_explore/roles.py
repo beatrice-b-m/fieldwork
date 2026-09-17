@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from .._runtime import operation, phase
 from .census import _source
 from .encoding import encode_series, normalize_scalar, validate_frame
 from .result import ExplorerResult
@@ -29,36 +30,39 @@ class SchemaProposal:
         }
 
 
+@operation("schema inference")
 def infer_schema(df: pd.DataFrame, candidate_keys: Iterable[Any] | None = None) -> ExplorerResult:
     """Suggest roles without silently choosing an analysis configuration."""
 
     validate_frame(df)
     proposals: list[SchemaProposal] = []
     rows = len(df)
-    for column in df.columns:
-        series = df[column]
-        cardinality = len(encode_series(series)[0])
-        ratio = cardinality / rows if rows else 0.0
-        name = str(column).lower()
-        reasons = (
-            {"code": "CARDINALITY", "value": cardinality},
-            {"code": "CARDINALITY_RATIO", "value": ratio},
-            {"code": "DTYPE", "value": str(series.dtype)},
-            {"code": "MISSING_ROWS", "value": int(series.isna().sum())},
-        )
-        if rows and cardinality == rows:
-            role = "id"
-        elif pd.api.types.is_numeric_dtype(series.dtype) and cardinality > min(20, rows / 2):
-            role = "continuous"
-        elif cardinality <= max(20, int(rows * 0.1)):
-            role = "categorical"
-        else:
-            role = "unknown"
-        if name.endswith(("id", "_id")):
-            reasons = (*reasons, {"code": "NAME_HINT_ID", "value": True})
-        proposals.append(
-            SchemaProposal(normalize_scalar(column, label=True).to_dict(), role, reasons)
-        )
+    with phase("schema columns", len(df.columns), "columns") as progress:
+        for column in df.columns:
+            series = df[column]
+            cardinality = len(encode_series(series)[0])
+            ratio = cardinality / rows if rows else 0.0
+            name = str(column).lower()
+            reasons = (
+                {"code": "CARDINALITY", "value": cardinality},
+                {"code": "CARDINALITY_RATIO", "value": ratio},
+                {"code": "DTYPE", "value": str(series.dtype)},
+                {"code": "MISSING_ROWS", "value": int(series.isna().sum())},
+            )
+            if rows and cardinality == rows:
+                role = "id"
+            elif pd.api.types.is_numeric_dtype(series.dtype) and cardinality > min(20, rows / 2):
+                role = "continuous"
+            elif cardinality <= max(20, int(rows * 0.1)):
+                role = "categorical"
+            else:
+                role = "unknown"
+            if name.endswith(("id", "_id")):
+                reasons = (*reasons, {"code": "NAME_HINT_ID", "value": True})
+            proposals.append(
+                SchemaProposal(normalize_scalar(column, label=True).to_dict(), role, reasons)
+            )
+            progress.advance(detail=str(column))
     if candidate_keys is not None:
         from .grain import grain
 

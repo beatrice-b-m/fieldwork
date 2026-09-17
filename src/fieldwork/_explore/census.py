@@ -9,11 +9,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .._runtime import checkpoint, operation, phase
 from ._kernels import dense_counts
 from .encoding import (
     MISSING,
     ScalarIdentity,
     encode_series,
+    missing_code,
     normalize_scalar,
     resolve_columns,
     validate_limit,
@@ -84,6 +86,7 @@ def _mixed_warning(
     return None
 
 
+@operation("levels")
 def levels(
     df: pd.DataFrame,
     features: Iterable[Any] | None = None,
@@ -106,64 +109,66 @@ def levels(
     records: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     scopes: list[dict[str, Any]] = []
-    for position, column in enumerate(selected):
-        feature_id = f"f{position}"
-        values, codes = encode_series(df[column])
-        missing_code = values.index(MISSING) if MISSING in values else None
-        eligible = np.arange(len(df), dtype=np.int64)
-        missing_excluded = 0
-        if dropna and missing_code is not None:
-            keep = codes != missing_code
-            missing_excluded = int((~keep).sum())
-            eligible = eligible[keep]
-        counts = dense_counts(codes, eligible)
-        ranked = _rank_counts(counts, values)
-        semantic = ranked[:top_n] if top_n is not None else ranked
-        semantic = [item for item in semantic if item[1] >= min_count]
-        reported = semantic[:max_levels] if max_levels is not None else semantic
-        evaluated_rows = len(eligible)
-        output_levels = [
-            {
-                "level_id": f"{feature_id}:l{code}",
-                "rank": rank,
-                "value": values[code].to_dict(),
-                "count": count,
-                "share_of_feature": count / evaluated_rows if evaluated_rows else None,
-                "share_reason": None if evaluated_rows else "empty_population",
-            }
-            for rank, (code, count) in enumerate(reported, 1)
-        ]
-        reported_rows = sum(item[1] for item in reported)
-        scope_id = f"s1:{feature_id}"
-        scopes.append(_scope(scope_id, len(df), missing_excluded, 0, False))
-        records.append(
-            {
-                "feature_id": feature_id,
-                "column": normalize_scalar(column, label=True).to_dict(),
-                "role": (schema or {}).get(column),
-                "scope_id": scope_id,
-                "status": "empty" if evaluated_rows == 0 else "computed",
-                "levels_total": len(ranked),
-                "levels_reported": len(reported),
-                "omitted_levels": len(ranked) - len(reported),
-                "reported_rows": reported_rows,
-                "unreported_rows": evaluated_rows - reported_rows,
-                "levels": output_levels,
-            }
-        )
-        warning = _mixed_warning(feature_id, column, values)
-        if warning:
-            warnings.append(warning)
-        role = (schema or {}).get(column)
-        if role in {"id", "continuous"}:
-            warnings.append(
+    with phase("level counts", len(selected), "columns") as progress:
+        for position, column in enumerate(selected):
+            feature_id = f"f{position}"
+            values, codes = encode_series(df[column])
+            absent_code = missing_code(values)
+            eligible = np.arange(len(df), dtype=np.int64)
+            missing_excluded = 0
+            if dropna and absent_code is not None:
+                keep = codes != absent_code
+                missing_excluded = int((~keep).sum())
+                eligible = eligible[keep]
+            counts = dense_counts(codes, eligible)
+            ranked = _rank_counts(counts, values)
+            semantic = ranked[:top_n] if top_n is not None else ranked
+            semantic = [item for item in semantic if item[1] >= min_count]
+            reported = semantic[:max_levels] if max_levels is not None else semantic
+            evaluated_rows = len(eligible)
+            output_levels = [
                 {
-                    "code": "EXPLICIT_ROLE_SELECTION",
+                    "level_id": f"{feature_id}:l{code}",
+                    "rank": rank,
+                    "value": values[code].to_dict(),
+                    "count": count,
+                    "share_of_feature": count / evaluated_rows if evaluated_rows else None,
+                    "share_reason": None if evaluated_rows else "empty_population",
+                }
+                for rank, (code, count) in enumerate(reported, 1)
+            ]
+            reported_rows = sum(item[1] for item in reported)
+            scope_id = f"s1:{feature_id}"
+            scopes.append(_scope(scope_id, len(df), missing_excluded, 0, False))
+            records.append(
+                {
                     "feature_id": feature_id,
                     "column": normalize_scalar(column, label=True).to_dict(),
-                    "role": role,
+                    "role": (schema or {}).get(column),
+                    "scope_id": scope_id,
+                    "status": "empty" if evaluated_rows == 0 else "computed",
+                    "levels_total": len(ranked),
+                    "levels_reported": len(reported),
+                    "omitted_levels": len(ranked) - len(reported),
+                    "reported_rows": reported_rows,
+                    "unreported_rows": evaluated_rows - reported_rows,
+                    "levels": output_levels,
                 }
             )
+            warning = _mixed_warning(feature_id, column, values)
+            if warning:
+                warnings.append(warning)
+            role = (schema or {}).get(column)
+            if role in {"id", "continuous"}:
+                warnings.append(
+                    {
+                        "code": "EXPLICIT_ROLE_SELECTION",
+                        "feature_id": feature_id,
+                        "column": normalize_scalar(column, label=True).to_dict(),
+                        "role": role,
+                    }
+                )
+            progress.advance(detail=str(column))
     payload: dict[str, Any] = {
         "status": "empty" if len(df) == 0 else "computed",
         "source": _source(df),
@@ -229,6 +234,7 @@ def _census(
     dropna: bool = False,
     schema: dict[Any, str] | None = None,
     engine_metadata: bool = False,
+    _encoded=None,
 ) -> ExplorerResult:
     """Build a deterministic, ancestor-closed observed-prefix census."""
 
@@ -252,15 +258,16 @@ def _census(
     code_arrays: list[np.ndarray] = []
     missing_codes: list[int | None] = []
     for column in active:
-        values, codes = encode_series(df[column])
+        checkpoint()
+        values, codes = _encoded[column] if _encoded is not None else encode_series(df[column])
         dictionaries.append(values)
         code_arrays.append(codes)
-        missing_codes.append(values.index(MISSING) if MISSING in values else None)
+        missing_codes.append(missing_code(values))
     eligible_mask = np.ones(len(df), dtype=bool)
     if dropna:
-        for codes, missing_code in zip(code_arrays, missing_codes):
-            if missing_code is not None:
-                eligible_mask &= codes != missing_code
+        for codes, absent_code in zip(code_arrays, missing_codes):
+            if absent_code is not None:
+                eligible_mask &= codes != absent_code
     eligible = np.flatnonzero(eligible_mask)
     missing_excluded = len(df) - len(eligible)
     retained_metadata: list[dict[str, Any]] = []
@@ -355,67 +362,73 @@ def _census(
     }
     node_lookup: dict[str, dict[str, Any]] = {"root": root}
     next_id = 0
-    while queue:
-        parent_id, depth, rows, parent_count = queue.popleft()
-        parent = node_lookup[parent_id]
-        if depth >= len(active):
-            parent["expansion_state"] = "complete"
-            continue
-        counts = dense_counts(code_arrays[depth], rows)
-        ranked = _rank_counts(counts, dictionaries[depth])
-        chosen = ranked
-        if top_n is not None:
-            if top_n_per_parent and top_n_mode == "post":
-                chosen = chosen[:top_n]
-            elif global_chosen[depth] is not None:
-                chosen = [item for item in chosen if item[0] in global_chosen[depth]]
-        chosen = [item for item in chosen if item[1] >= min_count]
-        if max_levels is not None:
-            chosen = chosen[:max_levels]
-        remaining_budget = None if max_nodes is None else max_nodes - len(nodes)
-        budget_truncated = remaining_budget is not None and len(chosen) > max(0, remaining_budget)
-        if remaining_budget is not None:
-            chosen = chosen[: max(0, remaining_budget)]
-        chosen_codes = {code for code, _ in chosen}
-        omitted_rows = sum(count for code, count in ranked if code not in chosen_codes)
-        parent["omitted_child_rows"] = omitted_rows
-        parent["omitted_child_levels"] = len(ranked) - len(chosen)
-        parent["expansion_state"] = "expanded"
-        reasons: list[str] = []
-        if len(chosen) < len(ranked):
+    with phase("census tree", unit="parents") as progress:
+        while queue:
+            parent_id, depth, rows, parent_count = queue.popleft()
+            checkpoint()
+            parent = node_lookup[parent_id]
+            if depth >= len(active):
+                parent["expansion_state"] = "complete"
+                progress.advance()
+                continue
+            counts = dense_counts(code_arrays[depth], rows)
+            ranked = _rank_counts(counts, dictionaries[depth])
+            chosen = ranked
             if top_n is not None:
-                reasons.append("top_n")
-            if max_levels is not None and len(ranked) > max_levels:
-                reasons.append("max_levels")
-            if budget_truncated or (max_nodes is not None and len(nodes) >= max_nodes):
-                reasons.append("max_nodes")
-            if any(count < min_count for _, count in ranked):
-                reasons.append("min_count")
-        parent["stop_reasons"] = sorted(set(reasons))
-        for code, count in chosen:
-            node_id = f"n{next_id}"
-            next_id += 1
-            child_rows = rows[code_arrays[depth][rows] == code]
-            node = {
-                "node_id": node_id,
-                "parent_id": parent_id,
-                "feature_id": f"f{depth}",
-                "level_id": f"f{depth}:l{code}",
-                "depth": depth + 1,
-                "count": count,
-                "share_of_parent": count / parent_count if parent_count else None,
-                "share_of_total": count / len(evaluated) if len(evaluated) else None,
-                "share_reason": None if len(evaluated) else "empty_population",
-                "expansion_state": "complete" if depth + 1 == len(active) else "unexpanded",
-                "omitted_child_rows": 0,
-                "omitted_child_levels": 0,
-                "stop_reasons": [],
-            }
-            nodes.append(node)
-            node_lookup[node_id] = node
-            emitted_levels.add((depth, code))
-            if depth + 1 < len(active):
-                queue.append((node_id, depth + 1, child_rows, count))
+                if top_n_per_parent and top_n_mode == "post":
+                    chosen = chosen[:top_n]
+                elif global_chosen[depth] is not None:
+                    chosen = [item for item in chosen if item[0] in global_chosen[depth]]
+            chosen = [item for item in chosen if item[1] >= min_count]
+            if max_levels is not None:
+                chosen = chosen[:max_levels]
+            remaining_budget = None if max_nodes is None else max_nodes - len(nodes)
+            budget_truncated = remaining_budget is not None and len(chosen) > max(
+                0, remaining_budget
+            )
+            if remaining_budget is not None:
+                chosen = chosen[: max(0, remaining_budget)]
+            chosen_codes = {code for code, _ in chosen}
+            omitted_rows = sum(count for code, count in ranked if code not in chosen_codes)
+            parent["omitted_child_rows"] = omitted_rows
+            parent["omitted_child_levels"] = len(ranked) - len(chosen)
+            parent["expansion_state"] = "expanded"
+            reasons: list[str] = []
+            if len(chosen) < len(ranked):
+                if top_n is not None:
+                    reasons.append("top_n")
+                if max_levels is not None and len(ranked) > max_levels:
+                    reasons.append("max_levels")
+                if budget_truncated or (max_nodes is not None and len(nodes) >= max_nodes):
+                    reasons.append("max_nodes")
+                if any(count < min_count for _, count in ranked):
+                    reasons.append("min_count")
+            parent["stop_reasons"] = sorted(set(reasons))
+            for code, count in chosen:
+                node_id = f"n{next_id}"
+                next_id += 1
+                child_rows = rows[code_arrays[depth][rows] == code]
+                node = {
+                    "node_id": node_id,
+                    "parent_id": parent_id,
+                    "feature_id": f"f{depth}",
+                    "level_id": f"f{depth}:l{code}",
+                    "depth": depth + 1,
+                    "count": count,
+                    "share_of_parent": count / parent_count if parent_count else None,
+                    "share_of_total": count / len(evaluated) if len(evaluated) else None,
+                    "share_reason": None if len(evaluated) else "empty_population",
+                    "expansion_state": "complete" if depth + 1 == len(active) else "unexpanded",
+                    "omitted_child_rows": 0,
+                    "omitted_child_levels": 0,
+                    "stop_reasons": [],
+                }
+                nodes.append(node)
+                node_lookup[node_id] = node
+                emitted_levels.add((depth, code))
+                if depth + 1 < len(active):
+                    queue.append((node_id, depth + 1, child_rows, count))
+            progress.advance()
     # Pre-selection metadata must remain decodable even when no corresponding
     # tree node survives the output budgets or the conjunctive pre filter.
     referenced_levels = emitted_levels.copy()
@@ -468,6 +481,7 @@ def _census(
     return ExplorerResult("census", payload)
 
 
+@operation("census")
 def census(df, dimensions, *, scope=None, missing=None, table_id="table", **options):
     """Build an observed-prefix census, optionally preserving a discovery scope and sentinels."""
     if scope is None and missing is None and table_id == "table":

@@ -53,11 +53,22 @@ def fixture(rows, columns, kind, seed):
                 values = rng.normal(size=rows)
             elif i % 3 == 1:
                 values = np.array([f"code-{int(v):03}" for v in values], dtype=object)
+        elif kind == "structured":
+            # Unique IDs, repeated entities/contexts and nested availability.
+            if i == 0:
+                values = np.arange(rows)
+            elif i == 1:
+                values = np.arange(rows) // 4
+            elif i == 2:
+                values = np.arange(rows) % 8
+            else:
+                values = (np.arange(rows) // 4 % (8 + i % 4)).astype(float)
+                values[np.arange(rows) % 10 < i % 7] = np.nan
         data[f"field_{i}"] = values
     return pd.DataFrame(data)
 
 
-def workload(frame, args):
+def workload(frame, args, progress=None):
     selected = list(frame.columns[: args.features]) if args.features else None
     common = {"features": selected}
     dependency_options = {"max_key_size": 1, **common}
@@ -72,19 +83,27 @@ def workload(frame, args):
     operations = {
         "fingerprint": lambda: fingerprint(frame),
         "prepare": lambda: prepare(frame),
-        "missingness": lambda: fw.missingness(frame, **common),
-        "dependencies": lambda: fw.discover_dependencies(frame, **dependency_options),
-        "paths": lambda: fw.suggest_paths(frame, **path_options),
-        "patterns": lambda: fw.value_patterns(frame, max_pairs=20, **common),
-        "explore": lambda: fw.explore(frame, discovery=path_options),
-        "levels": lambda: fw.levels(frame, selected or list(frame.columns), top_n=5),
-        "census": lambda: fw.census(frame, dimensions, max_nodes=40, max_levels=8),
-        "grain": lambda: fw.grain(
-            frame[selected] if selected else frame, (selected or list(frame.columns))[:2]
+        "missingness": lambda: fw.missingness(frame, progress=progress, **common),
+        "dependencies": lambda: fw.discover_dependencies(
+            frame, progress=progress, **dependency_options
         ),
-        "pairs": lambda: fw.pairs(frame, dimensions),
-        "joint_counts": lambda: fw.joint_counts(frame, dimensions[:2]),
-        "infer_schema": lambda: fw.infer_schema(frame),
+        "paths": lambda: fw.suggest_paths(frame, progress=progress, **path_options),
+        "patterns": lambda: fw.value_patterns(frame, max_pairs=20, progress=progress, **common),
+        "explore": lambda: fw.explore(frame, discovery=path_options, progress=progress),
+        "levels": lambda: fw.levels(
+            frame, selected or list(frame.columns), top_n=5, progress=progress
+        ),
+        "census": lambda: fw.census(
+            frame, dimensions, max_nodes=40, max_levels=8, progress=progress
+        ),
+        "grain": lambda: fw.grain(
+            frame[selected] if selected else frame,
+            (selected or list(frame.columns))[:2],
+            progress=progress,
+        ),
+        "pairs": lambda: fw.pairs(frame, dimensions, progress=progress),
+        "joint_counts": lambda: fw.joint_counts(frame, dimensions[:2], progress=progress),
+        "infer_schema": lambda: fw.infer_schema(frame, progress=progress),
     }
     return operations[args.worker]()
 
@@ -96,8 +115,9 @@ def worker(args):
     profiler = cProfile.Profile() if args.profile else None
     if profiler:
         profiler.enable()
+    events = []
     started = time.perf_counter()
-    result = workload(frame, args)
+    result = workload(frame, args, events.append if args.progress else None)
     seconds = time.perf_counter() - started
     if profiler:
         profiler.disable()
@@ -108,9 +128,23 @@ def worker(args):
         "fixture_seconds": fixture_seconds,
         "frame_bytes": int(frame.memory_usage(index=True, deep=True).sum()),
     }
+    if args.progress:
+        record["progress_events"] = len(events)
+        record["phases"] = [
+            {
+                "phase": e.phase,
+                "phase_id": e.phase_id,
+                "parent_id": e.parent_id,
+                "seconds": e.phase_elapsed_seconds,
+                "completed": e.completed,
+                "total": e.total,
+            }
+            for e in events
+            if e.status == "completed"
+        ]
     if hasattr(result, "to_dict"):
         started = time.perf_counter()
-        encoded = json.dumps(result.to_dict(), allow_nan=False).encode()
+        encoded = json.dumps(result.to_dict(compact=args.compact), allow_nan=False).encode()
         record.update(
             serialization_seconds=time.perf_counter() - started,
             result_bytes=len(encoded),
@@ -127,7 +161,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rows", type=int, default=10_000)
     parser.add_argument("--columns", type=int, default=150)
-    parser.add_argument("--fixture", choices=["sparse", "dense", "mixed"], default="sparse")
+    parser.add_argument(
+        "--fixture", choices=["sparse", "dense", "mixed", "structured"], default="sparse"
+    )
+    parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="Collect callback counts and inclusive phase durations",
+    )
+    parser.add_argument(
+        "--compact", action="store_true", help="Measure the optional compact JSON envelope"
+    )
     parser.add_argument("--seed", type=int, default=721)
     parser.add_argument("--operations", nargs="+", choices=OPERATIONS, default=["explore"])
     parser.add_argument(

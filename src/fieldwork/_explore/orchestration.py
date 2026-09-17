@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .census import _pre_mask_per_parent, _rank_counts, _source, census, levels
-from .encoding import MISSING, encode_series, resolve_columns
+from .encoding import encode_series, missing_code, resolve_columns
 from .grain import grain
 from .relations import pairs
 from .result import ExplorerResult
@@ -30,8 +30,9 @@ def _pre_cohort(
         values, encoded = encode_series(df[column])
         dictionaries.append(values)
         codes.append(encoded)
-        if dropna and MISSING in values:
-            eligible_mask &= encoded != values.index(MISSING)
+        absent = missing_code(values)
+        if dropna and absent is not None:
+            eligible_mask &= encoded != absent
     eligible = np.flatnonzero(eligible_mask)
     if top_n_per_parent:
         mask, _ = _pre_mask_per_parent(codes, dictionaries, eligible, top_n)

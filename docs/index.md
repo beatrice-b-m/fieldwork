@@ -16,3 +16,6 @@ For a small executable tour, read `examples/investigation.py`. For exact interfa
 signatures, read `src/fieldwork/__init__.py` and the exported functions' modules.
 Tests under `tests/foundation/` preserve the extracted explorer contracts;
 `tests/discovery/` exercises new investigation behavior.
+
+- [Large dataframes, progress, cancellation, and work budgets](performance.md)
+- [Performance implementation measurements](performance-results.md)

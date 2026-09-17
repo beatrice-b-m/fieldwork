@@ -11,12 +11,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .._runtime import checkpoint, operation
 from ._kernels import exact_pair_ids
 from .census import _scope, _source
 from .encoding import (
-    MISSING,
     ScalarIdentity,
     encode_series,
+    missing_code,
     normalize_scalar,
     resolve_columns,
     validate_limit,
@@ -79,6 +80,7 @@ def _declared_domain(
     return sorted(normalized, key=ScalarIdentity.sort_key), "caller_declared"
 
 
+@operation("pairs")
 def pairs(
     df: pd.DataFrame,
     dimensions: Iterable[Any],
@@ -123,6 +125,7 @@ def pairs(
     records: list[dict[str, Any]] = []
     examples_remaining = max_absence_cells
     for a_index, b_index in processed_pairs:
+        checkpoint()
         a_column, b_column = selected[a_index], selected[b_index]
         pair_tokens = {
             normalize_scalar(a_column, label=True),
@@ -136,8 +139,9 @@ def pairs(
         if dropna:
             for column in (a_column, b_column):
                 values, codes = encoded[column]
-                if MISSING in values:
-                    base_mask &= codes != values.index(MISSING)
+                absent = missing_code(values)
+                if absent is not None:
+                    base_mask &= codes != absent
         base_rows = np.flatnonzero(base_mask)
         global_a_raw = np.bincount(a_codes[base_rows], minlength=len(a_values))
         global_b_raw = np.bincount(b_codes[base_rows], minlength=len(b_values))
@@ -154,8 +158,9 @@ def pairs(
             if dropna:
                 for column in context:
                     values, codes = encoded[column]
-                    if MISSING in values:
-                        local_mask &= codes != values.index(MISSING)
+                    absent = missing_code(values)
+                    if absent is not None:
+                        local_mask &= codes != absent
             eligible_rows = int(local_mask.sum())
             for column, raw_value in context.items():
                 values, codes = encoded[column]
@@ -326,6 +331,7 @@ def pairs(
     )
 
 
+@operation("joint counts")
 def joint_counts(
     df: pd.DataFrame,
     dimensions: Iterable[Any],
@@ -354,8 +360,9 @@ def joint_counts(
     mask = np.ones(len(df), dtype=bool)
     if dropna:
         for values, codes in encoded.values():
-            if MISSING in values:
-                mask &= codes != values.index(MISSING)
+            absent = missing_code(values)
+            if absent is not None:
+                mask &= codes != absent
     eligible = int(mask.sum())
     for column, value in context.items():
         values, codes = encoded[column]

@@ -17,8 +17,10 @@ implicit path search; common `features`, `scope`, `missing`, and `table_id` para
 also flow into overview evidence.
 
 Discovery modules call `evidence.prepare` to identify the ordered dataset, apply a
-scope, encode values, and compute native/sentinel availability without modifying
-source values. Findings carry table-qualified feature references and bounded source
+scope, encode needed values, and compute native/sentinel availability without modifying
+source values. A private call-scoped runtime shares prepared data and fingerprints
+across nested components, reports optional progress, and checks cancellation.
+No cache survives the top-level call; see [performance controls](performance.md). Findings carry table-qualified feature references and bounded source
 positions. Presentation consumes saved evidence, never the original dataframe.
 
 ## Module map
@@ -31,7 +33,9 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `_explore/relations.py`, `roles.py` | Pair contexts/absence, joint counts, schema suggestions |
 | `_explore/result.py`, `resolved.py` | Foundation result model and readable references |
 | `_explore/visual_data.py`, `render.py`, `graphics.py` | Foundation projections and renderers |
-| `evidence.py` | Discovery results, scopes, fingerprints, source inspection |
+| `evidence.py`, `_selection.py` | Discovery results, scopes, fingerprints, targeted source selection |
+| `_runtime.py`, `progress.py` | Call-scoped reuse, progress events/display, cancellation |
+| `_serialization.py` | Optional versioned shared-container JSON envelopes |
 | `availability.py` | Presence signatures, families, implications, entity summaries |
 | `discovery.py` | Supplied search bounds, exact/approximate/conditional FDs |
 | `navigation.py` | Deterministic beam search and objective-specific prefix costs |
@@ -48,7 +52,7 @@ operation to the explicit Recipe allowlist only when its arguments serialize to
 JSON and can be safely reapplied to a new frame. No arbitrary Python evaluation is
 used for recipes.
 
-Related-table automatic discovery, adaptive branch-specific census orders, cached
+Related-table automatic discovery, adaptive branch-specific census orders, persistent user-managed
 sessions, and external discovery engines remain future extensions. Table identity
 is present in new feature references; foundation references are local to the
 source's `table_id`. The current public APIs analyze one dataframe at a time.

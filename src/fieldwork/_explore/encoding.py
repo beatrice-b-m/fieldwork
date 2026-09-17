@@ -65,6 +65,25 @@ class ScalarIdentity:
 MISSING = ScalarIdentity("missing")
 
 
+@dataclass(frozen=True)
+class MissingCode:
+    """Missing-code metadata when an FD kernel only needs equivalence classes.
+
+    Grain never displays cell values, so discovery can reuse integer groups
+    without retaining or rebuilding every high-cardinality scalar dictionary.
+    """
+
+    code: int | None
+
+
+def missing_code(values):
+    if isinstance(values, MissingCode):
+        return values.code
+    # Canonical dictionaries sort MISSING last. Avoid a linear dictionary scan
+    # for each candidate/target pair on continuous or unique-ID columns.
+    return len(values) - 1 if values and values[-1] == MISSING else None
+
+
 def _is_missing(value: Any) -> bool:
     if value is None or value is pd.NA or value is pd.NaT:
         return True
@@ -210,6 +229,11 @@ def encode_series(series: pd.Series) -> tuple[list[ScalarIdentity], np.ndarray]:
     """Encode a series with deterministic dictionary ordering."""
 
     inferred = pd.api.types.infer_dtype(series.array, skipna=True)
+    if inferred == "unknown-array":
+        # Some pandas versions do not inspect object NumpyExtensionArray values.
+        # Inspect their array, not an assumed dtype: mixed bool/int/float values
+        # must still take the typed fallback below.
+        inferred = pd.api.types.infer_dtype(series.to_numpy(copy=False), skipna=True)
     homogeneous = {
         "empty",
         "string",

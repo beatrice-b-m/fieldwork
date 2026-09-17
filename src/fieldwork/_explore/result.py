@@ -18,12 +18,14 @@ class ExplorerResult(Mapping[str, Any]):
     schema_version: str = SCHEMA_VERSION
     stability: str = "unstable"
 
-    def to_dict(self, *, resolve_references: bool = False) -> dict[str, Any]:
-        """Export compact JSON data, or an independent copy with references labeled.
+    def to_dict(self, *, resolve_references: bool = False, compact: bool = False) -> dict[str, Any]:
+        """Export JSON data, optionally labeling references or sharing containers.
 
         Resolved exports retain IDs and typed values, adding local labels and
         values for inspection. They contain all quantitative evidence; use
         ``visualization_data(detail="topology")`` for disclosure filtering.
+        ``compact=True`` wraps the data in a versioned shared-container envelope;
+        restore it with the appropriate result class's ``from_dict`` method.
         """
         data = {
             "schema_version": self.schema_version,
@@ -34,8 +36,27 @@ class ExplorerResult(Mapping[str, Any]):
         if resolve_references:
             from .resolved import resolve_result
 
-            return resolve_result(data)
+            data = resolve_result(data)
+        if compact:
+            from .._serialization import compact_result
+
+            return compact_result(data)
         return data
+
+    @classmethod
+    def from_dict(cls, data):
+        """Restore a foundation result from its ordinary or compact JSON export."""
+        from .._serialization import expand_result
+
+        data = expand_result(data)
+        if data.get("schema_version") != SCHEMA_VERSION:
+            raise ValueError("Unsupported foundation schema version")
+        return cls(
+            data["kind"],
+            {k: v for k, v in data.items() if k not in {"kind", "schema_version", "stability"}},
+            schema_version=data["schema_version"],
+            stability=data.get("stability", "unstable"),
+        )
 
     def __repr__(self) -> str:
         from .render import render_plaintext

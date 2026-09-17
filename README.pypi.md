@@ -52,6 +52,8 @@ df = pd.read_csv("your-data.csv")
 overview = fw.explore(df)
 print(overview)
 ```
+For large tables, use `fw.explore(df, progress=True)` to see the current phase,
+completed work, and elapsed time in a terminal or notebook.
 
 Follow the [first investigation](https://fieldwork.beabm.dev/getting-started/)
 to go from an overview to examining individual records, or work through the

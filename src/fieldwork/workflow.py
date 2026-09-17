@@ -2,23 +2,28 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ._explore.orchestration import explore as explicit_explore
+from ._runtime import operation, phase
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import finding, foundation_context, result
+from .evidence import finding, foundation_context, prepare, result
 from .families import feature_network
 from .navigation import suggest_paths
 from .patterns import value_patterns
 
 
-def explore(df, dimensions=None, *, discovery=None, **options):
+@operation("overview")
+def explore(df, dimensions=None, *, discovery=None, sections=None, section_options=None, **options):
     """Explicit dimensions preserve the foundation API; omitted dimensions discover an overview."""
     if dimensions is not None:
+        if sections is not None or section_options is not None:
+            raise ValueError("sections and section_options apply to discovery overviews only")
         config = dict(discovery or {})
         incompatible = config.keys() - {"scope", "missing", "table_id", "features"}
         if incompatible:
@@ -37,35 +42,66 @@ def explore(df, dimensions=None, *, discovery=None, **options):
         raise TypeError("With omitted dimensions, configure search with discovery dictionary")
     # Run-time population overrides retain all other configured search settings.
     config = {**(discovery or {}), **options}
+    if {"progress", "cancel", "timeout"} & config.keys():
+        raise ValueError("Pass runtime controls directly to explore, not in discovery")
     shared = {k: v for k, v in config.items() if k in {"scope", "missing", "table_id", "features"}}
     availability_options = {
         k: config.pop(k) for k in ("entity", "unit", "entity_presence") if k in config
     }
     contexts = config.pop("by", None)
-    paths = suggest_paths(df, **config)
-    availability = missingness(df, by=contexts, **availability_options, **shared)
-    dependencies = discover_dependencies(
-        df, by=contexts, max_key_size=1, max_candidates=20, **shared
-    )
-    patterns = value_patterns(df, by=contexts, max_pairs=20, **shared)
-    base = {
-        **availability.payload,
-        "sections": {
-            "missingness": availability.to_dict(),
-            "dependencies": dependencies.to_dict(),
-            "paths": paths.to_dict(),
-            "value_patterns": patterns.to_dict(),
-        },
+    names = ("missingness", "dependencies", "paths", "value_patterns")
+    requested = list(names if sections is None else sections)
+    if not requested or len(set(requested)) != len(requested) or set(requested) - set(names):
+        raise ValueError(f"sections must contain distinct names from {names}")
+    section_options = dict(section_options or {})
+    if section_options.keys() - set(requested):
+        raise ValueError("section_options must refer to requested sections")
+    protected = {"scope", "missing", "table_id", "progress", "cancel", "timeout"}
+    functions = {
+        "paths": suggest_paths,
+        "missingness": missingness,
+        "dependencies": discover_dependencies,
+        "value_patterns": value_patterns,
     }
-    if paths.best:
+    configs = {
+        "paths": dict(config),
+        "missingness": {"by": contexts, **availability_options, **shared},
+        "dependencies": {"by": contexts, "max_key_size": 1, "max_candidates": 20, **shared},
+        "value_patterns": {"by": contexts, "max_pairs": 20, **shared},
+    }
+    # Validate all options before starting potentially expensive work.
+    inspect.signature(suggest_paths).bind(df, **config)
+    for name in requested:
+        overrides = dict(section_options.get(name, {}))
+        if protected & overrides.keys() or any(k.startswith("_") for k in overrides):
+            raise ValueError("section_options cannot override source context or runtime controls")
+        configs[name].update(overrides)
+        inspect.signature(functions[name]).bind(df, **configs[name])
+    analyses = {}
+    for name in ("paths", "missingness", "dependencies", "value_patterns"):
+        if name in requested:
+            analyses[name] = functions[name](df, **configs[name])
+    if "missingness" in analyses:
+        base = dict(analyses["missingness"].payload)
+    else:
+        base = prepare(df, features=[], **{k: v for k, v in shared.items() if k != "features"})[-1]
+    base["sections"] = {
+        name: analyses[name].to_dict() if name in analyses else {"status": "not_requested"}
+        for name in names
+    }
+    paths = analyses.get("paths")
+    if paths is not None and paths.best:
         base["sections"]["census"] = paths["paths"][0]["preview"]
+    if sections is not None or section_options:
+        base["section_selection"] = {
+            "requested": [n for n in names if n in requested],
+            "omitted": [n for n in names if n not in requested],
+        }
     base["findings"] = []
-    for section, analysis in [
-        ("missingness", availability),
-        ("dependencies", dependencies),
-        ("paths", paths),
-        ("value_patterns", patterns),
-    ]:
+    for section in names:
+        if section not in analyses:
+            continue
+        analysis = analyses[section]
         for record in analysis["findings"]:
             base["findings"].append(
                 {
@@ -80,7 +116,8 @@ def explore(df, dimensions=None, *, discovery=None, **options):
                     },
                 }
             )
-    base["feature_network"] = feature_network(base)
+    with phase("assembling overview"):
+        base["feature_network"] = feature_network(base)
     return result("overview", base)
 
 
@@ -94,6 +131,10 @@ class Recipe:
     def __post_init__(self):
         if self.version != "1.0" or self.operation not in self.operations():
             raise ValueError("Unsupported recipe version or operation")
+        if {"progress", "cancel", "timeout"} & self.parameters.keys():
+            raise ValueError(
+                "Runtime controls belong in Recipe.run overrides, not saved parameters"
+            )
         if "scope" in self.parameters:
             raise ValueError(
                 "Recipes reapply to deliveries; pass a scope when running, not in the recipe"
@@ -116,6 +157,7 @@ class Recipe:
             "joint_counts": joint_counts,
         }
 
+    @operation("recipe")
     def run(self, df, **overrides):
         return self.operations()[self.operation](df, **{**self.parameters, **overrides})
 

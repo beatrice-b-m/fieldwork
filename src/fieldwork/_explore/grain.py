@@ -9,8 +9,17 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .._runtime import checkpoint, operation, phase
+from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
-from .encoding import MISSING, encode_series, normalize_scalar, resolve_columns, validate_frame
+from .encoding import (
+    MissingCode,
+    encode_series,
+    missing_code,
+    normalize_scalar,
+    resolve_columns,
+    validate_frame,
+)
 from .grain_graph import build_grain_graph
 from .result import ExplorerResult, KeySpec
 
@@ -50,27 +59,46 @@ def _fd_record(
     if dropna:
         for column in (*spec.columns, target):
             values, codes = encoded[column]
-            if MISSING in values:
-                mask &= codes != values.index(MISSING)
-    key_names = [f"k{index}" for index in range(len(spec.columns))]
-    table = pd.DataFrame(
-        {
-            **{name: encoded[column][1][mask] for name, column in zip(key_names, spec.columns)},
-            "target": encoded[target][1][mask],
-        }
-    )
-    if len(table):
-        grouped = table.groupby(key_names, sort=False, observed=True)["target"].agg(
-            ["nunique", "size"]
+            absent = missing_code(values)
+            if absent is not None:
+                mask &= codes != absent
+    checkpoint()
+    cache = getattr(encoded, "fd_cache", None)
+    cache_key = (spec.columns, target, dropna)
+    cached = cache.get(cache_key, mask) if cache is not None else None
+    if cached is None:
+        key_names = [f"k{index}" for index in range(len(spec.columns))]
+        table = pd.DataFrame(
+            {
+                **{name: encoded[column][1][mask] for name, column in zip(key_names, spec.columns)},
+                "target": encoded[target][1][mask],
+            }
         )
-        violations = grouped["nunique"] > 1
-        evaluated_groups = len(grouped)
-        violating_groups = int(violations.sum())
-        affected_rows = int(grouped.loc[violations, "size"].sum())
-        singleton_groups = int((grouped["size"] == 1).sum())
-    else:
-        evaluated_groups = violating_groups = affected_rows = singleton_groups = 0
-    evaluated_rows = int(mask.sum())
+        if len(table):
+            grouped = table.groupby(key_names, sort=False, observed=True)["target"].agg(
+                ["nunique", "size"]
+            )
+            violations = grouped["nunique"] > 1
+            evaluated_groups = len(grouped)
+            violating_groups = int(violations.sum())
+            affected_rows = int(grouped.loc[violations, "size"].sum())
+            singleton_groups = int((grouped["size"] == 1).sum())
+        else:
+            evaluated_groups = violating_groups = affected_rows = singleton_groups = 0
+        cached = {
+            "evaluated_groups": evaluated_groups,
+            "violating_groups": violating_groups,
+            "affected_rows": affected_rows,
+            "singleton_groups": singleton_groups,
+            "evaluated_rows": int(mask.sum()),
+        }
+        if cache is not None:
+            cache.put(cache_key, mask, cached, global_population=row_mask is None)
+    evaluated_groups = cached["evaluated_groups"]
+    violating_groups = cached["violating_groups"]
+    affected_rows = cached["affected_rows"]
+    singleton_groups = cached["singleton_groups"]
+    evaluated_rows = cached["evaluated_rows"]
     missing_excluded = len(df) - evaluated_rows
     scope_id = f"{scope_prefix}:{spec.name}:{normalize_scalar(target, label=True).sort_key()}"
     record = {
@@ -93,6 +121,7 @@ def _fd_record(
     return record, mask
 
 
+@operation("grain")
 def grain(
     df: pd.DataFrame,
     candidate_keys: Iterable[Any],
@@ -101,6 +130,8 @@ def grain(
     schema: dict[Any, str] | None = None,
     engine_metadata: bool = False,
     scope_metadata: dict[str, Any] | None = None,
+    _encoded=None,
+    _cache=None,
 ) -> ExplorerResult:
     """Evaluate exact observed FDs for explicit determinant candidates."""
 
@@ -108,36 +139,50 @@ def grain(
     records: list[dict[str, Any]] = []
     scopes: list[dict[str, Any]] = []
     holds_by_target: dict[Any, list[str]] = defaultdict(list)
-    encoded = {column: encode_series(df[column]) for column in df.columns}
-    evaluated_sets: dict[tuple[str, Any], np.ndarray] = {}
-    for spec in specs:
-        components = {normalize_scalar(c, label=True) for c in spec.columns}
-        for target in df.columns:
-            if normalize_scalar(target, label=True) in components:
-                continue
-            record, evaluated = _fd_record(
-                df,
-                spec,
-                target,
-                dropna=dropna,
-                scope_prefix="s3",
-                encoded=encoded,
-            )
-            records.append(record)
-            scope = record.pop("scope")
-            scopes.append(
-                _scope(
-                    scope["scope_id"],
-                    len(df),
-                    scope["missing_excluded_rows"],
-                    0,
-                    bool((scope_metadata or {}).get("conditional")),
-                    parent_scope=(scope_metadata or {}).get("scope"),
+    encoded = _encoded
+    if encoded is None:
+        encoded = {}
+        with phase("grain encoding", len(df.columns), "columns") as progress:
+            for column in df.columns:
+                values, codes = encode_series(df[column])
+                encoded[column] = (MissingCode(missing_code(values)), codes)
+                progress.advance(detail=str(column))
+    encoded = EncodedColumns(encoded, _cache)
+    pool = MaskPool()
+    evaluated_sets = {}
+    with phase(
+        "exact dependencies", sum(len(df.columns) - len(s.columns) for s in specs), "tests"
+    ) as progress:
+        for spec in specs:
+            checkpoint()
+            components = {normalize_scalar(c, label=True) for c in spec.columns}
+            for target in df.columns:
+                if normalize_scalar(target, label=True) in components:
+                    continue
+                record, evaluated = _fd_record(
+                    df,
+                    spec,
+                    target,
+                    dropna=dropna,
+                    scope_prefix="s3",
+                    encoded=encoded,
                 )
-            )
-            evaluated_sets[(spec.name, target)] = evaluated
-            if record["holds"] is True:
-                holds_by_target[target].append(spec.name)
+                records.append(record)
+                scope = record.pop("scope")
+                scopes.append(
+                    _scope(
+                        scope["scope_id"],
+                        len(df),
+                        scope["missing_excluded_rows"],
+                        0,
+                        bool((scope_metadata or {}).get("conditional")),
+                        parent_scope=(scope_metadata or {}).get("scope"),
+                    )
+                )
+                evaluated_sets[(spec.name, target)] = pool.intern(evaluated)
+                if record["holds"] is True:
+                    holds_by_target[target].append(spec.name)
+                progress.advance(detail=f"{spec.name} → {target}")
     target_summaries: list[dict[str, Any]] = []
     specs_by_name = {spec.name: spec for spec in specs}
     holds_lookup = {
@@ -151,7 +196,7 @@ def grain(
         for component in specs_by_name[right].columns:
             if normalize_scalar(component, label=True) in left_columns:
                 continue
-            if np.array_equal(evaluated_sets[(left, component)], mask):
+            if same_mask(evaluated_sets[(left, component)], mask):
                 holds = holds_lookup[(left, str(normalize_scalar(component, label=True).to_dict()))]
             else:
                 # Key-to-key evidence must use the same rows as the target FDs.
@@ -185,7 +230,7 @@ def grain(
                 for spec in specs
                 if (spec.name, target) in evaluated_sets
             ]
-            comparable = all(np.array_equal(item, sets[0]) for item in sets[1:]) if sets else True
+            comparable = all(same_mask(item, sets[0]) for item in sets[1:]) if sets else True
         equivalent: list[list[str]] = []
         incomparable: list[list[str]] = []
         coarsest = list(determining)

@@ -2,7 +2,8 @@
 
 ## Availability
 
-Features are encoded once per operation. Row presence or explicit any/all entity
+Needed value columns are encoded once per call context; native presence-only
+columns use missing masks. Row presence or explicit any/all entity
 aggregation provides the analysis masks. Repeated boolean availability signatures
 are ranked by descending analysis-unit count with lexical signature ties. `max_signatures=50`
 limits stored signatures, with omitted row mass reported. Identical masks form
@@ -94,7 +95,8 @@ reports how many populated context groups have a single populated target value.
 Discovery builds one view per distinct, nonempty candidate complete-case mask.
 Each view includes candidates whose supported rows contain that mask. The anchor
 candidate guarantees their common complete-case population is exactly that mask;
-the foundation still recomputes and checks every combined relationship on it.
+the foundation checks every combined relationship on it, reusing exact metrics
+only for identical eligible populations.
 Views are ordered by descending population, then candidate enumeration order.
 `exact_grain` is the first view; `grain_views` retains every view, candidate IDs,
 source positions and population accounting. No relation is composed across views.
@@ -143,3 +145,20 @@ returns a dataframe for filtering and following evidence to `inspect`/`select`.
 Saved HTML provides feature disclosures and links to the supporting findings.
 Topology removes evidence pointers and populations while retaining relation types,
 direction and context. Its relationship order is canonical.
+
+## Explicit work budgets and exact kernels
+
+Overview `sections` and `section_options` select and configure operations
+independently. Dependency discovery adds `include_grain`, `max_grain_views`, and
+`max_dependency_tests`; omitted graph views and candidate/target/context tests have
+explicit coverage metadata. Defaults preserve previous work and result ordering.
+See [usage and contracts](performance.md#choose-the-work-you-need).
+
+Availability uses packed boolean signatures with frequency/lexical tie ordering.
+Determinants and path prefixes use dense first-observed integer group IDs; modal
+counts preserve canonical-code ties. Path search computes objective-relevant
+impurity during search and complete explanation metrics for retained paths.
+Context constancy uses group membership counts, and repeated string summaries
+weight unique strings while preserving first-observed ties. Graph subset caches
+key exact packed populations; matching row counts alone never equate unrelated
+subsets. Bounded example extraction retains complete totals and first source rows.
