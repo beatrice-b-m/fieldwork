@@ -214,7 +214,7 @@ def _pre_mask_per_parent(
     return surviving, retained
 
 
-def census(
+def _census(
     df: pd.DataFrame,
     dimensions: Iterable[Any],
     *,
@@ -466,3 +466,14 @@ def census(
     if engine_metadata:
         payload["engine"] = {"name": "encoded_observed_prefix_refinement"}
     return ExplorerResult("census", payload)
+
+
+def census(df, dimensions, *, scope=None, missing=None, table_id="table", **options):
+    """Build an observed-prefix census, optionally preserving a discovery scope and sentinels."""
+    if scope is None and missing is None and table_id == "table":
+        return _census(df, dimensions, **options)
+    from ..evidence import foundation_context
+
+    return foundation_context(
+        df, _census, dimensions, scope=scope, missing=missing, table_id=table_id, **options
+    )

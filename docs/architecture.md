@@ -10,7 +10,9 @@ requirements only. Python 3.11–3.14 are supported, with a committed universal 
 dependency search. It returns an overview containing individual saved results and
 a census preview. Its compact text view presents families, signatures, candidate
 grains and recommended paths together. `explore(df, dimensions)` delegates to the original composition
-API; explicit dimension order remains authoritative. `discovery={...}` steers the
+API; explicit dimension order remains authoritative. Common context settings are
+applied to a private normalized frame and source accounting is retained in all
+derived scopes; incompatible search options are rejected. `discovery={...}` steers the
 implicit path search; common `features`, `scope`, `missing`, and `table_id` parameters
 also flow into overview evidence.
 

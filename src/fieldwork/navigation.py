@@ -8,18 +8,40 @@ from itertools import combinations
 import numpy as np
 
 from ._explore import census
-from .evidence import InvestigationResult, columns, finding, limit, prepare
+from .evidence import (
+    InvestigationResult,
+    columns,
+    finding,
+    fingerprint,
+    limit,
+    prepare,
+    saved_context,
+)
 
 
 class PathResult(InvestigationResult):
     @property
     def best(self):
-        return Path(self.payload["paths"][0]["dimensions"]) if self.payload["paths"] else None
+        return self.path(0) if self.payload["paths"] else None
+
+    def path(self, index=0):
+        return Path(self.payload["paths"][index]["dimensions"], self.payload)
 
 
 class Path:
-    def __init__(self, dimensions):
+    def __init__(self, dimensions, context):
         self.dimensions = tuple(dimensions)
+        self._context = context
+
+    def census(self, df, **options):
+        """Evaluate this recommendation on its original scope and missing conventions."""
+        if fingerprint(df) != self._context["source"]["dataset_id"]:
+            raise ValueError("Source dataset differs; reapply a path recipe for a new delivery")
+        if {"scope", "missing", "table_id"} & options.keys():
+            raise ValueError(
+                "Path census preserves its analysis context; rerun discovery to change it"
+            )
+        return census(df, self.dimensions, **saved_context(self._context), **options)
 
 
 def suggest_paths(
@@ -192,10 +214,15 @@ def suggest_paths(
         if not path:
             continue
         metrics = measure(path)
-        preview_frame = frame[list(path)].copy()
-        for c in path:
-            preview_frame[c] = preview_frame[c].astype(object).where(present[c], None)
-        preview = census(preview_frame, path, max_nodes=display_budget, max_levels=8).to_dict()
+        preview = census(
+            df,
+            path,
+            scope=scope,
+            missing=missing or {},
+            table_id=table_id,
+            max_nodes=display_budget,
+            max_levels=8,
+        ).to_dict()
         base["paths"].append(
             {
                 "dimensions": list(path),

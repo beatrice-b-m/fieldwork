@@ -138,6 +138,10 @@ class InvestigationResult(ExplorerResult):
     def from_dict(cls, data: Mapping[str, Any]):
         if data.get("schema_version") != "1.0":
             raise ValueError("Unsupported investigation schema version")
+        if data["kind"] == "paths":
+            from .navigation import PathResult
+
+            cls = PathResult
         return cls(
             data["kind"],
             {k: v for k, v in data.items() if k not in {"kind", "schema_version", "stability"}},
@@ -296,3 +300,56 @@ def _restore_scalar(value):
     if kind == "timedelta":
         return pd.Timedelta(int(raw), unit="ns")
     raise ValueError(f"Unsupported saved sentinel: {kind}")
+
+
+def saved_context(base):
+    """Restore source-bound scope and typed missing conventions from saved evidence."""
+    data = base["scope"]
+    positions = data.get("selection_positions")
+    return {
+        "scope": Scope(
+            base["source"]["dataset_id"], tuple(positions), data["name"], data.get("parent")
+        )
+        if positions is not None
+        else None,
+        "missing": {
+            c: [_restore_scalar(v) for v in values]
+            for c, values in base["missing_convention"]["sentinels"].items()
+        },
+        "table_id": base["source"]["table_id"],
+    }
+
+
+def foundation_context(df, operation, *args, scope=None, missing=None, table_id="table", **options):
+    """Normalize a private frame and retain original-source accounting in every derived scope."""
+    from copy import deepcopy
+    from ._explore.census import _source
+
+    frame, _, _, present, base = prepare(df, scope=scope, missing=missing, table_id=table_id)
+    normalized = frame.copy()
+    for c in normalized:
+        normalized[c] = normalized[c].astype(object).where(present[c], None)
+    analysis = operation(normalized, *args, **options)
+    payload = deepcopy(analysis.payload)
+    excluded = len(df) - len(frame)
+    source = {**_source(df), **base["source"]}
+
+    def rebase(value):
+        if isinstance(value, dict):
+            if "scope_id" in value and "input_rows" in value:
+                value["input_rows"] += excluded
+                value["restriction_excluded_rows"] += excluded
+                value["conditional"] = value["conditional"] or bool(excluded)
+                value["lineage"] = [base["scope"]["name"], *value["lineage"]]
+            for key, child in list(value.items()):
+                if key == "source":
+                    value[key] = deepcopy(source)
+                else:
+                    rebase(child)
+        elif isinstance(value, list):
+            for child in value:
+                rebase(child)
+
+    rebase(payload)
+    payload["analysis_context"] = {k: base[k] for k in ("source", "scope", "missing_convention")}
+    return ExplorerResult(analysis.kind, payload, schema_version=analysis.schema_version)

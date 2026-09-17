@@ -16,7 +16,7 @@ raise `TypeError`; no arbitrary object stringification is used to merge values.
 `InvestigationResult.from_dict` restores schema 1.0 saved evidence. `to_frame()`
 normalizes findings; pass a section such as `availability`, `dependencies`,
 `candidates`, or `changes` to project another list. `PathResult.best` is `None` if
-no path exists, otherwise its `dimensions` can be passed directly to `census`.
+no path exists, otherwise use `best.census(df)` to preserve recommendation context.
 
 ## Population, source and scope
 
@@ -79,3 +79,17 @@ scope as a run override, not as a persisted recipe parameter. Composite grain
 `compare` compares two missingness results by feature name, preserving both source
 identities and conventions. Its delta is after minus before populated fraction;
 empty populations and added/removed features have an undefined delta.
+
+## Recommendation handoff
+
+Use `paths.best.census(df)` (or `paths.path(i).census(df)`) to retain the exact
+source, scope and sentinel conventions of a recommendation, including after JSON
+restoration. `path.dimensions` is only an ordered tuple: it does not carry context.
+The handoff validates source identity and rejects context overrides. To choose a
+new population, rerun discovery. `census(df, dimensions, scope=..., missing=...)`
+also supports explicit context. Derived foundation scopes account against the
+original source, separating scope restrictions from missing-value exclusions.
+
+With explicit dimensions, `explore` accepts common `scope`, `missing`, `table_id`
+and `features` settings in `discovery`; search-only settings raise `ValueError`.
+Duplicate settings in `discovery` and explicit options are rejected.

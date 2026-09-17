@@ -10,7 +10,7 @@ from typing import Any
 from ._explore.orchestration import explore as explicit_explore
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import finding, result
+from .evidence import finding, foundation_context, result
 from .navigation import suggest_paths
 from .patterns import value_patterns
 
@@ -18,6 +18,19 @@ from .patterns import value_patterns
 def explore(df, dimensions=None, *, discovery=None, **options):
     """Explicit dimensions preserve the foundation API; omitted dimensions discover an overview."""
     if dimensions is not None:
+        config = dict(discovery or {})
+        incompatible = config.keys() - {"scope", "missing", "table_id", "features"}
+        if incompatible:
+            raise ValueError(
+                f"Explicit dimensions do not accept discovery search options: {sorted(incompatible)}"
+            )
+        duplicate = config.keys() & options.keys()
+        if duplicate:
+            raise ValueError(f"Configuration supplied twice: {sorted(duplicate)}")
+        options = {**config, **options}
+        context = {k: options.pop(k) for k in ("scope", "missing", "table_id") if k in options}
+        if context:
+            return foundation_context(df, explicit_explore, dimensions, **context, **options)
         return explicit_explore(df, dimensions, **options)
     if options:
         raise TypeError("With omitted dimensions, configure search with discovery dictionary")
