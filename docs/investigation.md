@@ -1,5 +1,36 @@
 # One single-table investigation
 
+The [worked notebook](../examples/investigation.ipynb) follows a concrete question:
+which exams in a synthetic export have both image references on every export slot,
+and does a corrected delivery resolve an incomplete exam? It includes saved outputs,
+interpretation, and the decisions that connect each step. The
+[Python companion](../examples/investigation.py) runs the same investigation.
+
+The example's specification expects paired images for MR slots and dose measurements
+for CT slots. This is an export-specific rule, not a general modality rule. Eligibility
+is selected from the MR context independently of image availability, so incomplete
+records remain in the denominator. A `-999` sentinel is treated as a missing second
+image reference throughout.
+
+| Question | Initial delivery | Interpretation |
+| --- | --- | --- |
+| How many MR slots have both references? | 7/8 (87.5%) | Row completeness; larger exams contribute more weight |
+| How many MR exams have any second-image reference? | 4/4 (100%) | At least one populated slot can conceal incomplete exams |
+| How many MR exams have complete pairs on every slot? | 3/4 (75%) | With the first image present everywhere, `entities` + `all` for the second image answers the acceptance question |
+
+Inspection identifies South / S01 / slot 2, while an entity selection retrieves
+both slots of the affected exam. The site-to-exam census organizes eight eligible
+rows into four exams. Reapplying a saved recipe to a simulated corrected delivery,
+with a newly selected MR scope, yields 4/4 complete exams: a 25-percentage-point
+increase. Reference availability does not establish file existence or image quality.
+
+The notebook also contrasts overall availability (7/12 rows) with MR availability
+(7/8 rows). That change reflects a population restriction in one delivery, not an
+improvement over time. In either kind of comparison, interpret fractions alongside
+their populations, denominators, units, and missing-value conventions.
+
+## Explore for leads
+
 Start with `overview = fw.explore(df)`. Its compact summary presents availability
 families and signatures, supported candidate grains, and census recommendations.
 `overview.relationships("image_1")` lists typed connections to other features and

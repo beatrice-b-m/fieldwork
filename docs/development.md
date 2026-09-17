@@ -20,11 +20,24 @@ rendering and strict-JSON semantics, including Hypothesis differential oracles.
 Discovery fixtures check co-absence, sentinels, unequal entities, duplicate indexes,
 modal exceptions, conditional/composite dependencies, constraints and saved exports.
 The notebook executes as part of validation with IPython; no external data is used.
+Its checks also verify the numerical conclusions in the narrative and agreement
+with the Python companion's initial and corrected deliveries. After editing notebook
+cells, refresh the checked-in text, table, and SVG outputs with:
+
+```bash
+uv run python scripts/execute_notebook.py
+```
+
+The output refresher uses the existing IPython dependency and the notebook's explicit
+`display`/`print` calls; it does not need a Jupyter server. Review the saved outputs
+and adjacent interpretations together. A failed cell leaves the previous file intact.
+
 `tests/discovery/test_journeys.py` follows scoped recommendation handoffs, sparse
 grain views, typed conditional contexts, complete signature/context/entity
 selection, unequal entity weights, candidate classification, diverse path reasons,
 and linked feature relationships through saved exports. The executable example
-also saves/loads a recipe in a temporary directory and restores a saved signature.
+also saves/loads a recipe in a temporary directory, compares the initial and corrected
+deliveries using newly selected scopes, and restores saved exception evidence.
 
 After graph or path search changes, run the seeded discovery benchmark. Its
 population-compatible views retain more evidence than a single intersected graph;

@@ -4,7 +4,7 @@
   "findings": [
     {
       "pattern": "census_path",
-      "statement": "site \u2192 exam_id \u2192 image_2",
+      "statement": "site \u2192 exam_id",
       "features": [
         {
           "table": "table",
@@ -13,10 +13,6 @@
         {
           "table": "table",
           "column": "exam_id"
-        },
-        {
-          "table": "table",
-          "column": "image_2"
         }
       ],
       "structure": {},
@@ -28,36 +24,32 @@
       },
       "id": "f0",
       "measurements": {
-        "score": 5.2,
+        "score": 0.15,
         "prefix_counts": [
-          2,
           2,
           4
         ],
-        "prefix_cost": 0.2,
+        "prefix_cost": 0.15,
         "overflow": 0.0,
         "nesting_inversions": 0,
-        "redundant_steps": 1,
-        "alias_steps": 1,
+        "redundant_steps": 0,
+        "alias_steps": 0,
         "target_impurity_sum": 0,
         "target_impurity_by_depth": [],
-        "availability_impurity_sum": 0.5,
+        "availability_impurity_sum": 0.0,
         "availability_impurity_by_depth": [
-          0.25,
-          0.25,
+          0.0,
           0.0
         ],
-        "explanation": "Observed prefix groups: site: 2 \u2192 exam_id: 2 \u2192 image_2: 4; Supported coarse-to-fine nesting: exam_id \u2192 image_2, site \u2192 image_2; Adds no groups: exam_id; Equivalent value partitions: site / exam_id; Availability nonmodal fractions: 0.25, 0.25, 0",
+        "explanation": "Observed prefix groups: site: 2 \u2192 exam_id: 4; Supported coarse-to-fine nesting: site \u2192 exam_id; Availability nonmodal fractions: 0, 0",
         "reasons": [
           {
             "kind": "branching",
             "dimensions": [
               "site",
-              "exam_id",
-              "image_2"
+              "exam_id"
             ],
             "prefix_groups": [
-              2,
               2,
               4
             ],
@@ -67,33 +59,21 @@
             "kind": "nesting",
             "coarse_to_fine": [
               [
-                "exam_id",
-                "image_2"
-              ],
-              [
                 "site",
-                "image_2"
+                "exam_id"
               ]
             ],
             "reversed_edges": 0
           },
           {
             "kind": "redundancy",
-            "no_new_groups": [
-              "exam_id"
-            ],
-            "equivalent_pairs": [
-              [
-                "site",
-                "exam_id"
-              ]
-            ]
+            "no_new_groups": [],
+            "equivalent_pairs": []
           },
           {
             "kind": "availability_separation",
             "nonmodal_fraction_by_depth": [
-              0.25,
-              0.25,
+              0.0,
               0.0
             ]
           }
@@ -103,56 +83,10 @@
         "positions": [
           0,
           1,
-          4
+          2
         ],
-        "total": 4,
-        "omitted": 1,
-        "method": "first_in_source_order",
-        "limit": 3
-      },
-      "exceptions": {
-        "positions": [],
-        "total": 0,
-        "omitted": 0,
-        "method": "first_in_source_order",
-        "limit": 3
-      }
-    },
-    {
-      "pattern": "value_alias",
-      "statement": "site and exam_id: equivalent value partitions",
-      "features": [
-        {
-          "table": "table",
-          "column": "site"
-        },
-        {
-          "table": "table",
-          "column": "exam_id"
-        }
-      ],
-      "structure": {
-        "relation": "equivalent_value_partitions"
-      },
-      "counting_unit": "rows",
-      "analysis_unit": {
-        "counting_unit": "rows",
-        "entity_keys": [],
-        "presence_aggregation": "per_row"
-      },
-      "id": "f1",
-      "measurements": {
-        "evaluated_rows": 4,
-        "groups": 2
-      },
-      "examples": {
-        "positions": [
-          0,
-          1,
-          4
-        ],
-        "total": 4,
-        "omitted": 1,
+        "total": 8,
+        "omitted": 5,
         "method": "first_in_source_order",
         "limit": 3
       },
@@ -166,29 +100,33 @@
     }
   ],
   "scope": {
-    "name": "image-bearing rows",
+    "name": "MR export slots",
     "parent": "input",
-    "evaluated_rows": 4,
+    "evaluated_rows": 8,
     "restriction_excluded_rows": 4,
     "positions_are": "zero_based_source_positions",
     "selection_positions": [
       0,
       1,
+      2,
+      3,
       4,
-      5
+      7,
+      8,
+      9
     ]
   },
   "coverage": {
-    "features_requested": 3,
-    "features_evaluated": 3,
+    "features_requested": 2,
+    "features_evaluated": 2,
     "features_omitted": [],
-    "pairs_evaluated": 3,
-    "pair_candidates": 3,
-    "paths_evaluated": 4,
+    "pairs_evaluated": 1,
+    "pair_candidates": 1,
+    "paths_evaluated": 1,
     "distinct_alternatives": 1,
     "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
     "search_exhausted_budget": false,
-    "requested_depth": 3,
-    "returned_depth": 3
+    "requested_depth": 2,
+    "returned_depth": 2
   }
 }
