@@ -227,7 +227,7 @@ def _section_lines(
             else:
                 yield "  ... additional nodes not rendered (renderer max_nodes)"
     elif kind == "grain":
-        yield "  Observed dependencies; sample evidence does not establish semantic grain."
+        yield "  Observed dependencies among tested keys."
         for dependency in data.get("dependencies", []):
             columns = ", ".join(label(c, column=True) for c in dependency["key_columns"])
             yield (
@@ -363,7 +363,7 @@ def _section_lines(
             or "global"
         )
         yield f"  {names[0]} / {names[1]} [{context}]"
-        yield "  Observed cells; absence in this population does not imply impossibility."
+        yield "  Observed cells and unobserved combinations."
         for cell in data["cells"]:
             text = (
                 f"    {names[0]}={label(data['a'][cell['a']])}, "
@@ -423,7 +423,7 @@ def render_plaintext(
         data, kind, version = result, result.get("kind", "?"), result.get("schema_version", "?")
 
     def lines() -> Iterator[str]:
-        yield f"bea-tools feature explorer v{version}"
+        yield f"Fieldwork feature explorer v{version}"
         if detail == "topology":
             yield "Topology display (quantitative evidence suppressed)"
         sections = data.get("sections")

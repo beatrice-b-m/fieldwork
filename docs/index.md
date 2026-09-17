@@ -1,4 +1,15 @@
-# Developer documentation
+# Fieldwork developer map
 
-Start with [architecture](architecture.md), then consult the source modules and tests.
-User workflows live in the associated fieldwork-docs repository.
+Start here when changing or reviewing the package. User-facing workflows and API
+reference belong in [fieldwork-docs](https://github.com/beatrice-b-m/fieldwork-docs).
+
+1. [Architecture](architecture.md) — boundaries, data flow, where to make changes.
+2. [Evidence contracts](contracts.md) — populations, types, saved inspection, exports.
+3. [Discovery algorithms](algorithms.md) — measurements, search limits, ranking.
+4. [Development and validation](development.md) — uv, parity tests, examples, profiling.
+5. [Release and documentation](releases.md) — generated assets, two-repository sync, publication.
+
+For a small executable tour, read `examples/investigation.py`. For exact interface
+signatures, read `src/fieldwork/__init__.py` and the exported functions' modules.
+Tests under `tests/foundation/` preserve the extracted explorer contracts;
+`tests/discovery/` exercises new investigation behavior.

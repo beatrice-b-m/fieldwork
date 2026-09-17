@@ -20,7 +20,7 @@ def test_census_subtrees_are_contiguous_and_dimensions_named() -> None:
     before = deepcopy(result.to_dict())
     text = render_plaintext(result, width=88)
     assert text.splitlines() == [
-        "bea-tools feature explorer v0.3",
+        "Fieldwork feature explorer v0.3",
         "Census (computed)",
         "  rows: 3 evaluated / 3 input; excluded: 0 missing, 0 restricted",
         "  path: site > modality > side",

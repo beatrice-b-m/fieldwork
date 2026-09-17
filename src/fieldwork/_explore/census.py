@@ -24,6 +24,7 @@ from .result import ExplorerResult
 
 def _source(df: pd.DataFrame) -> dict[str, Any]:
     return {
+        "table_id": "table",
         "rows": len(df),
         "columns": len(df.columns),
         "dtypes": [

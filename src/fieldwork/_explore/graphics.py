@@ -291,8 +291,12 @@ def _bars_svg(data):
             )
             svg.parts.append(f"<g {attrs}>")
             lines = _wrap(row["label"], 42)
+            if is_tree:
+                svg.parts.append(
+                    f'<path d="M{x},{y - 10} v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/>'
+                )
             for i, line in enumerate(lines):
-                svg.text(x, y + i * 18, ("↳ " if is_tree and i == 0 else "") + line, size=13)
+                svg.text(x + (14 if is_tree else 0), y + i * 18, line, size=13)
             if full:
                 share = row.get("share")
                 svg.rect(bar_x, y - 13, 300, 16, fill="#edf1f5")

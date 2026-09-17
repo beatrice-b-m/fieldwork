@@ -60,7 +60,7 @@ def visualization_data(
         if "graph" not in data:
             raise ValueError("Grain graph evidence is missing; recompute grain() with schema 0.3+")
         graph = data["graph"]
-        output["caption"] = "Observed groupings among tested keys; not a semantic entity model."
+        output["caption"] = "Observed groupings among tested keys."
         output["scope"] = _scope(graph["scope"], full)
         output["missingness"] = graph["missingness"].replace("_", " ")
         names = {key["name"]: key for key in data["keys"]}
