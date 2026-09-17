@@ -8,7 +8,8 @@ requirements only. Python 3.11–3.14 are supported, with a committed universal 
 
 `explore(df)` calls path search, availability analysis, and a bounded single-key
 dependency search. It returns an overview containing individual saved results and
-a census preview. `explore(df, dimensions)` delegates to the original composition
+a census preview. Its compact text view presents families, signatures, candidate
+grains and recommended paths together. `explore(df, dimensions)` delegates to the original composition
 API; explicit dimension order remains authoritative. `discovery={...}` steers the
 implicit path search; common `features`, `scope`, `missing`, and `table_id` parameters
 also flow into overview evidence.

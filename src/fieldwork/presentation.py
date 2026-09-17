@@ -66,7 +66,36 @@ def visualization_data(result, *, section=None, detail="full"):
         ):
             if key in data:
                 output[key] = data[key]
-    else:
+    if data["kind"] == "overview":
+        sections = data["sections"]
+        output["overview"] = {
+            "families": [family["features"] for family in sections["missingness"]["families"]],
+            "paths": [path["dimensions"] for path in sections["paths"]["paths"]],
+            "grains": [
+                {
+                    "columns": c["columns"],
+                    "role": "unique identifier" if c["unique"] else "repeated grouping",
+                    **(
+                        {"groups": c["groups"], "repeated_groups": c["repeated_groups"]}
+                        if detail == "full"
+                        else {}
+                    ),
+                }
+                for c in sections["dependencies"]["candidates"]
+            ],
+            "signatures": [
+                {
+                    "present": sig["present"],
+                    "absent": sig["absent"],
+                    **({"count": sig["count"]} if detail == "full" else {}),
+                }
+                for sig in sections["missingness"]["signatures"]
+            ],
+        }
+        if detail == "topology":
+            for name in output["overview"]:
+                output["overview"][name].sort(key=lambda row: json.dumps(row, sort_keys=True))
+    if detail == "topology":
         # Frequency-ranked evidence is canonicalized; no support or selectors are exported.
         output["findings"].sort(key=lambda r: (r["pattern"], r["statement"]))
     return output
@@ -104,7 +133,28 @@ def render_plaintext(
         lines.append("Topology only · quantitative evidence suppressed")
     else:
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
-    for row in data["findings"][:max_nodes]:
+    if data["kind"] == "overview":
+        overview = data["overview"]
+        lines.append("Availability families")
+        lines.extend("  " + ", ".join(group) for group in overview["families"][: min(5, max_nodes)])
+        lines.append("Major availability signatures")
+        for signature in overview["signatures"][: min(5, max_nodes)]:
+            text = "  Present: " + (", ".join(signature["present"]) or "none")
+            if detail == "full":
+                text += f" ({signature['count']} rows)"
+            lines.append(text)
+        lines.append("Candidate grains")
+        for candidate in overview["grains"][: min(5, max_nodes)]:
+            text = "  " + ", ".join(candidate["columns"]) + ": " + candidate["role"]
+            if detail == "full":
+                text += f"; {candidate['groups']} groups, {candidate['repeated_groups']} repeated"
+            lines.append(text)
+        lines.append("Suggested census paths")
+        lines.extend("  " + " > ".join(path) for path in overview["paths"][:max_nodes])
+        lines.append(
+            "Summary lists are limited; individual sections retain complete evidence and coverage."
+        )
+    for row in [] if data["kind"] == "overview" else data["findings"][:max_nodes]:
         lines.append(row["statement"])
         if detail == "full":
             metrics = ", ".join(
@@ -116,7 +166,7 @@ def render_plaintext(
             lines.append(
                 f"  Examples: {row['examples']['positions']}; exceptions: {row['exceptions']['positions']}"
             )
-    if len(data["findings"]) > max_nodes:
+    if data["kind"] != "overview" and len(data["findings"]) > max_nodes:
         lines.append("... more findings not rendered (max_nodes)")
     if len(lines) > max_lines:
         lines = lines[: max_lines - 1] + ["... more output not rendered (max_lines)"]

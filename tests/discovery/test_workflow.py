@@ -312,3 +312,18 @@ def test_scope_constructor_and_missing_contexts():
     assert r["coverage"]["contexts_total"] == 2
     assert r["contexts"][0]["values"]["site"] == {"type": "missing"}
     assert r["contexts"][0]["rows"] == 2
+
+
+def test_overview_displays_all_orientation_sections(frame):
+    overview = fw.explore(frame)
+    text = str(overview)
+    for section in [
+        "Availability families",
+        "Major availability signatures",
+        "Candidate grains",
+        "Suggested census paths",
+    ]:
+        assert section in text
+    topology = fw.visualization_data(overview, detail="topology")
+    assert "repeated_groups" not in json.dumps(topology)
+    assert "count" not in json.dumps(topology["overview"]["signatures"])

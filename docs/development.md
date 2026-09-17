@@ -24,7 +24,7 @@ The notebook executes as part of validation with IPython; no external data is us
 ## Profile representative workloads
 
 ```bash
-uv run python benchmarks/foundation.py --suite smoke --repeats 3 --output /tmp/foundation.json
+uv run python benchmarks/foundation.py --suite smoke --repeats 3 --output /tmp/fieldwork-foundation-benchmarks
 uv run python benchmarks/discovery.py --output /tmp/discovery.json
 ```
 
