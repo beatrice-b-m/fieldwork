@@ -1,69 +1,66 @@
 # Fieldwork
 
-Explore unfamiliar data through patterns, source-row evidence, and reproducible
-investigations. Fieldwork is a Python toolkit for researchers working with pandas
-dataframes: find availability families, examine dependencies and candidate grains,
-then choose a useful census path through the data.
+Make sense of unfamiliar tables before you start analyzing them. Fieldwork is a
+Python toolkit for researchers working with pandas: see how records fit together,
+investigate surprising patterns, and decide what to explore next.
 
-**Alpha release.** Python 3.11–3.14; pandas and NumPy are the only required runtime
-dependencies.
+A dataset often arrives as one large export, with repeated records, unevenly
+filled columns, and little explanation of how it was assembled. Before choosing
+what to count or compare, you need to understand what each row represents.
+Fieldwork helps you build that understanding and follow what you find back to
+the records themselves.
 
-![Observed grain graph of a 960-row, 43-column laboratory table, with participant and specimen structure joining assay and instrument runs at a composite specimen–assay key](docs/assets/wide-table.png)
+## See how the table fits together
 
-One wide table, several overlapping levels of detail. In this
-[executable synthetic example](examples/wide_table.py), Fieldwork tests six candidate
-keys and places attributes at their coarsest observed grouping. Participant and
-specimen structure meets assay and instrument runs at a composite specimen–assay
-key; replicate-level signals remain unplaced. This is an estimated map of the
-table's structure based on observed dependencies, not a declared or proven schema.
+A laboratory export might mix information about people, samples, instruments,
+and measurements across dozens of columns. In the example below, those
+relationships are buried in **960 rows and 43 columns**. Starting with identifiers
+such as participant and specimen IDs, Fieldwork builds a map that helps you see
+which details belong together and where repeated measurements enter the picture.
+
+![A map of a laboratory table: participants connect to specimens, instruments and assays connect to runs, and the branches meet at specimen measurements](docs/assets/wide-table.png)
+
+That gives you a starting point for deciding how to group the data, what to count,
+and which records deserve a closer look.
+[Try the laboratory example](examples/wide_table.py) to build this map yourself
+from synthetic data.
+
+## Follow the questions that emerge
+
+- **Get your bearings.** Find groups of fields that appear together and identify
+  how records repeat across the table.
+- **Investigate a surprise.** Follow a pattern to the rows that support it or the
+  exceptions that need explaining.
+- **Narrow your focus.** Explore a particular site, group, or subset to understand
+  how it differs from the rest of the data.
+- **Build on what you learn.** Share findings and figures, save an investigation,
+  and revisit it when the next delivery arrives.
+
+## Start with your own data
 
 ```bash
 pip install fieldwork
 ```
 
+Load a table and get an overview of patterns worth exploring:
+
 ```python
 import pandas as pd
 import fieldwork as fw
 
-df = pd.DataFrame({
-    "site": ["North", "North", "South", "South"],
-    "exam": [1, 1, 2, 2],
-    "image": [10, 11, 20, 21],
-    "report": ["ok", "ok", "ok", None],
-})
+df = pd.read_csv("your-data.csv")
 overview = fw.explore(df)
-availability = fw.missingness(df, entity="exam", min_implication=0.75)
-paths = fw.suggest_paths(df, features=["site", "exam"])
-tree = paths.best.census(df)
-print(tree)
+print(overview)
 ```
 
-Use `result.to_frame()` for discovery tables and `result.inspect(df, finding_id,
-exceptions=True)` for the saved example rows. Duplicate indexes are supported;
-inspection checks the ordered source dataset. Use `result.select(df, finding_id)`
-to recover the complete matching population as a `Scope`, then pass that scope to
-`missingness` or `suggest_paths`. `paths.best.census(df)` preserves the selected
-population and sentinel conventions. Choose `unit="entities"` with `entity=` for
-equal entity weights, or keep the default `unit="rows"`. Browse connected feature
-evidence with `overview.relationships("image")`. Save results with `to_dict()`, export
-with `render_svg()` or `render_html()`, and reapply a `Recipe` to later deliveries.
+Follow the [first investigation](https://fieldwork.beabm.dev/getting-started/)
+to go from an overview to examining individual records, or work through the
+[guided notebook](examples/investigation.ipynb). The
+[documentation](https://fieldwork.beabm.dev/) covers the tools you can use as
+your questions become more specific.
 
-![Observed census from the worked example](docs/assets/census.png)
+Fieldwork is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
+only required runtime dependencies.
 
-The single-table workflow includes independent levels, contextual pair summaries,
-joint counts and absence, exact grain graphs, bounded approximate dependency
-discovery, five census-path objectives, availability signatures and entity summaries,
-string and numeric patterns, scoped investigations, and delivery comparisons.
-Topology-only exports retain structure while suppressing quantitative evidence.
-Automatic related-table discovery is a later extension.
-
-- [User documentation source](https://github.com/beatrice-b-m/fieldwork-docs)
-- [Developer documentation](docs/index.md): architecture, contracts, algorithms, releases
-- [Investigation journey and units](docs/investigation.md)
-- [Executable investigation](examples/investigation.py) and [notebook](examples/investigation.ipynb)
-- [MIT license](LICENSE) and [extraction provenance](NOTICE)
-
-For development: `uv sync --locked`, `uv run pytest`, and `uv build`. Documentation
-images are generated from executable examples using the public renderers. Run
-`uv run python scripts/generate_assets.py` after behavior or styling changes;
-CI checks concurrence and release builds regenerate the assets.
+For contributing and local setup, see the [developer documentation](docs/index.md).
+Fieldwork is [MIT licensed](LICENSE); see [NOTICE](NOTICE) for project provenance.
