@@ -36,7 +36,7 @@ def _safe(text: str, unicode_mode: str) -> str:
     except ImportError as exc:
         raise ImportError(
             "Native Unicode rendering requires the 'unicode' extra: "
-            "pip install 'bea-tools[unicode]'"
+            "pip install 'fieldwork[unicode]'"
         ) from exc
     return text
 

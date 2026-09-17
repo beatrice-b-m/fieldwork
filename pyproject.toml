@@ -21,6 +21,9 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 
+[project.optional-dependencies]
+unicode = ["wcwidth>=0.2"]
+
 [project.urls]
 Source = "https://github.com/beatrice-b-m/fieldwork"
 Documentation = "https://fieldwork.beabm.dev"

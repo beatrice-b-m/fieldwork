@@ -41,6 +41,16 @@ class Scope:
     name: str = "selection"
     parent: str | None = None
 
+    def __post_init__(self):
+        positions = tuple(self.positions)
+        if any(
+            isinstance(p, bool) or not isinstance(p, (int, np.integer)) or p < 0 for p in positions
+        ):
+            raise ValueError("Scope positions must be nonnegative integers")
+        if len(set(positions)) != len(positions):
+            raise ValueError("Scope positions must not repeat")
+        object.__setattr__(self, "positions", tuple(sorted(int(p) for p in positions)))
+
     @classmethod
     def from_positions(cls, df: pd.DataFrame, positions: Iterable[int], *, name="selection"):
         selected = tuple(positions)
@@ -79,6 +89,50 @@ class InvestigationResult(ExplorerResult):
             raise KeyError(finding)
         selection = record["exceptions" if exceptions else "examples"]
         return df.iloc[selection["positions"]].copy()
+
+    def recompute(self, df: pd.DataFrame, **overrides):
+        """Reapply saved conventions and scope to the same source, with explicit budget overrides."""
+        from .availability import missingness
+        from .discovery import discover_dependencies
+        from .navigation import suggest_paths
+        from .patterns import value_patterns
+
+        operations = {
+            "missingness": missingness,
+            "dependencies": discover_dependencies,
+            "paths": suggest_paths,
+            "value_patterns": value_patterns,
+        }
+        if self.kind not in operations:
+            raise ValueError(
+                "Recompute an individual analysis section, not an overview or comparison"
+            )
+        if fingerprint(df) != self.payload["source"]["dataset_id"]:
+            raise ValueError("Source dataset differs; use a Recipe for a new delivery")
+        scope_data = self.payload["scope"]
+        scoped = scope_data.get("selection_positions")
+        scope = (
+            Scope(
+                self.payload["source"]["dataset_id"],
+                tuple(scoped),
+                scope_data["name"],
+                scope_data.get("parent"),
+            )
+            if scoped is not None
+            else None
+        )
+        missing = {
+            c: [_restore_scalar(v) for v in values]
+            for c, values in self.payload["missing_convention"]["sentinels"].items()
+        }
+        parameters = {
+            **self.payload["parameters"],
+            "scope": scope,
+            "missing": missing,
+            "table_id": self.payload["source"]["table_id"],
+            **overrides,
+        }
+        return operations[self.kind](df, **parameters)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]):
@@ -125,6 +179,8 @@ def prepare(df, *, scope=None, missing=None, table_id="table"):
     identity = fingerprint(df)
     if scope is not None and scope.dataset_id != identity:
         raise ValueError("Scope belongs to a different ordered dataset")
+    if scope is not None and any(p >= len(df) for p in scope.positions):
+        raise ValueError("Scope positions exceed the source population")
     positions = np.array(scope.positions if scope else range(len(df)), dtype=np.int64)
     frame = df.iloc[positions]
     missing = missing or {}
@@ -158,6 +214,7 @@ def prepare(df, *, scope=None, missing=None, table_id="table"):
             "evaluated_rows": len(frame),
             "restriction_excluded_rows": len(df) - len(frame),
             "positions_are": "zero_based_source_positions",
+            "selection_positions": list(scope.positions) if scope else None,
         },
         "missing_convention": {
             "native_missing": True,
@@ -202,7 +259,14 @@ def finding(
         "measurements": metrics,
         "examples": selection(positions, len(positions), example_limit),
         "exceptions": selection(exceptions, len(exceptions), example_limit),
-        "selector": {"dataset_id": base["source"]["dataset_id"], **(selector or {})},
+        "selector": {
+            "dataset_id": base["source"]["dataset_id"],
+            "scope_ref": "scope",
+            "parameters_ref": "parameters",
+            "missing_convention_ref": "missing_convention",
+            "finding_id": f"f{len(base['findings'])}",
+            **(selector or {}),
+        },
     }
     base["findings"].append(record)
     return record
@@ -210,3 +274,25 @@ def finding(
 
 def result(kind, base):
     return InvestigationResult(kind, base, schema_version="1.0")
+
+
+def _restore_scalar(value):
+    kind = value["type"]
+    raw = value.get("value")
+    if kind == "missing":
+        return None
+    if kind in {"boolean", "string"}:
+        return raw
+    if kind == "integer":
+        return int(raw)
+    if kind == "float":
+        return float.fromhex(raw)
+    if kind == "date":
+        from datetime import date
+
+        return date.fromisoformat(raw)
+    if kind in {"datetime_naive", "datetime_aware"}:
+        return pd.Timestamp(raw)
+    if kind == "timedelta":
+        return pd.Timedelta(int(raw), unit="ns")
+    raise ValueError(f"Unsupported saved sentinel: {kind}")

@@ -50,6 +50,11 @@ dependencies = [
     { name = "pandas" },
 ]
 
+[package.optional-dependencies]
+unicode = [
+    { name = "wcwidth" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "hypothesis" },
@@ -64,7 +69,9 @@ dev = [
 requires-dist = [
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "wcwidth", marker = "extra == 'unicode'", specifier = ">=0.2" },
 ]
+provides-extras = ["unicode"]
 
 [package.metadata.requires-dev]
 dev = [

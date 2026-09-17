@@ -1156,7 +1156,8 @@
     "parent": null,
     "evaluated_rows": 8,
     "restriction_excluded_rows": 0,
-    "positions_are": "zero_based_source_positions"
+    "positions_are": "zero_based_source_positions",
+    "selection_positions": null
   },
   "coverage": {
     "pair_candidates": 15,

@@ -28,14 +28,16 @@ invalidates inspection. Identical rows are analytically interchangeable.
 
 Use `Scope.from_positions(df, positions, name=...)`; positions are unique,
 nonnegative, in bounds, and normalized to source order. `refine` requires a subset
-of its parent's source positions and records the parent name. Analysis reports
+of its parent's source positions and records the parent name. Saved scopes include selected source positions, not source cell values. Analysis reports
 input rows, evaluated rows and restrictions separately. A scope is not an implicit
 sample: search budgets and display limits never change its row population.
 
 Examples and exceptions contain at most `example_limit` positions (default 5),
 selected in source order. `total`, `omitted`, `limit`, and selection method accompany
 each. `inspect` returns those saved representative rows, not every matching row;
-rerun with a larger `example_limit` for more evidence. Dependency exception groups
+`result.recompute(df, example_limit=len(df))` replays saved parameters, missing
+conventions and scope to recover all examples before calling `inspect` again.
+Recomputation applies to individual discovery sections, not an overview/comparison. Dependency exception groups
 also report omitted groups and rows. Findings never embed entire source rows.
 
 ## Missing conventions

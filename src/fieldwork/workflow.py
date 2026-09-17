@@ -39,9 +39,26 @@ def explore(df, dimensions=None, *, discovery=None, **options):
     }
     if paths.best:
         base["sections"]["census"] = paths["paths"][0]["preview"]
-    base["findings"] = availability["findings"] + dependencies["findings"] + paths["findings"]
-    for i, record in enumerate(base["findings"]):
-        base["findings"][i] = {**record, "id": f"f{i}"}
+    base["findings"] = []
+    for section, analysis in [
+        ("missingness", availability),
+        ("dependencies", dependencies),
+        ("paths", paths),
+    ]:
+        for record in analysis["findings"]:
+            base["findings"].append(
+                {
+                    **record,
+                    "id": f"f{len(base['findings'])}",
+                    "selector": {
+                        **record["selector"],
+                        "analysis_section": section,
+                        "scope_ref": f"sections.{section}.scope",
+                        "parameters_ref": f"sections.{section}.parameters",
+                        "missing_convention_ref": f"sections.{section}.missing_convention",
+                    },
+                }
+            )
     return result("overview", base)
 
 

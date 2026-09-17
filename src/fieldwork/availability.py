@@ -44,6 +44,7 @@ def missingness(
         df, scope=scope, missing=missing, table_id=table_id
     )
     n = len(frame)
+    codes = {c: np.where(present[c], values, -1) for c, values in codes.items()}
     base["parameters"] = {
         "features": selected,
         "by": contexts,
@@ -184,7 +185,12 @@ def missingness(
 
         base["contexts"].append(
             {
-                "values": {c: normalize_scalar(frame[c].iloc[rows[0]]).to_dict() for c in contexts},
+                "values": {
+                    c: normalize_scalar(
+                        frame[c].iloc[rows[0]] if present[c][rows[0]] else None
+                    ).to_dict()
+                    for c in contexts
+                },
                 "rows": len(rows),
                 "availability": [
                     {

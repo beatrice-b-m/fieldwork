@@ -60,7 +60,12 @@ def discover_dependencies(
         for rows in list(groups.values())[:max_contexts]:
             partitions.append(
                 (
-                    {c: normalize_scalar(frame[c].iloc[rows[0]]).to_dict() for c in contexts},
+                    {
+                        c: normalize_scalar(
+                            frame[c].iloc[rows[0]] if present[c][rows[0]] else None
+                        ).to_dict()
+                        for c in contexts
+                    },
                     np.array(rows, dtype=np.int64),
                 )
             )
@@ -113,7 +118,9 @@ def discover_dependencies(
                             exception_groups.append(
                                 {
                                     "key_values": {
-                                        c: normalize_scalar(frame[c].iloc[rows[0]]).to_dict()
+                                        c: normalize_scalar(
+                                            frame[c].iloc[rows[0]] if present[c][rows[0]] else None
+                                        ).to_dict()
                                         for c in key
                                     },
                                     "rows": len(rows),

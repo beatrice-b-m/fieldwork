@@ -291,3 +291,24 @@ def test_availability_matches_boolean_oracle():
                 assert f["exceptions"]["total"] == sum(a and not b for a, b in rows)
 
     check()
+
+
+def test_saved_recomputation_restores_scope_and_sentinels(frame):
+    scope = fw.Scope.from_positions(frame, [0, 2, 5])
+    r = fw.missingness(frame, features=["a"], scope=scope, missing={"a": [5]}, example_limit=0)
+    restored = fw.InvestigationResult.from_dict(json.loads(json.dumps(r.to_dict())))
+    replay = restored.recompute(frame, example_limit=len(frame))
+    assert replay["availability"] == r["availability"]
+    assert replay.inspect(frame, 0, exceptions=True).equals(frame.iloc[[2, 5]])
+    with pytest.raises(ValueError):
+        restored.recompute(frame.iloc[::-1])
+
+
+def test_scope_constructor_and_missing_contexts():
+    with pytest.raises(ValueError):
+        fw.Scope("identity", (-1,))
+    df = pd.DataFrame({"site": [None, "unknown", "A"], "value": [1, 2, 3]})
+    r = fw.missingness(df, by=["site"], missing={"site": ["unknown"]})
+    assert r["coverage"]["contexts_total"] == 2
+    assert r["contexts"][0]["values"]["site"] == {"type": "missing"}
+    assert r["contexts"][0]["rows"] == 2
