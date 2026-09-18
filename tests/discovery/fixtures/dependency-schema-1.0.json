@@ -1,0 +1,1221 @@
+{
+  "schema_version": "1.0",
+  "stability": "unstable",
+  "kind": "dependencies",
+  "status": "computed",
+  "source": {
+    "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+    "table_id": "table",
+    "input_rows": 4
+  },
+  "scope": {
+    "name": "input",
+    "parent": null,
+    "evaluated_rows": 4,
+    "restriction_excluded_rows": 0,
+    "positions_are": "zero_based_source_positions",
+    "selection_positions": null
+  },
+  "missing_convention": {
+    "native_missing": true,
+    "sentinels": {
+      "X": [],
+      "Y": []
+    },
+    "numeric_sentinel_equality": true
+  },
+  "features": [
+    {
+      "table": "table",
+      "column": "X"
+    },
+    {
+      "table": "table",
+      "column": "Y"
+    }
+  ],
+  "findings": [
+    {
+      "id": "f0",
+      "pattern": "exact_dependency",
+      "statement": "X determines Y",
+      "features": [
+        {
+          "table": "table",
+          "column": "X"
+        },
+        {
+          "table": "table",
+          "column": "Y"
+        }
+      ],
+      "counting_unit": "rows",
+      "structure": {},
+      "measurements": {
+        "determinant": [
+          "X"
+        ],
+        "target": "Y",
+        "context": null,
+        "exact": true,
+        "modal_accuracy": 1.0,
+        "repair_rows": 0,
+        "evaluated_rows": 2,
+        "missing_excluded_rows": 2,
+        "evaluated_groups": 2,
+        "violating_groups": 0,
+        "affected_rows": 0,
+        "group_violation_rate": 0.0,
+        "repeated_groups": 0,
+        "exception_groups": [],
+        "omitted_exception_groups": 0
+      },
+      "examples": {
+        "positions": [
+          0,
+          2
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "selector": {
+        "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+        "scope_ref": "scope",
+        "parameters_ref": "parameters",
+        "missing_convention_ref": "missing_convention",
+        "finding_id": "f0",
+        "operation": "dependency",
+        "determinant": [
+          "X"
+        ],
+        "target": "Y",
+        "context": null,
+        "dropna": true
+      }
+    },
+    {
+      "id": "f1",
+      "pattern": "exact_dependency",
+      "statement": "Y determines X",
+      "features": [
+        {
+          "table": "table",
+          "column": "Y"
+        },
+        {
+          "table": "table",
+          "column": "X"
+        }
+      ],
+      "counting_unit": "rows",
+      "structure": {},
+      "measurements": {
+        "determinant": [
+          "Y"
+        ],
+        "target": "X",
+        "context": null,
+        "exact": true,
+        "modal_accuracy": 1.0,
+        "repair_rows": 0,
+        "evaluated_rows": 2,
+        "missing_excluded_rows": 2,
+        "evaluated_groups": 2,
+        "violating_groups": 0,
+        "affected_rows": 0,
+        "group_violation_rate": 0.0,
+        "repeated_groups": 0,
+        "exception_groups": [],
+        "omitted_exception_groups": 0
+      },
+      "examples": {
+        "positions": [
+          0,
+          2
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "selector": {
+        "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+        "scope_ref": "scope",
+        "parameters_ref": "parameters",
+        "missing_convention_ref": "missing_convention",
+        "finding_id": "f1",
+        "operation": "dependency",
+        "determinant": [
+          "Y"
+        ],
+        "target": "X",
+        "context": null,
+        "dropna": true
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "columns": [
+        "X"
+      ],
+      "evaluated_rows": 4,
+      "missing_excluded_rows": 0,
+      "groups": 2,
+      "unique": false,
+      "uniqueness": 0.5,
+      "repeated_groups": 2,
+      "repeated_rows": 4,
+      "determines": [
+        "Y"
+      ],
+      "id": "key0",
+      "graph_views": [
+        "g0",
+        "g1"
+      ]
+    },
+    {
+      "columns": [
+        "Y"
+      ],
+      "evaluated_rows": 2,
+      "missing_excluded_rows": 2,
+      "groups": 2,
+      "unique": true,
+      "uniqueness": 1.0,
+      "repeated_groups": 0,
+      "repeated_rows": 0,
+      "determines": [
+        "X"
+      ],
+      "id": "key1",
+      "graph_views": [
+        "g1"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "determinant": [
+        "X"
+      ],
+      "target": "Y",
+      "context": null,
+      "exact": true,
+      "modal_accuracy": 1.0,
+      "repair_rows": 0,
+      "evaluated_rows": 2,
+      "missing_excluded_rows": 2,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "affected_rows": 0,
+      "group_violation_rate": 0.0,
+      "repeated_groups": 0,
+      "exception_groups": [],
+      "omitted_exception_groups": 0
+    },
+    {
+      "determinant": [
+        "Y"
+      ],
+      "target": "X",
+      "context": null,
+      "exact": true,
+      "modal_accuracy": 1.0,
+      "repair_rows": 0,
+      "evaluated_rows": 2,
+      "missing_excluded_rows": 2,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "affected_rows": 0,
+      "group_violation_rate": 0.0,
+      "repeated_groups": 0,
+      "exception_groups": [],
+      "omitted_exception_groups": 0
+    }
+  ],
+  "grain_views": [
+    {
+      "id": "g0",
+      "candidate_ids": [
+        "key0"
+      ],
+      "population": {
+        "input_rows": 4,
+        "scope_rows": 4,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "missing_excluded_rows": 0,
+        "positions": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "rule": "complete_cases_of_candidate_components"
+      },
+      "grain": {
+        "schema_version": "0.3",
+        "stability": "unstable",
+        "kind": "grain",
+        "status": "computed",
+        "source": {
+          "table_id": "table",
+          "rows": 4,
+          "columns": 2,
+          "dtypes": [
+            {
+              "column": {
+                "type": "string",
+                "value": "X"
+              },
+              "dtype": "int64"
+            },
+            {
+              "column": {
+                "type": "string",
+                "value": "Y"
+              },
+              "dtype": "str"
+            }
+          ],
+          "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+          "input_rows": 4
+        },
+        "scopes": [
+          {
+            "scope_id": "s3:key0:(3, 'Y', ())",
+            "input_rows": 4,
+            "missing_excluded_rows": 2,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 2,
+            "retained_rows": 2,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "name": "key0",
+            "columns": [
+              {
+                "type": "string",
+                "value": "X"
+              }
+            ]
+          }
+        ],
+        "dependencies": [
+          {
+            "key_name": "key0",
+            "key_columns": [
+              {
+                "type": "string",
+                "value": "X"
+              }
+            ],
+            "target": {
+              "type": "string",
+              "value": "Y"
+            },
+            "scope_id": "s3:key0:(3, 'Y', ())",
+            "holds": true,
+            "undefined_reason": null,
+            "evaluated_groups": 2,
+            "violating_groups": 0,
+            "group_rate": 0.0,
+            "affected_rows": 0,
+            "evaluated_rows": 2,
+            "row_rate": 0.0,
+            "singleton_groups": 2,
+            "repeated_groups": 0
+          }
+        ],
+        "graph": {
+          "status": "computed",
+          "scope": {
+            "scope_id": "s3:graph",
+            "input_rows": 4,
+            "missing_excluded_rows": 0,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 4,
+            "retained_rows": 4,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          },
+          "missingness": "complete_candidate_keys",
+          "nodes": [
+            {
+              "id": "g0",
+              "keys": [
+                "key0"
+              ],
+              "evaluated_rows": 4,
+              "evaluated_groups": 2,
+              "singleton_groups": 0,
+              "repeated_groups": 2,
+              "attributes": []
+            }
+          ],
+          "edges": [],
+          "key_relationships": [],
+          "dependencies": [
+            {
+              "key_name": "key0",
+              "target": {
+                "type": "string",
+                "value": "X"
+              },
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_rows": 4,
+              "evaluated_groups": 2,
+              "singleton_groups": 0,
+              "repeated_groups": 2,
+              "violating_groups": 0,
+              "affected_rows": 0,
+              "group_rate": 0.0,
+              "row_rate": 0.0,
+              "scope_id": "s3:graph",
+              "scope_compatible": true,
+              "scope": {
+                "scope_id": "s3:graph",
+                "input_rows": 4,
+                "missing_excluded_rows": 0,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 4,
+                "retained_rows": 4,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            },
+            {
+              "key_name": "key0",
+              "key_columns": [
+                {
+                  "type": "string",
+                  "value": "X"
+                }
+              ],
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "scope_id": "s3:graph:target:1",
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_groups": 2,
+              "violating_groups": 0,
+              "group_rate": 0.0,
+              "affected_rows": 0,
+              "evaluated_rows": 2,
+              "row_rate": 0.0,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "scope_compatible": false,
+              "scope": {
+                "scope_id": "s3:graph:target:1",
+                "input_rows": 4,
+                "missing_excluded_rows": 2,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 2,
+                "retained_rows": 2,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            }
+          ],
+          "assignments": [
+            {
+              "target": {
+                "type": "string",
+                "value": "X"
+              },
+              "nodes": [
+                "g0"
+              ],
+              "reason": null,
+              "key_component": true
+            },
+            {
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "nodes": [],
+              "reason": "different_target_population",
+              "key_component": false
+            }
+          ],
+          "unplaced": [
+            {
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "reason": "different_target_population"
+            }
+          ]
+        },
+        "targets": [
+          {
+            "target": {
+              "type": "string",
+              "value": "Y"
+            },
+            "determining_keys": [
+              "key0"
+            ],
+            "assignment": "compatible",
+            "cross_key_comparison": "comparable",
+            "coarsest_candidates": [
+              "key0"
+            ],
+            "equivalent_determinants": [],
+            "incomparable_candidates": []
+          }
+        ],
+        "warnings": [],
+        "scope_metadata": null,
+        "analysis_context": {
+          "source": {
+            "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+            "table_id": "table",
+            "input_rows": 4
+          },
+          "scope": {
+            "name": "input",
+            "parent": null,
+            "evaluated_rows": 4,
+            "restriction_excluded_rows": 0,
+            "positions_are": "zero_based_source_positions",
+            "selection_positions": null
+          },
+          "missing_convention": {
+            "native_missing": true,
+            "sentinels": {
+              "X": [],
+              "Y": []
+            },
+            "numeric_sentinel_equality": true
+          }
+        }
+      }
+    },
+    {
+      "id": "g1",
+      "candidate_ids": [
+        "key0",
+        "key1"
+      ],
+      "population": {
+        "input_rows": 4,
+        "scope_rows": 4,
+        "evaluated_rows": 2,
+        "restriction_excluded_rows": 0,
+        "missing_excluded_rows": 2,
+        "positions": [
+          0,
+          2
+        ],
+        "rule": "complete_cases_of_candidate_components"
+      },
+      "grain": {
+        "schema_version": "0.3",
+        "stability": "unstable",
+        "kind": "grain",
+        "status": "computed",
+        "source": {
+          "table_id": "table",
+          "rows": 4,
+          "columns": 2,
+          "dtypes": [
+            {
+              "column": {
+                "type": "string",
+                "value": "X"
+              },
+              "dtype": "int64"
+            },
+            {
+              "column": {
+                "type": "string",
+                "value": "Y"
+              },
+              "dtype": "str"
+            }
+          ],
+          "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+          "input_rows": 4
+        },
+        "scopes": [
+          {
+            "scope_id": "s3:key0:(3, 'Y', ())",
+            "input_rows": 4,
+            "missing_excluded_rows": 2,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 2,
+            "retained_rows": 2,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          },
+          {
+            "scope_id": "s3:key1:(3, 'X', ())",
+            "input_rows": 4,
+            "missing_excluded_rows": 2,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 2,
+            "retained_rows": 2,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "name": "key0",
+            "columns": [
+              {
+                "type": "string",
+                "value": "X"
+              }
+            ]
+          },
+          {
+            "name": "key1",
+            "columns": [
+              {
+                "type": "string",
+                "value": "Y"
+              }
+            ]
+          }
+        ],
+        "dependencies": [
+          {
+            "key_name": "key0",
+            "key_columns": [
+              {
+                "type": "string",
+                "value": "X"
+              }
+            ],
+            "target": {
+              "type": "string",
+              "value": "Y"
+            },
+            "scope_id": "s3:key0:(3, 'Y', ())",
+            "holds": true,
+            "undefined_reason": null,
+            "evaluated_groups": 2,
+            "violating_groups": 0,
+            "group_rate": 0.0,
+            "affected_rows": 0,
+            "evaluated_rows": 2,
+            "row_rate": 0.0,
+            "singleton_groups": 2,
+            "repeated_groups": 0
+          },
+          {
+            "key_name": "key1",
+            "key_columns": [
+              {
+                "type": "string",
+                "value": "Y"
+              }
+            ],
+            "target": {
+              "type": "string",
+              "value": "X"
+            },
+            "scope_id": "s3:key1:(3, 'X', ())",
+            "holds": true,
+            "undefined_reason": null,
+            "evaluated_groups": 2,
+            "violating_groups": 0,
+            "group_rate": 0.0,
+            "affected_rows": 0,
+            "evaluated_rows": 2,
+            "row_rate": 0.0,
+            "singleton_groups": 2,
+            "repeated_groups": 0
+          }
+        ],
+        "graph": {
+          "status": "computed",
+          "scope": {
+            "scope_id": "s3:graph",
+            "input_rows": 4,
+            "missing_excluded_rows": 2,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 2,
+            "retained_rows": 2,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          },
+          "missingness": "complete_candidate_keys",
+          "nodes": [
+            {
+              "id": "g0",
+              "keys": [
+                "key0",
+                "key1"
+              ],
+              "evaluated_rows": 2,
+              "evaluated_groups": 2,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "attributes": []
+            }
+          ],
+          "edges": [],
+          "key_relationships": [
+            {
+              "determinant": "key0",
+              "dependent": "key1",
+              "holds": true
+            },
+            {
+              "determinant": "key1",
+              "dependent": "key0",
+              "holds": true
+            }
+          ],
+          "dependencies": [
+            {
+              "key_name": "key0",
+              "target": {
+                "type": "string",
+                "value": "X"
+              },
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_rows": 2,
+              "evaluated_groups": 2,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "violating_groups": 0,
+              "affected_rows": 0,
+              "group_rate": 0.0,
+              "row_rate": 0.0,
+              "scope_id": "s3:graph",
+              "scope_compatible": true,
+              "scope": {
+                "scope_id": "s3:graph",
+                "input_rows": 4,
+                "missing_excluded_rows": 2,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 2,
+                "retained_rows": 2,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            },
+            {
+              "key_name": "key0",
+              "key_columns": [
+                {
+                  "type": "string",
+                  "value": "X"
+                }
+              ],
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "scope_id": "s3:graph",
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_groups": 2,
+              "violating_groups": 0,
+              "group_rate": 0.0,
+              "affected_rows": 0,
+              "evaluated_rows": 2,
+              "row_rate": 0.0,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "scope_compatible": true,
+              "scope": {
+                "scope_id": "s3:graph",
+                "input_rows": 4,
+                "missing_excluded_rows": 2,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 2,
+                "retained_rows": 2,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            },
+            {
+              "key_name": "key1",
+              "key_columns": [
+                {
+                  "type": "string",
+                  "value": "Y"
+                }
+              ],
+              "target": {
+                "type": "string",
+                "value": "X"
+              },
+              "scope_id": "s3:graph",
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_groups": 2,
+              "violating_groups": 0,
+              "group_rate": 0.0,
+              "affected_rows": 0,
+              "evaluated_rows": 2,
+              "row_rate": 0.0,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "scope_compatible": true,
+              "scope": {
+                "scope_id": "s3:graph",
+                "input_rows": 4,
+                "missing_excluded_rows": 2,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 2,
+                "retained_rows": 2,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            },
+            {
+              "key_name": "key1",
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "holds": true,
+              "undefined_reason": null,
+              "evaluated_rows": 2,
+              "evaluated_groups": 2,
+              "singleton_groups": 2,
+              "repeated_groups": 0,
+              "violating_groups": 0,
+              "affected_rows": 0,
+              "group_rate": 0.0,
+              "row_rate": 0.0,
+              "scope_id": "s3:graph",
+              "scope_compatible": true,
+              "scope": {
+                "scope_id": "s3:graph",
+                "input_rows": 4,
+                "missing_excluded_rows": 2,
+                "restriction_excluded_rows": 0,
+                "evaluated_rows": 2,
+                "retained_rows": 2,
+                "conditional": false,
+                "lineage": [
+                  "input"
+                ]
+              }
+            }
+          ],
+          "assignments": [
+            {
+              "target": {
+                "type": "string",
+                "value": "X"
+              },
+              "nodes": [
+                "g0"
+              ],
+              "reason": null,
+              "key_component": true
+            },
+            {
+              "target": {
+                "type": "string",
+                "value": "Y"
+              },
+              "nodes": [
+                "g0"
+              ],
+              "reason": null,
+              "key_component": true
+            }
+          ],
+          "unplaced": []
+        },
+        "targets": [
+          {
+            "target": {
+              "type": "string",
+              "value": "X"
+            },
+            "determining_keys": [
+              "key1"
+            ],
+            "assignment": "compatible",
+            "cross_key_comparison": "comparable",
+            "coarsest_candidates": [
+              "key1"
+            ],
+            "equivalent_determinants": [],
+            "incomparable_candidates": []
+          },
+          {
+            "target": {
+              "type": "string",
+              "value": "Y"
+            },
+            "determining_keys": [
+              "key0"
+            ],
+            "assignment": "compatible",
+            "cross_key_comparison": "comparable",
+            "coarsest_candidates": [
+              "key0"
+            ],
+            "equivalent_determinants": [],
+            "incomparable_candidates": []
+          }
+        ],
+        "warnings": [],
+        "scope_metadata": null,
+        "analysis_context": {
+          "source": {
+            "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+            "table_id": "table",
+            "input_rows": 4
+          },
+          "scope": {
+            "name": "input",
+            "parent": null,
+            "evaluated_rows": 4,
+            "restriction_excluded_rows": 0,
+            "positions_are": "zero_based_source_positions",
+            "selection_positions": null
+          },
+          "missing_convention": {
+            "native_missing": true,
+            "sentinels": {
+              "X": [],
+              "Y": []
+            },
+            "numeric_sentinel_equality": true
+          }
+        }
+      }
+    }
+  ],
+  "exact_grain": {
+    "schema_version": "0.3",
+    "stability": "unstable",
+    "kind": "grain",
+    "status": "computed",
+    "source": {
+      "table_id": "table",
+      "rows": 4,
+      "columns": 2,
+      "dtypes": [
+        {
+          "column": {
+            "type": "string",
+            "value": "X"
+          },
+          "dtype": "int64"
+        },
+        {
+          "column": {
+            "type": "string",
+            "value": "Y"
+          },
+          "dtype": "str"
+        }
+      ],
+      "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+      "input_rows": 4
+    },
+    "scopes": [
+      {
+        "scope_id": "s3:key0:(3, 'Y', ())",
+        "input_rows": 4,
+        "missing_excluded_rows": 2,
+        "restriction_excluded_rows": 0,
+        "evaluated_rows": 2,
+        "retained_rows": 2,
+        "conditional": false,
+        "lineage": [
+          "input"
+        ]
+      }
+    ],
+    "keys": [
+      {
+        "name": "key0",
+        "columns": [
+          {
+            "type": "string",
+            "value": "X"
+          }
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "key_name": "key0",
+        "key_columns": [
+          {
+            "type": "string",
+            "value": "X"
+          }
+        ],
+        "target": {
+          "type": "string",
+          "value": "Y"
+        },
+        "scope_id": "s3:key0:(3, 'Y', ())",
+        "holds": true,
+        "undefined_reason": null,
+        "evaluated_groups": 2,
+        "violating_groups": 0,
+        "group_rate": 0.0,
+        "affected_rows": 0,
+        "evaluated_rows": 2,
+        "row_rate": 0.0,
+        "singleton_groups": 2,
+        "repeated_groups": 0
+      }
+    ],
+    "graph": {
+      "status": "computed",
+      "scope": {
+        "scope_id": "s3:graph",
+        "input_rows": 4,
+        "missing_excluded_rows": 0,
+        "restriction_excluded_rows": 0,
+        "evaluated_rows": 4,
+        "retained_rows": 4,
+        "conditional": false,
+        "lineage": [
+          "input"
+        ]
+      },
+      "missingness": "complete_candidate_keys",
+      "nodes": [
+        {
+          "id": "g0",
+          "keys": [
+            "key0"
+          ],
+          "evaluated_rows": 4,
+          "evaluated_groups": 2,
+          "singleton_groups": 0,
+          "repeated_groups": 2,
+          "attributes": []
+        }
+      ],
+      "edges": [],
+      "key_relationships": [],
+      "dependencies": [
+        {
+          "key_name": "key0",
+          "target": {
+            "type": "string",
+            "value": "X"
+          },
+          "holds": true,
+          "undefined_reason": null,
+          "evaluated_rows": 4,
+          "evaluated_groups": 2,
+          "singleton_groups": 0,
+          "repeated_groups": 2,
+          "violating_groups": 0,
+          "affected_rows": 0,
+          "group_rate": 0.0,
+          "row_rate": 0.0,
+          "scope_id": "s3:graph",
+          "scope_compatible": true,
+          "scope": {
+            "scope_id": "s3:graph",
+            "input_rows": 4,
+            "missing_excluded_rows": 0,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 4,
+            "retained_rows": 4,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          }
+        },
+        {
+          "key_name": "key0",
+          "key_columns": [
+            {
+              "type": "string",
+              "value": "X"
+            }
+          ],
+          "target": {
+            "type": "string",
+            "value": "Y"
+          },
+          "scope_id": "s3:graph:target:1",
+          "holds": true,
+          "undefined_reason": null,
+          "evaluated_groups": 2,
+          "violating_groups": 0,
+          "group_rate": 0.0,
+          "affected_rows": 0,
+          "evaluated_rows": 2,
+          "row_rate": 0.0,
+          "singleton_groups": 2,
+          "repeated_groups": 0,
+          "scope_compatible": false,
+          "scope": {
+            "scope_id": "s3:graph:target:1",
+            "input_rows": 4,
+            "missing_excluded_rows": 2,
+            "restriction_excluded_rows": 0,
+            "evaluated_rows": 2,
+            "retained_rows": 2,
+            "conditional": false,
+            "lineage": [
+              "input"
+            ]
+          }
+        }
+      ],
+      "assignments": [
+        {
+          "target": {
+            "type": "string",
+            "value": "X"
+          },
+          "nodes": [
+            "g0"
+          ],
+          "reason": null,
+          "key_component": true
+        },
+        {
+          "target": {
+            "type": "string",
+            "value": "Y"
+          },
+          "nodes": [],
+          "reason": "different_target_population",
+          "key_component": false
+        }
+      ],
+      "unplaced": [
+        {
+          "target": {
+            "type": "string",
+            "value": "Y"
+          },
+          "reason": "different_target_population"
+        }
+      ]
+    },
+    "targets": [
+      {
+        "target": {
+          "type": "string",
+          "value": "Y"
+        },
+        "determining_keys": [
+          "key0"
+        ],
+        "assignment": "compatible",
+        "cross_key_comparison": "comparable",
+        "coarsest_candidates": [
+          "key0"
+        ],
+        "equivalent_determinants": [],
+        "incomparable_candidates": []
+      }
+    ],
+    "warnings": [],
+    "scope_metadata": null,
+    "analysis_context": {
+      "source": {
+        "dataset_id": "d13e6ea7404e39538126fe20ef74824cb88ed33d10b3d0a1015ade85997cef4c",
+        "table_id": "table",
+        "input_rows": 4
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "missing_convention": {
+        "native_missing": true,
+        "sentinels": {
+          "X": [],
+          "Y": []
+        },
+        "numeric_sentinel_equality": true
+      }
+    }
+  },
+  "graph_selection": {
+    "strategy": "candidate_population_anchors_with_superset_candidates",
+    "primary_view": "g0",
+    "excluded": []
+  },
+  "coverage": {
+    "candidate_space": 2,
+    "candidates_evaluated": 2,
+    "dependency_tests": 2,
+    "contexts_total": 0,
+    "contexts_evaluated": 0,
+    "search_order": "determinant_size_then_input_column_order"
+  },
+  "parameters": {
+    "features": [
+      "X",
+      "Y"
+    ],
+    "max_key_size": 1,
+    "max_candidates": 100,
+    "min_accuracy": 0.95,
+    "by": [],
+    "max_contexts": 32,
+    "dropna": true,
+    "example_limit": 5
+  }
+}

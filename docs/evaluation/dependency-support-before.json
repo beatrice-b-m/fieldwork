@@ -1,0 +1,2340 @@
+{
+  "report_version": 1,
+  "fixture_harness_version": 1,
+  "seed": 721,
+  "source_commit": "16cca830837f50b5c9140585ae2b3f6cdf7df878",
+  "python": "3.11.14",
+  "pandas": "3.0.5",
+  "numpy": "2.4.6",
+  "cases": [
+    {
+      "case": "sparse_target",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [
+            "Y"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 2,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "325ed9feb37db7d10fb32459ddb9ef280a2ab986d9e1878e82f79bca497d1152"
+    },
+    {
+      "case": "singleton_inflation",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 100,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 100,
+          "missing_excluded_rows": 0,
+          "groups": 99,
+          "unique": false,
+          "uniqueness": 0.99,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": false,
+          "evaluated_rows": 100,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 99,
+          "repeated_groups": 1,
+          "repair_rows": 1,
+          "modal_accuracy": 0.99,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "ac4468b8c88cf64ec0901632808d8feabbf72fb47feb220a545953cdffba081a"
+    },
+    {
+      "case": "empty",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 0,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 0,
+          "groups": 0,
+          "unique": false,
+          "uniqueness": null,
+          "repeated_groups": 0,
+          "repeated_rows": 0,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "0a6491d62fc912fae44b689e7d0ca65ba1d6693715f8d354cf26009bb494d365"
+    },
+    {
+      "case": "missing_target",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "e8909584451ddb94860715d1e83d2a48cd44786014abb28b4df3efd2d7780a7e"
+    },
+    {
+      "case": "missing_category",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1,
+        "dropna": false
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": false,
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 2,
+          "repeated_groups": 2,
+          "repair_rows": 2,
+          "modal_accuracy": 0.5,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "b4052a1f7ffee9721f0a17896fa185cfb16e83a9a2ddcbcf6417820f2b7ac1ef"
+    },
+    {
+      "case": "sentinel_category",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1,
+        "dropna": false,
+        "missing": {
+          "Y": [
+            "absent"
+          ]
+        }
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 1,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": false,
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 2,
+          "repeated_groups": 2,
+          "repair_rows": 2,
+          "modal_accuracy": 0.5,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "7c431e2c7a22dc278562728238695bf84a1e3af694c56b7b7323007aee9c9ddb"
+    },
+    {
+      "case": "conditional_composite",
+      "parameters": {
+        "max_key_size": 2,
+        "max_candidates": 6,
+        "by": [
+          "C"
+        ]
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 5,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 6,
+        "candidates_evaluated": 6,
+        "dependency_tests": 36,
+        "contexts_total": 3,
+        "contexts_evaluated": 3,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ],
+        [
+          "Y"
+        ],
+        [
+          "C"
+        ],
+        [
+          "X",
+          "Y"
+        ],
+        [
+          "X",
+          "C"
+        ],
+        [
+          "Y",
+          "C"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "C"
+        ],
+        [
+          "Y"
+        ],
+        [
+          "X"
+        ],
+        [
+          "X",
+          "Y"
+        ],
+        [
+          "X",
+          "C"
+        ],
+        [
+          "Y",
+          "C"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [
+            "Y"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0",
+            "g3",
+            "g4"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "Y"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 3,
+          "unique": false,
+          "uniqueness": 0.75,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "X",
+            "C"
+          ],
+          "id": "key1",
+          "graph_views": [
+            "g1",
+            "g3",
+            "g5"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "C"
+          ],
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.6666666666666666,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "X",
+            "Y"
+          ],
+          "id": "key2",
+          "graph_views": [
+            "g2",
+            "g4",
+            "g5"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "X",
+            "Y"
+          ],
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.6666666666666666,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "C"
+          ],
+          "id": "key3",
+          "graph_views": [
+            "g3"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "X",
+            "C"
+          ],
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "groups": 2,
+          "unique": true,
+          "uniqueness": 1.0,
+          "repeated_groups": 0,
+          "repeated_rows": 0,
+          "determines": [
+            "Y"
+          ],
+          "id": "key4",
+          "graph_views": [
+            "g4"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "Y",
+            "C"
+          ],
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "groups": 2,
+          "unique": true,
+          "uniqueness": 1.0,
+          "repeated_groups": 0,
+          "repeated_rows": 0,
+          "determines": [
+            "X"
+          ],
+          "id": "key5",
+          "graph_views": [
+            "g5"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 2,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": false,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 1,
+          "modal_accuracy": 0.5,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 1,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 2,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 2,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 1,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 2,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 2,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 1,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 1,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "Y"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "Y"
+          ],
+          "target": "C",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "C"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X",
+            "C"
+          ],
+          "target": "Y",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y",
+            "C"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y",
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "missing"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y",
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "rare"
+            }
+          },
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 0,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y",
+            "C"
+          ],
+          "target": "X",
+          "context": {
+            "C": {
+              "type": "string",
+              "value": "other"
+            }
+          },
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "ac4f960982e42c1de0ff373c21b36abc11f4a5ca10d5283395c3a8e8f822ea9c"
+    },
+    {
+      "case": "scoped",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1,
+        "scope": [
+          0,
+          1,
+          3,
+          4
+        ]
+      },
+      "scope": {
+        "name": "selection",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 1,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": [
+          0,
+          1,
+          3,
+          4
+        ]
+      },
+      "coverage": {
+        "candidate_space": 3,
+        "candidates_evaluated": 1,
+        "dependency_tests": 2,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 1,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.6666666666666666,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "Y",
+            "C"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 1,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 1,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "22a7cfed683377f9766b1e57c6ba9d66fe51963db52e2d3aa8ecc1f0e4aa6317"
+    },
+    {
+      "case": "zero_tests",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 1,
+        "max_dependency_tests": 0
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 2,
+        "candidates_evaluated": 1,
+        "dependency_tests": 0,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order",
+        "dependency_tests_possible": 1,
+        "dependency_tests_omitted": 1
+      },
+      "candidate_order": [
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [],
+      "graph_sha256": "325ed9feb37db7d10fb32459ddb9ef280a2ab986d9e1878e82f79bca497d1152"
+    },
+    {
+      "case": "partial_tests",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 3,
+        "max_dependency_tests": 2
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 5,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 3,
+        "candidates_evaluated": 3,
+        "dependency_tests": 2,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order",
+        "dependency_tests_possible": 6,
+        "dependency_tests_omitted": 4
+      },
+      "candidate_order": [
+        [
+          "X"
+        ],
+        [
+          "Y"
+        ],
+        [
+          "C"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ],
+        [
+          "C"
+        ],
+        [
+          "Y"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [
+            "Y"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "Y"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 3,
+          "unique": false,
+          "uniqueness": 0.75,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [],
+          "id": "key1",
+          "graph_views": [
+            "g1"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "C"
+          ],
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.6666666666666666,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [],
+          "id": "key2",
+          "graph_views": [
+            "g2"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 2,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": false,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 1,
+          "modal_accuracy": 0.5,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "7aac587222c04385d8faa935c78c6499888a28fd8aac7a4a8fff410439661b01"
+    },
+    {
+      "case": "permuted_partial_tests",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 3,
+        "max_dependency_tests": 2
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 5,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 3,
+        "candidates_evaluated": 3,
+        "dependency_tests": 2,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order",
+        "dependency_tests_possible": 6,
+        "dependency_tests_omitted": 4
+      },
+      "candidate_order": [
+        [
+          "Y"
+        ],
+        [
+          "C"
+        ],
+        [
+          "X"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "Y"
+        ],
+        [
+          "X"
+        ],
+        [
+          "C"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "Y"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 3,
+          "unique": false,
+          "uniqueness": 0.75,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "C",
+            "X"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "C"
+          ],
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.6666666666666666,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [],
+          "id": "key1",
+          "graph_views": [
+            "g2"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 1,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [],
+          "id": "key2",
+          "graph_views": [
+            "g1"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "C",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 3,
+          "evaluated_groups": 2,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 3,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 2,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "43b20712e67f63c0b0c8b8b2bbb2969e3024e295267ff1e3595f364f3286b6f4"
+    },
+    {
+      "case": "overlapping_grains",
+      "parameters": {
+        "max_key_size": 1,
+        "max_candidates": 3
+      },
+      "scope": {
+        "name": "input",
+        "parent": null,
+        "evaluated_rows": 4,
+        "restriction_excluded_rows": 0,
+        "positions_are": "zero_based_source_positions",
+        "selection_positions": null
+      },
+      "coverage": {
+        "candidate_space": 3,
+        "candidates_evaluated": 3,
+        "dependency_tests": 6,
+        "contexts_total": 0,
+        "contexts_evaluated": 0,
+        "search_order": "determinant_size_then_input_column_order"
+      },
+      "candidate_order": [
+        [
+          "X"
+        ],
+        [
+          "Y"
+        ],
+        [
+          "Z"
+        ]
+      ],
+      "presentation_order": [
+        [
+          "X"
+        ],
+        [
+          "Y"
+        ],
+        [
+          "Z"
+        ]
+      ],
+      "candidates": [
+        {
+          "columns": [
+            "X"
+          ],
+          "evaluated_rows": 4,
+          "missing_excluded_rows": 0,
+          "groups": 2,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 2,
+          "repeated_rows": 4,
+          "determines": [
+            "Y",
+            "Z"
+          ],
+          "id": "key0",
+          "graph_views": [
+            "g0",
+            "g1",
+            "g2"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "Y"
+          ],
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "groups": 1,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "X"
+          ],
+          "id": "key1",
+          "graph_views": [
+            "g1"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        },
+        {
+          "columns": [
+            "Z"
+          ],
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "groups": 1,
+          "unique": false,
+          "uniqueness": 0.5,
+          "repeated_groups": 1,
+          "repeated_rows": 2,
+          "determines": [
+            "X"
+          ],
+          "id": "key2",
+          "graph_views": [
+            "g2"
+          ],
+          "determines_with_repeated_support": null,
+          "global_targets_tested": null,
+          "global_targets_possible": null
+        }
+      ],
+      "dependencies": [
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "X"
+          ],
+          "target": "Z",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Y"
+          ],
+          "target": "Z",
+          "context": null,
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Z"
+          ],
+          "target": "X",
+          "context": null,
+          "exact": true,
+          "evaluated_rows": 2,
+          "missing_excluded_rows": 2,
+          "evaluated_groups": 1,
+          "repeated_groups": 1,
+          "repair_rows": 0,
+          "modal_accuracy": 1.0,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        },
+        {
+          "determinant": [
+            "Z"
+          ],
+          "target": "Y",
+          "context": null,
+          "exact": null,
+          "evaluated_rows": 0,
+          "missing_excluded_rows": 4,
+          "evaluated_groups": 0,
+          "repeated_groups": 0,
+          "repair_rows": 0,
+          "modal_accuracy": null,
+          "determinant_evaluated_rows": null,
+          "target_observed_rows": null,
+          "target_coverage": null,
+          "target_missing_excluded_rows": null,
+          "repeated_rows": null,
+          "repeat_coverage": null,
+          "repeat_modal_accuracy": null
+        }
+      ],
+      "graph_sha256": "4d5885b73278976c778caea20d4547b241daffba9875091dd959960b7f048597"
+    }
+  ]
+}
