@@ -16,7 +16,7 @@ import pandas as pd
 
 import fieldwork as fw
 
-VERSION = 1
+VERSION = 2
 DEPENDENCY_FIELDS = (
     "exact",
     "evaluated_rows",
@@ -70,8 +70,32 @@ def cases():
         {"max_candidates": 3},
     )
 
+    yield "missing_determinant", sparse.assign(X=None), {}
+    yield "sentinel_excluded", sparse.fillna("absent"), {"missing": {"Y": ["absent"]}}
+    yield "independent_graph_budget", sparse, {"max_grain_views": 0}
+    yield "incompatible_transitivity", sparse.assign(Z=range(4)), {"max_candidates": 3}
+    yield (
+        "ranking_reversal",
+        pd.DataFrame(
+            {
+                "X": [1, 1, 2, 2, 3, 3, 4, 4],
+                "Z": ["a", "b", "a", "b", "c", "d", "c", "d"],
+                "W": ["a", "b", "a", "b", "c", "d", "c", "d"],
+                **{f"Y{i}": [10, None, 20, None, 30, None, 40, None] for i in range(3)},
+            }
+        ),
+        {"max_candidates": 6},
+    )
+    yield (
+        "rare_complete_context",
+        pd.DataFrame(
+            {"X": [1] * 6, "Y": ["a", "a", "b", "c", "d", "e"], "C": ["rare"] * 2 + ["other"] * 4}
+        ),
+        {"by": ["C"]},
+    )
 
-def report():
+
+def report(source_commit=None):
     records = []
     for name, frame, overrides in cases():
         options = {"max_key_size": 1, "max_candidates": 1, **overrides}
@@ -80,7 +104,9 @@ def report():
             "kind": "overview",
             "sections": {"dependencies": result.to_dict(), "missingness": {}, "paths": {}},
         }
-        parameters = {k: list(v.positions) if isinstance(v, fw.Scope) else v for k, v in options.items()}
+        parameters = {
+            k: list(v.positions) if isinstance(v, fw.Scope) else v for k, v in options.items()
+        }
         records.append(
             {
                 "case": name,
@@ -127,7 +153,8 @@ def report():
         "report_version": 1,
         "fixture_harness_version": VERSION,
         "seed": 721,
-        "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "source_commit": source_commit
+        or subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "python": platform.python_version(),
         "pandas": pd.__version__,
         "numpy": np.__version__,
@@ -138,5 +165,8 @@ def report():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--source-commit", help="Explicit revision when importing an archived source tree"
+    )
     args = parser.parse_args()
-    args.output.write_text(json.dumps(report(), indent=2, allow_nan=False) + "\n")
+    args.output.write_text(json.dumps(report(args.source_commit), indent=2, allow_nan=False) + "\n")

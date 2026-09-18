@@ -145,3 +145,12 @@ The corpus covers 100 seeded scoped/unscoped cases, duplicate indexes, sentinels
 entity/context summaries, composite/conditional dependencies, all scored path
 objectives and full overviews. It compares all exported analytical fields, not
 only top-level counts. Keep parity runs separate from performance measurements.
+
+The [dependency support qualification](evaluation/dependency-support.md) records
+versioned before/after semantic cases, graph digests and cost samples. Run
+`benchmarks/evidence_support.py --output /tmp/support.json` with the current
+Python environment. For comparisons across the additive support extension only,
+`benchmarks/parity.py --allow-evidence-support-extension` removes the explicit new
+fields from discovery records; all legacy fields, graphs, selectors and analytical
+orders still have to match. Default parity remains exact. The standalone
+`examples/dependency_support.py` supplies the generated dependency-support assets.

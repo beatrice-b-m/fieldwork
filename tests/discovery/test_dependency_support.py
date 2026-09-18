@@ -271,3 +271,29 @@ def test_topology_order_and_fields_do_not_follow_support_scores():
         "explanation",
     ):
         assert field not in encoded
+
+
+def test_parity_allowlist_preserves_legacy_fields_and_graph_evidence():
+    import runpy
+
+    harness = runpy.run_path(str(Path(__file__).parents[2] / "benchmarks" / "parity.py"))
+    normalize = harness["without_support_extension"]
+    data = [{"result": fw.explore(sparse_frame()).to_dict()}]
+    normalized = normalize(data)
+    section = normalized[0]["result"]["sections"]["dependencies"]
+    assert "target_coverage" not in section["dependencies"][0]
+    assert "determines_with_repeated_support" not in section["candidates"][0]
+    assert "repeated_rows" in section["candidates"][0]
+    assert section["grain_views"] == data[0]["result"]["sections"]["dependencies"]["grain_views"]
+    for field in ("exact", "evaluated_rows", "repair_rows", "modal_accuracy"):
+        changed = json.loads(json.dumps(data))
+        changed[0]["result"]["sections"]["dependencies"]["dependencies"][0][field] = "regression"
+        assert normalize(changed) != normalized
+    changed = json.loads(json.dumps(data))
+    changed[0]["result"]["sections"]["dependencies"]["candidates"][0]["repeated_rows"] = -1
+    assert normalize(changed) != normalized
+    changed = json.loads(json.dumps(data))
+    changed[0]["result"]["sections"]["dependencies"]["grain_views"][0]["population"][
+        "evaluated_rows"
+    ] = -1
+    assert normalize(changed) != normalized

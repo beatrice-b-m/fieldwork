@@ -470,8 +470,9 @@ def render_plaintext(
     max_lines : int, optional
         Positive maximum output lines; default 200. Truncation is marked in output.
     max_nodes : int, optional
-        Nonnegative displayed node/finding budget; default 1000. Zero omits
-        node/finding details, not analytical evidence in the saved result.
+        Nonnegative per-list display budget; default 1000. Applies to findings,
+        candidates, and completed dependency tests. Zero omits these details,
+        not analytical evidence in the saved result.
     detail : {'full', 'topology'}, optional
         Default 'full' includes measurements and evidence. 'topology' allowlists
         structural labels and qualitative relationships, suppressing quantities,
@@ -644,7 +645,9 @@ def render_svg(
         Default False. True includes supported exact-dependency exception edges
         in the foundation grain map; other result kinds do not use this option.
     max_findings : int, optional
-        Nonnegative discovery finding limit; default 12. Zero omits findings.
+        Nonnegative per-list discovery display limit; default 12. Full dependency
+        views show up to five candidate summaries and this many completed tests,
+        including tests below the finding threshold. Zero omits these lists.
         Foundation rendering uses its saved analytical bounds instead.
 
     Returns
@@ -822,7 +825,9 @@ def render_html(
         structural labels and qualitative relationships, suppressing quantities,
         row positions, and distribution statistics. It does not anonymize labels.
     max_findings : int, optional
-        Nonnegative discovery finding limit; default 100. Zero omits findings.
+        Nonnegative per-list discovery display limit; default 100. Applies to
+        findings, candidates, and completed dependency tests, including tests
+        below the finding threshold. Zero omits these lists.
         Foundation rendering uses its saved analytical bounds instead.
 
     Returns

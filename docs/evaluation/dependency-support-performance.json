@@ -1,0 +1,127 @@
+{
+  "report_version": 1,
+  "baseline_source": "16cca830837f50b5c9140585ae2b3f6cdf7df878",
+  "implementation_source": "f857e369f4a67a4d34a318825218f021f8e0bca3",
+  "python": "3.11.14",
+  "pandas": "3.0.5",
+  "numpy": "2.4.6",
+  "method": "One seeded discovery.py run per revision; wall-clock samples, not statistical performance estimates.",
+  "before": {
+    "rows": 2000,
+    "columns": 25,
+    "results": [
+      {
+        "operation": "missingness",
+        "seconds": 0.013767082942649722,
+        "result_bytes": 319722,
+        "coverage": {
+          "pair_candidates": 300,
+          "pairs_evaluated": 200,
+          "signatures_total": 1996,
+          "signatures_shown": 50,
+          "signature_omitted_units": 1946,
+          "signature_omitted_rows": 1946,
+          "contexts_total": 0,
+          "contexts_shown": 0,
+          "entity_missing_key_rows": 0
+        }
+      },
+      {
+        "operation": "dependencies",
+        "seconds": 0.06975662498734891,
+        "result_bytes": 982236,
+        "coverage": {
+          "candidate_space": 325,
+          "candidates_evaluated": 12,
+          "dependency_tests": 288,
+          "contexts_total": 0,
+          "contexts_evaluated": 0,
+          "search_order": "determinant_size_then_input_column_order"
+        }
+      },
+      {
+        "operation": "paths",
+        "seconds": 0.02042620803695172,
+        "result_bytes": 62171,
+        "coverage": {
+          "features_requested": 25,
+          "features_evaluated": 20,
+          "features_omitted": [
+            "field_20",
+            "field_21",
+            "field_22",
+            "field_23",
+            "entity"
+          ],
+          "pairs_evaluated": 190,
+          "pair_candidates": 190,
+          "paths_evaluated": 60,
+          "distinct_alternatives": 12,
+          "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
+          "search_exhausted_budget": true,
+          "requested_depth": 4,
+          "returned_depth": 2
+        }
+      }
+    ]
+  },
+  "after": {
+    "rows": 2000,
+    "columns": 25,
+    "results": [
+      {
+        "operation": "missingness",
+        "seconds": 0.013880833983421326,
+        "result_bytes": 319722,
+        "coverage": {
+          "pair_candidates": 300,
+          "pairs_evaluated": 200,
+          "signatures_total": 1996,
+          "signatures_shown": 50,
+          "signature_omitted_units": 1946,
+          "signature_omitted_rows": 1946,
+          "contexts_total": 0,
+          "contexts_shown": 0,
+          "entity_missing_key_rows": 0
+        }
+      },
+      {
+        "operation": "dependencies",
+        "seconds": 0.06882737495470792,
+        "result_bytes": 1049915,
+        "coverage": {
+          "candidate_space": 325,
+          "candidates_evaluated": 12,
+          "dependency_tests": 288,
+          "contexts_total": 0,
+          "contexts_evaluated": 0,
+          "search_order": "determinant_size_then_input_column_order"
+        }
+      },
+      {
+        "operation": "paths",
+        "seconds": 0.020712625002488494,
+        "result_bytes": 62171,
+        "coverage": {
+          "features_requested": 25,
+          "features_evaluated": 20,
+          "features_omitted": [
+            "field_20",
+            "field_21",
+            "field_22",
+            "field_23",
+            "entity"
+          ],
+          "pairs_evaluated": 190,
+          "pair_candidates": 190,
+          "paths_evaluated": 60,
+          "distinct_alternatives": 12,
+          "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
+          "search_exhausted_budget": true,
+          "requested_depth": 4,
+          "returned_depth": 2
+        }
+      }
+    ]
+  }
+}
