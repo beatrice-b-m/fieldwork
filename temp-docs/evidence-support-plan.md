@@ -1,7 +1,8 @@
 # Dependency coverage and repeated support
 
-Status: complete (implementation phase). No release or documentation-site deployment
-was performed. The original detailed plan is retained in git history.
+Status: complete and released in v0.1.1. The release and documentation synchronization
+are recorded in the [release record](../docs/releases/v0.1.1.md). The original detailed
+plan is retained in git history.
 
 Delivered in scoped commits:
 
@@ -11,8 +12,8 @@ Delivered in scoped commits:
    handoff journeys, executable example and reviewed generated assets (`f857e36`).
 4. Expanded before/after qualification, narrow parity oracle, supported-Python and
    installed-wheel checks, updated notebook, and durable documentation.
-5. Prepared [release documentation handoff](evidence-support-release-handoff.md),
-   awaiting a release containing this implementation.
+5. Published v0.1.1 and merged the matching documentation update; the fulfilled
+   release handoff was retired in favor of the [release record](../docs/releases/v0.1.1.md).
 
 Implementation details have moved to durable documentation:
 

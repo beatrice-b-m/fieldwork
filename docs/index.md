@@ -19,4 +19,5 @@ Tests under `tests/foundation/` preserve the extracted explorer contracts;
 
 - [Large dataframes, progress, cancellation, and work budgets](performance.md)
 - [Performance implementation measurements](performance-results.md)
-- [Dependency support qualification (unreleased)](evaluation/dependency-support.md)
+- [Dependency support qualification (v0.1.1)](evaluation/dependency-support.md)
+- [v0.1.1 release record](releases/v0.1.1.md)

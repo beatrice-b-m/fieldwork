@@ -1,4 +1,4 @@
-# Dependency support qualification (unreleased)
+# Dependency support qualification (v0.1.1)
 
 The implementation distinguishes observed exactness, consistency supported by
 repeated determinant groups, and semantic entity validity. It measures the first
@@ -113,8 +113,8 @@ dependency was added. [Development](../development.md) lists the commands.
 [Algorithms](../algorithms.md#dependency-target-coverage-and-repeated-support) and
 [contracts](../contracts.md#additive-dependency-support-fields-discovery-schema-10)
 are the durable behavioral specification. The
-[release documentation handoff](../../temp-docs/evidence-support-release-handoff.md)
-prepares synchronization only after a release containing this change.
+[v0.1.1 release record](../releases/v0.1.1.md) records publication and the matching
+documentation synchronization.
 
 Future experiments remain separate: bias-adjusted AFD ranking versus this corrected
 baseline, closed availability bundles, entropy prefix losses, explanation diversity,
@@ -122,4 +122,4 @@ and adaptive candidate allocation under fixed budgets. Any entity validity or
 systems-paper novelty claims need task-matched evaluation and further formalization;
 subsampled exactness and unique IDs in independent deliveries are not generalization
 evidence. This implementation includes no new dependency engine, macro averaging,
-entity-weighted FD analysis, resampling, release, or documentation-site deployment.
+entity-weighted FD analysis, or resampling.
