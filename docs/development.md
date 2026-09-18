@@ -3,6 +3,7 @@
 ```bash
 uv sync --locked
 uv run pytest
+uv run pyright --warnings
 uv run ruff check src tests scripts examples
 uv run ruff format --check src tests scripts examples
 uv run python examples/investigation.py
@@ -80,6 +81,25 @@ Do not assert wall-clock thresholds in unit tests. Fingerprinting traverses the
 entire source frame; dependency graphs compare pairs of candidate keys. For wider
 frames, narrow features and candidate budgets before introducing an optional engine.
 Use the reported coverage to distinguish a budget boundary from a negative finding.
+
+## Inline documentation and typing
+
+Follow the [inline API standard](inline-api.md) for public entry points, members,
+returned objects, and option dictionaries. The regular pytest run executes public
+docstring examples, checks documentation/annotation coverage, and probes Jedi
+hover/signature/completion behavior. `uv run pyright --warnings` checks the strict
+consumer examples in `tests/typing`, including expected invalid calls and result
+navigation. These tools are development dependencies only.
+
+After packaging, check the installed wheel independently of the source import:
+
+```bash
+uv run --no-project --isolated --with ./dist/*.whl --with pytest --with jedi python -I -m pytest tests/test_inline_docs.py tests/test_editor_api.py -q
+```
+
+CI runs this check on each supported Python version in addition to the existing
+installed investigation example. Update overloads and `fieldwork.typing` option
+fields together with implementation signatures and docstrings.
 
 ## Change discipline
 

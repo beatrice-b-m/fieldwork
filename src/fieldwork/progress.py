@@ -223,7 +223,7 @@ class ProgressDisplay:
         Returns
         -------
         None
-            Writes/flushed text or updates one notebook display.
+            Writes and flushes text or updates one notebook display.
 
         Raises
         ------

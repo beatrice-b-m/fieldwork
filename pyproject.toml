@@ -30,7 +30,17 @@ Documentation = "https://fieldwork.beabm.dev"
 Issues = "https://github.com/beatrice-b-m/fieldwork/issues"
 
 [dependency-groups]
-dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.11", "resvg-py>=0.2", "pillow>=11", "ipython>=8"]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6",
+    "ruff>=0.11",
+    "resvg-py>=0.2",
+    "pillow>=11",
+    "ipython>=8",
+    "pyright>=1.1.400",
+    "pandas-stubs>=2.2.3",
+    "jedi>=0.20",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -40,4 +50,4 @@ target-version = "py311"
 line-length = 100
 
 [tool.uv.build-backend]
-source-include = ["tests/**", "docs/**", "examples/**", "scripts/**", "benchmarks/**", "uv.lock", "NOTICE"]
+source-include = ["tests/**", "docs/**", "examples/**", "scripts/**", "benchmarks/**", "uv.lock", "pyrightconfig.json", "NOTICE"]

@@ -148,6 +148,86 @@ def explore(
         top_n_applies_to="both" also restricts pair/grain cohorts and requires
         top_n with pre mode. include_absence requires include_pairs.
 
+    Other Parameters
+    ----------------
+    scope : Scope or None, optional
+        Source-bound population selection; default None uses all rows. The scope
+        must match the ordered source. Fingerprinting still scans the full frame.
+    missing : mapping or None, optional
+        Additional missing sentinels per column; default None. Native missing
+        values are always absent. Numeric sentinels match integer/float values
+        numerically; booleans remain distinct. The source is not modified.
+    table_id : str, optional
+        Nonempty source label; default 'table'. Does not replace the fingerprint.
+    features : iterable of column labels or None, optional
+        Automatic mode: unique string columns for all sections, default None
+        selects all. Explicit mode: typed labels for independent levels, default
+        None uses dimensions. Section options can override automatic features.
+    candidate_keys : iterable of column labels or KeySpec or None, optional
+        Explicit mode only. Default None skips grain. Labels denote single-column
+        keys; use KeySpec for composite determinants. Tuple labels denote one
+        column, not a composite key. Names and components must be unique.
+    top_n : int or None, optional
+        Positive number of leading levels; default None keeps all eligible levels.
+        With pre mode this selects a cohort; with post mode it only limits output.
+    top_n_mode : {'pre', 'post'}, optional
+        Default 'post' counts the full eligible population before limiting output.
+        'pre' restricts rows to selected levels before counting, records exclusions,
+        and can warn about low retention.
+    top_n_per_parent : bool, optional
+        Default False chooses leading levels globally for each dimension. True
+        chooses them separately within each parent prefix.
+    top_n_applies_to : {'census', 'both'}, optional
+        Explicit mode only. Default 'census' limits census alone. 'both' applies
+        its selected cohort to pairs and grain as well, and requires top_n with
+        top_n_mode='pre'. Independent levels retain their own population.
+    min_retained_fraction : float, optional
+        Retention warning threshold in [0, 1]; default 0.01. Does not reject or
+        change the selected population.
+    max_depth : int or None, optional
+        Positive number of active dimensions; default None uses all dimensions.
+    max_levels : int or None, optional
+        Nonnegative displayed child-level limit per parent; default 100. None is
+        unbounded; zero omits all child levels. Omitted mass remains reported.
+    max_nodes : int or None, optional
+        Nonnegative total non-root node budget; default 10000. None is unbounded;
+        zero keeps only the root and omission evidence.
+    min_count : int, optional
+        Nonnegative minimum displayed count; default 1. Does not filter input rows.
+    dropna : bool, optional
+        Explicit mode only. Default False includes native/declared missing levels.
+        True uses each component's complete cases: independently per levels
+        feature, over active census dimensions, per pair/context, and per
+        determinant/target. Denominators can therefore differ across sections.
+    schema : dict or None, optional
+        Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
+        Default None. Roles annotate evidence and warnings; they do not cast values.
+    include_pairs : bool, optional
+        Explicit mode only. Default True computes bounded pair relationships.
+        False marks pairs as not_requested and cannot be used with include_absence.
+    include_absence : bool, optional
+        Include absent domain combinations when True; default False; requires include_pairs=True. Observed
+        mapping and association evidence is computed independently.
+    reference_domains : mapping or None, optional
+        Optional declared value domains by column; default None uses observed
+        domains. Absence means unobserved in the evaluated population, not invalid.
+    pair_contexts : iterable of mappings or None, optional
+        Additional exact column-to-value context filters; default None. Context
+        columns must be disjoint from the evaluated pair. Global evidence remains.
+    max_absence_cells : int or None, optional
+        Nonnegative absent-cell output budget; default 1000. None is unbounded;
+        zero retains absence totals without enumerating cells.
+    max_contexts : int or None, optional
+        Nonnegative total context budget, including the global population; default
+        32. None is unbounded; zero skips all pair/context records; one keeps
+        only global pair evidence.
+    max_pairs : int or None, optional
+        Nonnegative pair budget; default 15. None is unbounded; zero skips pairs.
+        Omitted tests are reported, not treated as failed relationships.
+    engine_metadata : bool, optional
+        Explicit mode only. Default False omits producer metadata. True includes
+        the combined result's orchestrator identifier.
+
     Returns
     -------
     InvestigationResult or ExplorerResult

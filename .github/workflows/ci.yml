@@ -18,9 +18,12 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: uv sync --locked
       - run: uv run pytest
+      - run: uv run pyright --warnings
       - run: uv run ruff check src tests scripts examples
       - run: uv run ruff format --check src tests scripts examples
       - run: uv build
+      - name: Check documentation and editor support in the installed wheel
+        run: uv run --no-project --isolated --with ./dist/*.whl --with pytest --with jedi python -I -m pytest tests/test_inline_docs.py tests/test_editor_api.py -q
       - name: Smoke-test the installed wheel
         run: uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py
   assets:

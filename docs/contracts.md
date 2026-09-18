@@ -162,3 +162,12 @@ omissions carry coverage or `not_requested` status and remain visible in present
 all evidence through shared-container references. Both result classes accept their
 ordinary and compact exports in `from_dict`; ordinary schemas 0.3/1.0 are unchanged.
 Compact exports do not apply topology disclosure filtering.
+
+## Editor-visible Python API
+
+Public functions and members carry NumPy-style docstrings and explicit type
+annotations. Runtime controls are declared in source; census handoff signatures
+exclude replacement source context, and grain cache parameters are private.
+`explore` overloads distinguish automatic discovery from explicit dimensions.
+`fieldwork.typing` provides documented dictionary types for reusable configurations.
+See the [inline API standard](inline-api.md) for the public boundary and validation.
