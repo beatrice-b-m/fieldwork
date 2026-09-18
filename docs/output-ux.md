@@ -1,8 +1,7 @@
 # Exploring saved outputs
 
-This page describes the current source implementation. The separate documentation
-site remains tied to its recorded stable release; these changes should be included
-in its next release synchronization.
+This page describes the output interfaces in Fieldwork 0.1.2. The separate
+documentation site records its release and source commit in `docs-source.json`.
 
 ## HTML evidence reports
 
