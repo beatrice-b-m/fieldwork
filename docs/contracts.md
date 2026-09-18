@@ -171,3 +171,16 @@ exclude replacement source context, and grain cache parameters are private.
 `explore` overloads distinguish automatic discovery from explicit dimensions.
 `fieldwork.typing` provides documented dictionary types for reusable configurations.
 See the [inline API standard](inline-api.md) for the public boundary and validation.
+
+### Additive dependency support fields (discovery schema 1.0)
+
+Dependency tables and finding measurements retain all existing meanings and add
+observed target coverage and consistency within repeated determinant groups.
+See [the population definitions](algorithms.md#dependency-target-coverage-and-repeated-support).
+Counts are nonnegative Python integers; undefined ratios serialize as JSON null.
+Candidate global test counters and supported-exact lists disclose evaluated work,
+not completeness. Graph budgets remain independent. Source identity, selection,
+exception repair rows, finding IDs and analytical candidate enumeration are unchanged.
+`to_frame('dependencies')` includes tests below the finding threshold; compact and
+ordinary exports retain these fields. No new public parameters, exports, foundation
+schema, or result type hierarchy are introduced.

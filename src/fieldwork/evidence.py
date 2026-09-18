@@ -318,6 +318,14 @@ class InvestigationResult(ExplorerResult):
     changes, or summaries. Overview sections hold ordinary result exports; restore
     one with from_dict before calling its methods. Each finding retains its own
     population and counting unit. Search omissions are not negative findings.
+    Dependency records include observed target coverage on determinant-eligible
+    rows and repeat-only consistency on the target-specific evaluated rows.
+    Undefined fractions are None. Candidate determines_with_repeated_support
+    lists global exact targets with repeated groups; global_targets_tested and
+    global_targets_possible disclose completed versus selected global tests.
+    Candidate repeated_rows describes the determinant population, which can be
+    larger than any individual dependency population. These are row-weighted
+    observations, not entity validity or reliability guarantees.
 
     Top-level attributes are frozen, but nested payloads and ordinary exports are
     mutable. Findings contain representative positions, not source rows. inspect,
@@ -357,6 +365,9 @@ class InvestigationResult(ExplorerResult):
         -----
         The result is a projection of saved data; it does not rerun analysis or
         validate source identity. Nested object values may remain shared.
+        The dependencies section includes completed tests below min_accuracy;
+        findings contains only emitted findings. Legacy exports retain their
+        original fields; to_frame does not fabricate missing measurements.
         """
         return pd.json_normalize(self.payload.get(section, []))
 

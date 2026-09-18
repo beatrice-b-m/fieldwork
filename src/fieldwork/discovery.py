@@ -121,7 +121,12 @@ def discover_dependencies(
     -------
     InvestigationResult
         Kind 'dependencies', with candidates, dependencies, conditional evidence,
-        grain views, findings, and coverage recording omitted tests/views.
+        grain views, findings, and coverage recording omitted tests/views. The
+        dependencies table retains every completed test, including those below
+        min_accuracy. Candidate determines lists global exact targets;
+        determines_with_repeated_support includes only those with repeated groups
+        in that target's evaluated population. global_targets_tested/possible
+        count completed/selected non-key global targets, independently of graphs.
 
     Raises
     ------
@@ -144,6 +149,22 @@ def discover_dependencies(
     A functional dependency here is observed evidence, not a guarantee about
     future deliveries or causality. Singleton determinant groups satisfy exact
     mappings trivially. Untested relationships are not negative evidence.
+
+    For each context, determinant_evaluated_rows counts complete determinant
+    cases when dropna=True, otherwise all context rows (Q). target_observed_rows
+    counts rows of Q with an observed target (O), and target_coverage is O/Q.
+    evaluated_rows (E) is O when dropna=True, otherwise Q;
+    target_missing_excluded_rows is Q-E. missing_excluded_rows still counts all
+    exclusions from the context. With dropna=False, observed target coverage can
+    be below one even though missing values participate in consistency tests.
+
+    repeated_rows (R) counts rows in determinant groups of size at least two
+    within E. repeat_coverage is R/E; repeat_modal_accuracy is 1-repair_rows/R.
+    Undefined fractions are None (JSON null). Candidate repeated_rows instead
+    describes the determinant population, before target exclusions. Measurements
+    are row-counted and row-weighted, without resampling or entity aggregation.
+    Repeated support describes observed consistency, not statistical reliability
+    or a meaningful entity interpretation.
 
     Examples
     --------
@@ -234,9 +255,14 @@ def discover_dependencies(
                 "repeated_groups": int(np.count_nonzero(key_groups > 1)),
                 "repeated_rows": int(key_groups[key_groups > 1].sum()),
                 "determines": [],
+                "determines_with_repeated_support": [],
+                "global_targets_tested": 0,
+                "global_targets_possible": len(selected) - len(key),
             }
             base["candidates"].append(candidate)
             for context, population in partitions:
+                determinant_eligible = population[key_mask[population]]
+                q = len(determinant_eligible)
                 for target in selected:
                     if tests >= total_tests:
                         break
@@ -244,11 +270,9 @@ def discover_dependencies(
                     if target in key:
                         continue
                     tests += 1
-                    eligible = (
-                        population[key_mask[population] & present[target][population]]
-                        if dropna
-                        else population
-                    )
+                    observed = present[target][determinant_eligible]
+                    observed_rows = int(observed.sum())
+                    eligible = determinant_eligible[observed] if dropna else determinant_eligible
                     grouped, sizes, modes, maxima, distinct = modal_groups(
                         key_ids[eligible], codes[target][eligible]
                     )
@@ -256,6 +280,7 @@ def discover_dependencies(
                     violating = int(violating_mask.sum())
                     repair = int((sizes - maxima).sum())
                     repeated = int(np.count_nonzero(sizes > 1))
+                    repeated_rows = int(sizes[sizes > 1].sum())
                     affected = int(sizes[violating_mask].sum())
                     good = codes[target][eligible] == modes[grouped]
                     exception_groups = []
@@ -285,6 +310,15 @@ def discover_dependencies(
                         "modal_accuracy": accuracy,
                         "repair_rows": repair,
                         "evaluated_rows": n,
+                        "determinant_evaluated_rows": q,
+                        "target_observed_rows": observed_rows,
+                        "target_coverage": observed_rows / q if q else None,
+                        "target_missing_excluded_rows": q - n,
+                        "repeated_rows": repeated_rows,
+                        "repeat_coverage": repeated_rows / n if n else None,
+                        "repeat_modal_accuracy": 1 - repair / repeated_rows
+                        if repeated_rows
+                        else None,
                         "missing_excluded_rows": len(population) - n,
                         "evaluated_groups": len(sizes),
                         "violating_groups": violating,
@@ -303,8 +337,12 @@ def discover_dependencies(
                             "evaluated_rows": n,
                         }
                     base["dependencies"].append(record)
-                    if context is None and record["exact"]:
-                        candidate["determines"].append(target)
+                    if context is None:
+                        candidate["global_targets_tested"] += 1
+                        if record["exact"]:
+                            candidate["determines"].append(target)
+                            if repeated:
+                                candidate["determines_with_repeated_support"].append(target)
                     if accuracy is not None and accuracy >= min_accuracy:
                         finding(
                             base,

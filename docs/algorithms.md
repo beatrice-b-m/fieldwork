@@ -162,3 +162,37 @@ Context constancy uses group membership counts, and repeated string summaries
 weight unique strings while preserving first-observed ties. Graph subset caches
 key exact packed populations; matching row counts alone never equate unrelated
 subsets. Bounded example extraction retains complete totals and first source rows.
+
+## Dependency target coverage and repeated support
+
+For each determinant/context, let P be the scoped context population, Q the
+complete determinant cases (`dropna=True`) or all P (`False`), O the rows of Q
+with an observed target, and E the evaluated population: O when dropping missing
+values, otherwise Q. Native and declared sentinel missingness share the existing
+presence policy. Group E by the encoded determinant; R contains rows in groups
+of at least two **after target exclusions**.
+
+Dependency records and finding measurements expose `determinant_evaluated_rows`
+(Q), `target_observed_rows` (O), `target_coverage` (O/Q),
+`target_missing_excluded_rows` (Q−E), `repeated_rows` (R), `repeat_coverage` (R/E),
+and `repeat_modal_accuracy` (1−repair_rows/R). All repair rows belong to repeated
+groups. Zero denominators give None/JSON null. Existing `missing_excluded_rows`
+still means P−E. With `dropna=False`, missing categories participate in consistency
+measurements: E=Q and target exclusions are zero, but observed target coverage
+can be below one. Determinant eligibility does not then imply observed values.
+
+Dependencies remain row-counted and row-weighted. There is no entity aggregation,
+macro averaging, or resampling. Counting unit, aggregation rule, weighting, and
+resampling unit are distinct choices. Exactness describes the evaluated rows;
+repeated support describes consistency beyond singleton groups; neither establishes
+entity meaning or statistical reliability. One repeated group qualifies descriptively.
+
+Candidate `determines` retains ordered global exact targets, including singleton-only
+tests. `determines_with_repeated_support` includes global exact targets with at
+least one repeated group in that target's E. Conditional evidence stays attached
+to its typed context. Candidate `repeated_rows` continues to refer to Q before
+target exclusions. `global_targets_tested` counts completed global tests, including
+empty tests; `global_targets_possible` counts selected non-key targets. Conditional
+and graph work never inflate those counters. Empty lists under incomplete budgets
+mean nothing was established by the completed work. `min_accuracy` only filters
+findings: the `dependencies` table retains every completed test.
