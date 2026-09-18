@@ -63,5 +63,5 @@ cannot preserve readable labels for arbitrarily large graphs. No automated brows
 checks substitute for testing with screen readers, touch hardware, or other engines;
 this qualification used Chromium only.
 
-The stable documentation repository is deliberately unchanged until release
-synchronization, in accordance with its source-version policy.
+The stable documentation was synchronized after v0.1.2 publication, in accordance
+with its source-version policy; see the [release record](../releases/v0.1.2.md).
