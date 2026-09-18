@@ -1,6 +1,7 @@
 """Target populations, repeated support, and source-free schema-1.0 compatibility."""
 
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -155,3 +156,118 @@ def test_budgets_do_not_count_graph_or_conditional_tests():
     result = fw.discover_dependencies(df, max_key_size=1, max_grain_views=0)
     assert all(c["global_targets_tested"] == 2 for c in result["candidates"])
     assert not result["grain_views"]
+
+
+def ranking_frame():
+    return pd.DataFrame(
+        {
+            "X": [1, 1, 2, 2, 3, 3, 4, 4],
+            "Z": ["a", "b", "a", "b", "c", "d", "c", "d"],
+            "W": ["a", "b", "a", "b", "c", "d", "c", "d"],
+            **{f"Y{i}": [10, None, 20, None, 30, None, 40, None] for i in range(3)},
+        }
+    )
+
+
+def overview_of(dependencies):
+    return {
+        "kind": "overview",
+        "sections": {"dependencies": dependencies, "missingness": {}, "paths": {}},
+    }
+
+
+def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
+    result = fw.discover_dependencies(ranking_frame(), max_key_size=1).to_dict()
+    original_order = [c["columns"] for c in result["candidates"]]
+    x, z = result["candidates"][:2]
+    assert len(x["determines"]) > len(z["determines"])
+    assert x["repeated_rows"] == z["repeated_rows"]
+    assert x["determines_with_repeated_support"] == []
+    assert z["determines_with_repeated_support"] == ["W"]
+    projected = fw.visualization_data(overview_of(result))["overview"]["grains"]
+    order = [c["columns"] for c in projected]
+    assert order.index(["Z"]) < order.index(["X"])
+    assert original_order == [c["columns"] for c in result["candidates"]]
+    legacy = json.loads(json.dumps(result))
+    for c in legacy["candidates"]:
+        for k in (
+            "determines_with_repeated_support",
+            "global_targets_tested",
+            "global_targets_possible",
+        ):
+            del c[k]
+    for d in legacy["dependencies"]:
+        for k in (
+            "repeated_rows",
+            "repeat_coverage",
+            "repeat_modal_accuracy",
+            "determinant_evaluated_rows",
+            "target_observed_rows",
+            "target_coverage",
+            "target_missing_excluded_rows",
+        ):
+            del d[k]
+    assert fw.visualization_data(overview_of(legacy))["overview"]["grains"] == projected
+    # One unrecoverable score requires legacy ordering throughout the collection.
+    next(d for d in legacy["dependencies"] if d["determinant"] == ["X"] and d["exact"]).pop(
+        "repeated_groups"
+    )
+    fallback = fw.visualization_data(overview_of(legacy))["overview"]["grains"]
+    fallback_order = [c["columns"] for c in fallback]
+    assert fallback_order.index(["X"]) < fallback_order.index(["Z"])
+    assert (
+        next(c for c in fallback if c["columns"] == ["X"])["determines_with_repeated_support"]
+        is None
+    )
+
+
+def test_saved_details_below_threshold_and_disclosure():
+    df = sparse_frame()
+    for dropna in (True, False):
+        result = fw.discover_dependencies(df, dropna=dropna, min_accuracy=1, max_key_size=1)
+        saved = fw.InvestigationResult.from_dict(
+            json.loads(json.dumps(result.to_dict(compact=True), allow_nan=False))
+        )
+        assert saved.to_dict() == result.to_dict()
+        projection = fw.visualization_data(saved)
+        assert len(projection["dependencies"]) == 2
+        for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
+            full = " ".join(re.sub(r"<[^>]+>", " ", render(saved)).split())
+            assert "repeat-only consistency" in full
+            assert "target observed on 2/4" in full
+            assert "global targets tested" in full
+            if not dropna:
+                assert "missing values participated in consistency measurements" in full
+            assert "repeat-only consistency" not in render(saved, detail="topology")
+        if not dropna:
+            assert dependency(saved)["exact"] is False
+            assert not any(f["measurements"]["determinant"] == ["X"] for f in saved["findings"])
+    legacy = json.loads(LEGACY.read_text())
+    before = json.dumps(legacy, sort_keys=True)
+    projection = fw.visualization_data(legacy)
+    d = dependency(projection)
+    assert d["repeated_rows"] == 0
+    assert d["repeat_coverage"] == 0
+    assert d["target_coverage"] is None
+    assert "observed target coverage unavailable" in fw.render_html(legacy)
+    assert json.dumps(legacy, sort_keys=True) == before
+    del legacy["dependencies"][0]["evaluated_groups"]
+    assert "repeated support unavailable" in fw.render_html(legacy)
+
+
+def test_topology_order_and_fields_do_not_follow_support_scores():
+    result = fw.discover_dependencies(ranking_frame(), max_key_size=1).to_dict()
+    topology = fw.visualization_data(overview_of(result), detail="topology")
+    for candidate in result["candidates"]:
+        candidate["determines_with_repeated_support"] = ["invented"] * 100
+        candidate["global_targets_tested"] = 0
+    assert fw.visualization_data(overview_of(result), detail="topology") == topology
+    encoded = json.dumps(topology)
+    for field in (
+        "repeated_rows",
+        "target_coverage",
+        "global_targets_tested",
+        "determines_with_repeated_support",
+        "explanation",
+    ):
+        assert field not in encoded

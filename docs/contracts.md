@@ -184,3 +184,17 @@ exception repair rows, finding IDs and analytical candidate enumeration are unch
 `to_frame('dependencies')` includes tests below the finding threshold; compact and
 ordinary exports retain these fields. No new public parameters, exports, foundation
 schema, or result type hierarchy are introduced.
+
+Full presentations adapt saved schema-1.0 records without a source or mutation.
+When available, evaluated rows minus (evaluated groups minus repeated groups)
+recovers repeat rows, and repair rows recover repeat-only accuracy. Global records
+recover supported-exact lists. Missing determinant eligibility never becomes
+invented target coverage: legacy coverage is displayed as unavailable. If even one
+candidate's supported-exact ranking input cannot be recovered, the entire collection
+retains legacy ranking. The adapter does not change ordinary or compact exports.
+
+Full text/HTML/SVG explanations distinguish observed exactness, observed target
+coverage and repeat-only consistency, and disclose missing-category evaluation.
+These qualifications never enter shared statements or structures. Topology keeps
+existing structural roles/relationships, adds no measurements or evidence pointers,
+and orders candidates canonically, independently of support ranking.

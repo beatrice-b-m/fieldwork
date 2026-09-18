@@ -1,0 +1,259 @@
+{
+  "kind": "dependencies",
+  "detail": "full",
+  "findings": [
+    {
+      "pattern": "exact_dependency",
+      "statement": "X determines Y",
+      "features": [
+        {
+          "table": "table",
+          "column": "X"
+        },
+        {
+          "table": "table",
+          "column": "Y"
+        }
+      ],
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [],
+        "presence_aggregation": "per_row"
+      },
+      "id": "f0",
+      "measurements": {
+        "determinant": [
+          "X"
+        ],
+        "target": "Y",
+        "context": null,
+        "exact": true,
+        "modal_accuracy": 1.0,
+        "repair_rows": 0,
+        "evaluated_rows": 2,
+        "determinant_evaluated_rows": 4,
+        "target_observed_rows": 2,
+        "target_coverage": 0.5,
+        "target_missing_excluded_rows": 2,
+        "repeated_rows": 0,
+        "repeat_coverage": 0.0,
+        "repeat_modal_accuracy": null,
+        "missing_excluded_rows": 2,
+        "evaluated_groups": 2,
+        "violating_groups": 0,
+        "affected_rows": 0,
+        "group_violation_rate": 0.0,
+        "repeated_groups": 0,
+        "exception_groups": [],
+        "omitted_exception_groups": 0
+      },
+      "examples": {
+        "positions": [
+          0,
+          2
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "explanation": "Exact on 2 evaluated rows; target observed on 2/4 determinant-eligible rows (observed target coverage 0.5); no repeated groups after exclusions; repeat-only consistency not assessable"
+    },
+    {
+      "pattern": "exact_dependency",
+      "statement": "Y determines X",
+      "features": [
+        {
+          "table": "table",
+          "column": "Y"
+        },
+        {
+          "table": "table",
+          "column": "X"
+        }
+      ],
+      "structure": {},
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [],
+        "presence_aggregation": "per_row"
+      },
+      "id": "f1",
+      "measurements": {
+        "determinant": [
+          "Y"
+        ],
+        "target": "X",
+        "context": null,
+        "exact": true,
+        "modal_accuracy": 1.0,
+        "repair_rows": 0,
+        "evaluated_rows": 2,
+        "determinant_evaluated_rows": 2,
+        "target_observed_rows": 2,
+        "target_coverage": 1.0,
+        "target_missing_excluded_rows": 0,
+        "repeated_rows": 0,
+        "repeat_coverage": 0.0,
+        "repeat_modal_accuracy": null,
+        "missing_excluded_rows": 2,
+        "evaluated_groups": 2,
+        "violating_groups": 0,
+        "affected_rows": 0,
+        "group_violation_rate": 0.0,
+        "repeated_groups": 0,
+        "exception_groups": [],
+        "omitted_exception_groups": 0
+      },
+      "examples": {
+        "positions": [
+          0,
+          2
+        ],
+        "total": 2,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "exceptions": {
+        "positions": [],
+        "total": 0,
+        "omitted": 0,
+        "method": "first_in_source_order",
+        "limit": 5
+      },
+      "explanation": "Exact on 2 evaluated rows; target observed on 2/2 determinant-eligible rows (observed target coverage 1); no repeated groups after exclusions; repeat-only consistency not assessable"
+    }
+  ],
+  "scope": {
+    "name": "input",
+    "parent": null,
+    "evaluated_rows": 4,
+    "restriction_excluded_rows": 0,
+    "positions_are": "zero_based_source_positions",
+    "selection_positions": null
+  },
+  "coverage": {
+    "candidate_space": 2,
+    "candidates_evaluated": 2,
+    "dependency_tests": 2,
+    "contexts_total": 0,
+    "contexts_evaluated": 0,
+    "search_order": "determinant_size_then_input_column_order"
+  },
+  "candidates": [
+    {
+      "columns": [
+        "X"
+      ],
+      "evaluated_rows": 4,
+      "missing_excluded_rows": 0,
+      "groups": 2,
+      "unique": false,
+      "uniqueness": 0.5,
+      "repeated_groups": 2,
+      "repeated_rows": 4,
+      "determines": [
+        "Y"
+      ],
+      "determines_with_repeated_support": [],
+      "global_targets_tested": 1,
+      "global_targets_possible": 1,
+      "id": "key0",
+      "graph_views": [
+        "g0",
+        "g1"
+      ],
+      "role": "repeated grouping"
+    },
+    {
+      "columns": [
+        "Y"
+      ],
+      "evaluated_rows": 2,
+      "missing_excluded_rows": 2,
+      "groups": 2,
+      "unique": true,
+      "uniqueness": 1.0,
+      "repeated_groups": 0,
+      "repeated_rows": 0,
+      "determines": [
+        "X"
+      ],
+      "determines_with_repeated_support": [],
+      "global_targets_tested": 1,
+      "global_targets_possible": 1,
+      "id": "key1",
+      "graph_views": [
+        "g1"
+      ],
+      "role": "unique identifier"
+    }
+  ],
+  "dependencies": [
+    {
+      "determinant": [
+        "X"
+      ],
+      "target": "Y",
+      "context": null,
+      "exact": true,
+      "modal_accuracy": 1.0,
+      "repair_rows": 0,
+      "evaluated_rows": 2,
+      "determinant_evaluated_rows": 4,
+      "target_observed_rows": 2,
+      "target_coverage": 0.5,
+      "target_missing_excluded_rows": 2,
+      "repeated_rows": 0,
+      "repeat_coverage": 0.0,
+      "repeat_modal_accuracy": null,
+      "missing_excluded_rows": 2,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "affected_rows": 0,
+      "group_violation_rate": 0.0,
+      "repeated_groups": 0,
+      "exception_groups": [],
+      "omitted_exception_groups": 0,
+      "explanation": "Exact on 2 evaluated rows; target observed on 2/4 determinant-eligible rows (observed target coverage 0.5); no repeated groups after exclusions; repeat-only consistency not assessable"
+    },
+    {
+      "determinant": [
+        "Y"
+      ],
+      "target": "X",
+      "context": null,
+      "exact": true,
+      "modal_accuracy": 1.0,
+      "repair_rows": 0,
+      "evaluated_rows": 2,
+      "determinant_evaluated_rows": 2,
+      "target_observed_rows": 2,
+      "target_coverage": 1.0,
+      "target_missing_excluded_rows": 0,
+      "repeated_rows": 0,
+      "repeat_coverage": 0.0,
+      "repeat_modal_accuracy": null,
+      "missing_excluded_rows": 2,
+      "evaluated_groups": 2,
+      "violating_groups": 0,
+      "affected_rows": 0,
+      "group_violation_rate": 0.0,
+      "repeated_groups": 0,
+      "exception_groups": [],
+      "omitted_exception_groups": 0,
+      "explanation": "Exact on 2 evaluated rows; target observed on 2/2 determinant-eligible rows (observed target coverage 1); no repeated groups after exclusions; repeat-only consistency not assessable"
+    }
+  ]
+}

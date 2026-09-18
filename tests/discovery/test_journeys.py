@@ -363,3 +363,62 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
             "evaluated_rows",
         ):
             assert key not in serialized
+
+
+def test_dependency_support_survives_overview_network_and_graph_handoffs():
+    df = pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None], "Z": range(4)})
+    overview = fw.InvestigationResult.from_dict(
+        json.loads(json.dumps(fw.explore(df).to_dict(compact=True), allow_nan=False))
+    )
+    dependencies = fw.InvestigationResult.from_dict(overview["sections"]["dependencies"])
+    records = {(tuple(d["determinant"]), d["target"]): d for d in dependencies["dependencies"]}
+    assert records[(("X",), "Y")]["exact"]
+    assert records[(("Y",), "Z")]["exact"]
+    assert not records[(("X",), "Z")]["exact"]
+    assert records[(("X",), "Y")]["repeated_rows"] == 0
+    broad = dependencies["grain_views"][0]
+    assert broad["population"]["evaluated_rows"] == 4
+    assert broad["candidate_ids"] == ["key0", "key2"]
+    assignment = next(
+        a for a in broad["grain"]["graph"]["assignments"] if a["target"]["value"] == "Y"
+    )
+    assert assignment["nodes"] == []
+    assert assignment["reason"] == "different_target_population"
+    narrow = dependencies["grain_views"][1]
+    assert narrow["population"]["positions"] == [0, 2]
+    assert len(narrow["grain"]["graph"]["nodes"]) == 1
+    edge = next(
+        e
+        for e in overview["feature_network"]["relationships"]
+        if e.get("determinant") == ["X"] and e.get("target") == "Y"
+    )
+    finding_id = edge["evidence"]["overview_finding_id"]
+    assert overview.select(df, finding_id).positions == (0, 2)
+    finding = next(f for f in overview["findings"] if f["id"] == finding_id)
+    assert finding["measurements"]["target_coverage"] == 0.5
+    assert "0 with repeated support" in fw.render_plaintext(overview)
+    assert "target observed on 2/4" in fw.render_html(overview, section="dependencies")
+    assert "repeat-only consistency not assessable" in fw.render_html(overview)
+    assert "target_coverage" not in json.dumps(fw.visualization_data(overview, detail="topology"))
+
+
+def test_singleton_inflation_and_incompatible_views_remain_visible():
+    frame = pd.DataFrame({"X": [*range(99), 98], "Y": ["a"] * 99 + ["b"]})
+    overview = fw.explore(frame)
+    dep = next(
+        d for d in overview["sections"]["dependencies"]["dependencies"] if d["determinant"] == ["X"]
+    )
+    assert dep["modal_accuracy"] == 0.99
+    assert dep["repeat_modal_accuracy"] == 0.5
+    assert "repeat-only consistency 0.5" in fw.render_html(overview)
+    assert "repeat coverage 0.02" in fw.render_html(overview, section="dependencies")
+    overlapping = fw.discover_dependencies(
+        pd.DataFrame({"X": [1, 1, 2, 2], "left": [1, 1, None, None], "right": [None, None, 2, 2]}),
+        max_key_size=1,
+    )
+    for view in overlapping["grain_views"]:
+        assert not {"key1", "key2"}.issubset(view["candidate_ids"])
+        assert (
+            view["population"]["evaluated_rows"]
+            == view["grain"]["graph"]["scope"]["evaluated_rows"]
+        )

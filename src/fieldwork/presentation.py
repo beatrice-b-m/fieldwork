@@ -41,7 +41,7 @@ def candidate_role(candidate):
     return "repeated grouping"
 
 
-def candidate_priority(candidate):
+def candidate_priority(candidate, *, legacy=False):
     roles = {
         "repeated grouping": 0,
         "unique identifier": 1,
@@ -50,11 +50,142 @@ def candidate_priority(candidate):
     }
     return (
         roles[candidate_role(candidate)],
-        -len(candidate["determines"]),
+        -len(candidate["determines"] if legacy else candidate["determines_with_repeated_support"]),
         -candidate["repeated_rows"],
         len(candidate["columns"]),
         tuple(candidate["columns"]),
     )
+
+
+def _dependency_measurements(record):
+    """Recover only arithmetic supported by saved evidence; never mutate it."""
+    row = dict(record)
+    if "repeated_rows" not in row:
+        fields = ("evaluated_rows", "evaluated_groups", "repeated_groups")
+        row["repeated_rows"] = (
+            row["evaluated_rows"] - (row["evaluated_groups"] - row["repeated_groups"])
+            if all(row.get(k) is not None for k in fields)
+            else None
+        )
+    repeated, evaluated = row["repeated_rows"], row.get("evaluated_rows")
+    row.setdefault(
+        "repeat_coverage", repeated / evaluated if evaluated and repeated is not None else None
+    )
+    row.setdefault(
+        "repeat_modal_accuracy",
+        1 - row["repair_rows"] / repeated
+        if repeated and row.get("repair_rows") is not None
+        else None,
+    )
+    for field in (
+        "determinant_evaluated_rows",
+        "target_observed_rows",
+        "target_coverage",
+        "target_missing_excluded_rows",
+    ):
+        row.setdefault(field, None)
+    return row
+
+
+def _candidate_summaries(data):
+    """Use one comparable ranking for the whole saved candidate collection."""
+    candidates = []
+    for original in data.get("candidates", []):
+        candidate = dict(original)
+        records = [
+            d
+            for d in data.get("dependencies", [])
+            if d.get("context") is None and d["determinant"] == candidate["columns"]
+        ]
+        by_target = {d["target"]: d for d in records}
+        if "determines_with_repeated_support" not in candidate:
+            exact_records = [by_target.get(target) for target in candidate["determines"]]
+            candidate["determines_with_repeated_support"] = (
+                [d["target"] for d in exact_records if d["repeated_groups"] > 0]
+                if all(
+                    d is not None and d.get("repeated_groups") is not None for d in exact_records
+                )
+                else None
+            )
+        candidate.setdefault(
+            "global_targets_tested", len(records) if "dependencies" in data else None
+        )
+        features = data.get("parameters", {}).get("features")
+        candidate.setdefault(
+            "global_targets_possible",
+            len(set(features) - set(candidate["columns"])) if features is not None else None,
+        )
+        candidate["role"] = candidate_role(candidate)
+        candidates.append(candidate)
+    legacy = any(c["determines_with_repeated_support"] is None for c in candidates)
+    return sorted(candidates, key=lambda c: candidate_priority(c, legacy=legacy))
+
+
+def _available(value):
+    return "unavailable" if value is None else str(value)
+
+
+def _candidate_explanation(candidate):
+    supported = candidate["determines_with_repeated_support"]
+    tested, possible = candidate["global_targets_tested"], candidate["global_targets_possible"]
+    text = (
+        f"{candidate['groups']} groups, {candidate['repeated_groups']} repeated; "
+        f"{candidate['repeated_rows']} determinant repeated rows; "
+        f"{len(candidate['determines'])} exact targets, "
+        f"{_available(len(supported) if supported is not None else None)} with repeated support; "
+        f"global targets tested {_available(tested)}/{_available(possible)}"
+    )
+    if tested is None or possible is None:
+        text += " (test coverage unavailable)"
+    elif tested < possible:
+        text += " (incomplete; untested targets are unknown)"
+    return text
+
+
+def _dependency_explanation(record, dropna):
+    row = _dependency_measurements(record)
+    n, repeated = row.get("evaluated_rows"), row["repeated_rows"]
+    text = (
+        "Exact"
+        if row.get("exact")
+        else "Consistency unsupported"
+        if row.get("exact") is None
+        else "Approximate"
+    ) + f" on {_available(n)} evaluated rows"
+    q, observed = row["determinant_evaluated_rows"], row["target_observed_rows"]
+    text += (
+        f"; target observed on {observed}/{q} determinant-eligible rows"
+        if q is not None and observed is not None
+        else "; observed target coverage unavailable"
+    )
+    if row["target_coverage"] is not None:
+        text += f" (observed target coverage {row['target_coverage']:.3g})"
+    if repeated == 0:
+        text += "; no repeated groups after exclusions; repeat-only consistency not assessable"
+    elif repeated is None:
+        text += "; repeated support unavailable; repeat-only consistency unavailable"
+    else:
+        text += f"; {repeated}/{n} rows in repeated groups"
+        if row["repeat_coverage"] is not None:
+            text += f" (repeat coverage {row['repeat_coverage']:.3g})"
+        accuracy = row["repeat_modal_accuracy"]
+        text += (
+            f"; repeat-only consistency {accuracy:.3g}"
+            if accuracy is not None
+            else "; repeat-only consistency unavailable"
+        )
+    if dropna is False:
+        text += "; missing values participated in consistency measurements"
+    return text
+
+
+def _dependency_label(row):
+    from .evidence import context_statement
+
+    label = ", ".join(row["determinant"]) + " → " + row["target"]
+    if row.get("context"):
+        label += " within " + context_statement(row["context"])
+    return label
 
 
 KINDS = {"missingness", "dependencies", "paths", "value_patterns", "overview", "comparison"}
@@ -102,7 +233,10 @@ def visualization_data(
     -------
     dict[str, Any]
         Fresh allowlisted presentation projection; not an analytical round-trip
-        export. Use to_dict for full serialization.
+        export. Use to_dict for full serialization. Full dependency results include
+        candidate summaries and all completed dependency tests, even below the
+        finding threshold. Legacy repeat measurements are recovered when possible;
+        unavailable target coverage remains None, without changing saved data.
 
     Raises
     ------
@@ -150,6 +284,12 @@ def visualization_data(
                 examples=record["examples"],
                 exceptions=record["exceptions"],
             )
+            if record["pattern"] in {"exact_dependency", "approximate_dependency"}:
+                dependency_data = data.get("sections", {}).get("dependencies", data)
+                row["measurements"] = _dependency_measurements(record["measurements"])
+                row["explanation"] = _dependency_explanation(
+                    record["measurements"], dependency_data.get("parameters", {}).get("dropna")
+                )
         output["findings"].append(row)
     if "analysis_unit" in data:
         output["analysis_unit"] = _qualitative_unit(data["analysis_unit"])
@@ -217,6 +357,15 @@ def visualization_data(
                 ),
             }
         )
+    if data["kind"] == "dependencies" and detail == "full":
+        output["candidates"] = _candidate_summaries(data)
+        output["dependencies"] = [
+            {
+                **_dependency_measurements(d),
+                "explanation": _dependency_explanation(d, data.get("parameters", {}).get("dropna")),
+            }
+            for d in data.get("dependencies", [])
+        ]
     if data["kind"] == "overview":
         sections = data["sections"]
         if "section_selection" in data:
@@ -231,13 +380,26 @@ def visualization_data(
                     "columns": c["columns"],
                     "role": candidate_role(c),
                     **(
-                        {"groups": c["groups"], "repeated_groups": c["repeated_groups"]}
+                        {
+                            k: c[k]
+                            for k in (
+                                "groups",
+                                "repeated_groups",
+                                "repeated_rows",
+                                "determines",
+                                "determines_with_repeated_support",
+                                "global_targets_tested",
+                                "global_targets_possible",
+                            )
+                        }
                         if detail == "full"
                         else {}
                     ),
                 }
-                for c in sorted(
-                    sections["dependencies"].get("candidates", []), key=candidate_priority
+                for c in (
+                    _candidate_summaries(sections["dependencies"])
+                    if detail == "full"
+                    else sections["dependencies"].get("candidates", [])
                 )
             ],
             "signatures": [
@@ -390,8 +552,12 @@ def render_plaintext(
         for candidate in overview["grains"][: min(5, max_nodes)]:
             text = "  " + ", ".join(candidate["columns"]) + ": " + candidate["role"]
             if detail == "full":
-                text += f"; {candidate['groups']} groups, {candidate['repeated_groups']} repeated"
-            lines.append(text)
+                lines.append(text)
+                lines.extend(
+                    "    " + part for part in _candidate_explanation(candidate).split("; ")
+                )
+            else:
+                lines.append(text)
         lines.append("Suggested census paths")
         lines.extend("  " + " > ".join(path) for path in overview["paths"][:max_nodes])
         if "feature_network" in data:
@@ -401,10 +567,24 @@ def render_plaintext(
         lines.append(
             "Summary lists are limited; individual sections retain complete evidence and coverage."
         )
+    if "candidates" in data:
+        lines.append("Candidate grains")
+        for candidate in data["candidates"][:max_nodes]:
+            lines.append("  " + ", ".join(candidate["columns"]) + ": " + candidate["role"])
+            lines.extend("  " + part for part in _candidate_explanation(candidate).split("; "))
+    if "dependencies" in data:
+        lines.append("Completed dependency tests (including below finding threshold)")
+        for row in data["dependencies"][:max_nodes]:
+            lines.append(_dependency_label(row))
+            lines.extend("  " + part for part in row["explanation"].split("; "))
+        if len(data["dependencies"]) > max_nodes:
+            lines.append("... more dependency tests not rendered (max_nodes)")
     for row in [] if data["kind"] == "overview" else data["findings"][:max_nodes]:
         lines.append((f"[{row['id']}] " if detail == "full" else "") + row["statement"])
         lines.append("  Analysis: " + _unit_label(row["analysis_unit"]))
         if detail == "full":
+            if "explanation" in row:
+                lines.extend("  " + part for part in row["explanation"].split("; "))
             if "explanation" in row["measurements"]:
                 lines.extend(
                     "  " + reason for reason in row["measurements"]["explanation"].split("; ")
@@ -546,7 +726,33 @@ def render_svg(
             svg.text(685, y + 13, f"{row['populated']}/{row['denominator']}", size=12)
             y += 28
     else:
-        for row in data["findings"][:max_findings]:
+        rows = data["findings"][:max_findings]
+        if detail == "full" and data["kind"] in {"overview", "dependencies"}:
+            candidates = data.get("candidates", data.get("overview", {}).get("grains", []))
+            rows = [
+                {
+                    "statement": ", ".join(c["columns"]) + ": " + c["role"],
+                    "analysis_unit": {"counting_unit": "rows"},
+                    "counting_unit": "rows",
+                    "measurements": {},
+                    "explanation": _candidate_explanation(c),
+                }
+                for c in candidates[: min(5, max_findings)]
+            ]
+            if data["kind"] == "dependencies":
+                rows += [
+                    {
+                        "statement": _dependency_label(d),
+                        "analysis_unit": {"counting_unit": "rows"},
+                        "counting_unit": "rows",
+                        "measurements": {},
+                        "explanation": d["explanation"],
+                    }
+                    for d in data["dependencies"][:max_findings]
+                ]
+            else:
+                rows += data["findings"][:max_findings]
+        for row in rows:
             lines = _wrap(row["statement"], 90)
             metrics = _unit_label(row["analysis_unit"])
             if detail == "full":
@@ -561,6 +767,8 @@ def render_svg(
                 )
             if detail == "full" and row["measurements"].get("explanation"):
                 metrics = row["measurements"]["explanation"]
+            if detail == "full" and "explanation" in row:
+                metrics = row["explanation"]
             detail_lines = _wrap(metrics, 102) if metrics else []
             height = 26 + len(lines) * 20 + len(detail_lines) * 17
             svg.rect(20, y, 820, height)
@@ -709,6 +917,36 @@ def render_html(
                     parts.append(_html_evidence(edge["structure"]))
                 parts.append("</li>")
             parts.append("</ul></details>")
+    if detail == "full":
+        candidates = projected.get("candidates", projected.get("overview", {}).get("grains", []))
+        if candidates:
+            parts.append("<h2>Candidate grains</h2>")
+            for candidate in candidates[:max_findings]:
+                parts.append(
+                    "<p>"
+                    + html.escape(
+                        ", ".join(candidate["columns"])
+                        + ": "
+                        + candidate["role"]
+                        + "; "
+                        + _candidate_explanation(candidate)
+                    )
+                    + "</p>"
+                )
+        if "dependencies" in projected:
+            parts.append("<h2>Completed dependency tests (including below finding threshold)</h2>")
+            for row in projected["dependencies"][:max_findings]:
+                parts.append(
+                    "<details><summary>"
+                    + html.escape(_dependency_label(row))
+                    + "</summary><p>"
+                    + html.escape(row["explanation"])
+                    + "</p>"
+                    + _html_evidence({k: v for k, v in row.items() if k != "explanation"})
+                    + "</details>"
+                )
+            if len(projected["dependencies"]) > max_findings:
+                parts.append("<p>More dependency tests available; display limit reached.</p>")
     for row in projected["findings"][:max_findings]:
         anchor = f' id="{html.escape(row["id"], quote=True)}"' if detail == "full" else ""
         parts.append(
@@ -723,6 +961,8 @@ def render_html(
                 + html.escape(row["counting_unit"])
                 + "</p>"
             )
+            if "explanation" in row:
+                parts.append("<p>" + html.escape(row["explanation"]) + "</p>")
             parts.append(_html_evidence(row["measurements"]))
             parts.append(
                 "<h3>Representative source rows</h3>"

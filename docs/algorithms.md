@@ -196,3 +196,18 @@ empty tests; `global_targets_possible` counts selected non-key targets. Conditio
 and graph work never inflate those counters. Empty lists under incomplete budgets
 mean nothing was established by the completed work. `min_accuracy` only filters
 findings: the `dependencies` table retains every completed test.
+
+Full presentation retains the role order: repeated groupings, unique identifiers,
+constants, then candidates without evaluated support. Within a role it sorts by
+the count of global exact targets with repeated support, descending determinant
+repeated rows, key size, and lexical columns. Raw exact-target count is no longer
+a tie-breaker; global test coverage is disclosed rather than multiplied into a
+score. This intentional presentation change does not reorder analytical candidates
+or findings. Ranking remains budget-sensitive and is not a completeness guarantee.
+Unique identifiers remain valid row-grain candidates.
+
+Full candidate summaries show both exact-target counts, determinant group counts,
+and global tests completed/possible. Standalone full dependency projections and
+renderings expose all completed per-target records within display limits, including
+below-threshold tests; the overview stays compact. Use `to_frame('dependencies')`
+for the complete table or render the overview's dependency section for detail.

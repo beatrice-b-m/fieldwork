@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "examples"))
+from dependency_support import investigate as investigate_support
 from investigation import investigate
 from wide_table import investigate as investigate_wide_table
 
@@ -23,7 +24,9 @@ def generate(output: Path):
     df, availability, exceptions, paths, tree = investigate()
     _, wide_graph = investigate_wide_table()
     assert exceptions["exam_id"].tolist() == ["S01"]
+    _, dependency_support = investigate_support()
     results = {
+        "dependency-support": dependency_support,
         "wide-table": wide_graph,
         "availability": availability,
         "census": tree,
