@@ -1,28 +1,138 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Feature explorer</title><style>
-body{margin:0;background:#f6f8fb;color:#193345;font:15px/1.5 Arial,sans-serif}
-main{padding:24px;max-width:1600px;margin:auto}h1{font-size:26px}h2{font-size:20px}
-.toolbar{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;align-items:center}
-select,button{font:inherit;padding:6px;border:1px solid #b8c8d3;border-radius:5px;background:white}
-.figure{overflow:auto;border:1px solid #d5dee6;border-radius:12px;margin:16px 0}
-svg{display:block}.feature{cursor:pointer}.selected rect{stroke:#087c9a;stroke-width:3}
-.dim{opacity:.22}.feature.active{fill:#006880;font-weight:bold}
-table{border-collapse:collapse;background:white}th,td{border:1px solid #d5dee6;padding:8px;text-align:left}
-summary{cursor:pointer;padding:8px;font-weight:bold}details{margin:8px 0}details p{padding:0 8px}
-[hidden]{display:none!important}
-</style></head><body><main><h1>Feature explorer</h1><p>Conditional cohort · 8 evaluated / 12 input rows · 0 missing, 4 restricted exclusions</p><p>Observed paths; omitted branches retain their original mass.</p><table><thead><tr><th>Observed path</th><th>Rows / share of total</th><th>Share of parent</th><th>Share of total</th></tr></thead><tbody><tr data-tree-row="c0" data-parent=""><td style="padding-left:8px"><button data-collapse-row="c0" aria-expanded="true" aria-label="Toggle child branches">↕</button> All evaluated rows</td><td>8 / 100.0%</td><td>—</td><td><meter min="0" max="1" value="1.0" aria-label="Share of total: 100.0%"></meter></td></tr><tr data-tree-row="c1" data-parent="c0"><td style="padding-left:28px"><button data-collapse-row="c1" aria-expanded="true" aria-label="Toggle child branches">↕</button> site=&#x27;North&#x27;</td><td>5 / 62.5%</td><td>62.5%</td><td><meter min="0" max="1" value="0.625" aria-label="Share of total: 62.5%"></meter></td></tr><tr data-tree-row="c2" data-parent="c1"><td style="padding-left:48px">exam_id=&#x27;N01&#x27;</td><td>3 / 37.5%</td><td>60.0%</td><td><meter min="0" max="1" value="0.375" aria-label="Share of total: 37.5%"></meter></td></tr><tr data-tree-row="c3" data-parent="c1"><td style="padding-left:48px">exam_id=&#x27;N02&#x27;</td><td>2 / 25.0%</td><td>40.0%</td><td><meter min="0" max="1" value="0.25" aria-label="Share of total: 25.0%"></meter></td></tr><tr data-tree-row="c4" data-parent="c0"><td style="padding-left:28px"><button data-collapse-row="c4" aria-expanded="true" aria-label="Toggle child branches">↕</button> site=&#x27;South&#x27;</td><td>3 / 37.5%</td><td>37.5%</td><td><meter min="0" max="1" value="0.375" aria-label="Share of total: 37.5%"></meter></td></tr><tr data-tree-row="c5" data-parent="c4"><td style="padding-left:48px">exam_id=&#x27;S01&#x27;</td><td>2 / 25.0%</td><td>66.7%</td><td><meter min="0" max="1" value="0.25" aria-label="Share of total: 25.0%"></meter></td></tr><tr data-tree-row="c6" data-parent="c4"><td style="padding-left:48px">exam_id=&#x27;S02&#x27;</td><td>1 / 12.5%</td><td>33.3%</td><td><meter min="0" max="1" value="0.125" aria-label="Share of total: 12.5%"></meter></td></tr></tbody></table><details><summary>Static figure</summary><div class="figure"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Observed census" viewBox="0 0 980 361" width="980" height="361" font-family="Arial, sans-serif" fill="#193345"><title>Observed census</title><rect width="100%" height="100%" fill="#f6f8fb"/><text x="24" y="32" font-size="22" font-weight="600" >Observed census</text><text x="24" y="55" font-size="12" font-weight="400" >Observed paths; omitted branches retain their original mass.</text><text x="24" y="73" font-size="12" font-weight="400" >Conditional cohort · 8 evaluated / 12 input rows · 0 missing, 4 restricted exclusions</text><text x="24" y="111" font-size="14" font-weight="600" >Bars show share of all evaluated rows</text><g data-row="c0" data-parent=""><path d="M24,123 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="38" y="133" font-size="13" font-weight="400" >All evaluated rows</text><rect x="420" y="120" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="120" width="300.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="133" font-size="12" font-weight="400" >8 rows · 100.0%</text></g><g data-row="c1" data-parent="c0"><path d="M44,151 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="58" y="161" font-size="13" font-weight="400" >site=&#x27;North&#x27;</text><rect x="420" y="148" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="148" width="187.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="161" font-size="12" font-weight="400" >5 rows · 62.5%</text></g><g data-row="c2" data-parent="c1"><path d="M64,179 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="189" font-size="13" font-weight="400" >exam_id=&#x27;N01&#x27;</text><rect x="420" y="176" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="176" width="112.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="189" font-size="12" font-weight="400" >3 rows · 37.5%</text></g><g data-row="c3" data-parent="c1"><path d="M64,207 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="217" font-size="13" font-weight="400" >exam_id=&#x27;N02&#x27;</text><rect x="420" y="204" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="204" width="75.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="217" font-size="12" font-weight="400" >2 rows · 25.0%</text></g><g data-row="c4" data-parent="c0"><path d="M44,235 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="58" y="245" font-size="13" font-weight="400" >site=&#x27;South&#x27;</text><rect x="420" y="232" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="232" width="112.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="245" font-size="12" font-weight="400" >3 rows · 37.5%</text></g><g data-row="c5" data-parent="c4"><path d="M64,263 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="273" font-size="13" font-weight="400" >exam_id=&#x27;S01&#x27;</text><rect x="420" y="260" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="260" width="75.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="273" font-size="12" font-weight="400" >2 rows · 25.0%</text></g><g data-row="c6" data-parent="c4"><path d="M64,291 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="301" font-size="13" font-weight="400" >exam_id=&#x27;S02&#x27;</text><rect x="420" y="288" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="288" width="37.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="301" font-size="12" font-weight="400" >1 rows · 12.5%</text></g></svg></div></details></main><script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Fieldwork / Census</title><style>
+:root{color-scheme:light;--ink:#193345;--muted:#4c6474;--line:#cbd5df;--accent:#006880}
+*{box-sizing:border-box}body{margin:0;background:#f6f8fb;color:var(--ink);font:16px/1.55 system-ui,sans-serif}
+main{max-width:1200px;margin:auto;padding:28px}h1{font-size:28px;margin:8px 0}h2{font-size:21px}h3{font-size:17px}
+p{margin:10px 0}p,li,h1,h2,h3{overflow-wrap:anywhere}a{color:var(--accent)}.eyebrow,.muted{color:var(--muted)}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:16px 0}
+.toolbar label{min-width:0;max-width:100%;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.toolbar label:has(input[type=checkbox]){flex-direction:row;align-items:center}
+input,select,button{font:inherit;color:inherit;max-width:100%}
+input[type=search],select,button{padding:8px 12px;border:1px solid #8b9eac;border-radius:6px;background:white;min-height:42px}
+button,summary{cursor:pointer}button:hover{background:#e8f3f5}
+:focus-visible{outline:3px solid #087c9a;outline-offset:3px}
+.notice,.empty{padding:12px 16px;border-left:4px solid #087c9a;background:#e9f3f6;margin:16px 0}
+.badge{display:inline-block;padding:2px 8px;border:1px solid var(--line);border-radius:12px;font-size:13px;font-weight:400;margin-right:8px}
+section{margin:28px 0;min-width:0}details{background:white;border:1px solid var(--line);border-radius:8px;margin:10px 0}
+summary{padding:14px;font-weight:600;overflow-wrap:anywhere}details[open]>summary{border-bottom:1px solid var(--line)}
+.content{padding:4px 16px 16px;overflow-wrap:anywhere}details:target{border-color:var(--accent)}
+.figure,.table-scroll{overflow:auto;max-width:100%;margin:16px 0}
+.figure{border:1px solid var(--line);border-radius:10px}
+.figure svg{display:block;max-width:100%;height:auto}.figure.actual svg{max-width:none}
+table{border-collapse:collapse;background:white;width:100%;font-size:14px}
+.table-scroll>table:not(.evidence-table){min-width:680px}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+th{font-weight:600;background:#f1f5f8}td{overflow-wrap:anywhere}td table{margin:4px 0}
+code{font:14px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.feature{cursor:pointer}.selected rect{stroke:#087c9a;stroke-width:3}.dim{opacity:.3}.feature.active{fill:#006880;font-weight:bold}
+.matrix-scroll{overflow:auto;max-height:65vh;border:1px solid var(--line);border-radius:8px;isolation:isolate}
+.grain-matrix{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.grain-matrix caption{text-align:left;padding:12px;background:#f1f5f8;font-weight:600}
+.grain-matrix th,.grain-matrix td{width:160px;min-width:160px;max-width:160px;padding:8px;border-width:0 1px 1px 0}
+.grain-matrix tr>th:first-child{width:240px;min-width:240px;max-width:240px;position:sticky;left:0;z-index:1}
+.grain-matrix thead{position:sticky;top:0;z-index:3}
+.grain-matrix thead th{position:sticky;top:0;z-index:2;background:#e8eff4}
+.grain-matrix thead th:first-child{z-index:3}
+.grain-matrix button{width:100%;border:0;background:transparent;text-align:left;padding:4px;font-weight:inherit}
+.grain-matrix .active{outline:2px solid var(--accent);outline-offset:-2px}
+.matrix-label{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+@media(max-width:600px){.grain-matrix tr>th:first-child{width:140px;min-width:140px;max-width:140px}}
+[hidden]{display:none!important}.skip{position:absolute;left:-10000px}.skip:focus{left:16px;top:8px;background:white;padding:8px}
+@media(max-width:600px){main{padding:16px}h1{font-size:24px}.toolbar label{width:100%}
+.evidence-table,.evidence-table>tbody,.evidence-table>tbody>tr,.evidence-table>tbody>tr>th,.evidence-table>tbody>tr>td{display:block;width:100%}
+.evidence-table>tbody>tr>td{border-top:0;margin-bottom:8px}.evidence-table .table-scroll{margin:0}}
+@media print{body{background:white}main{max-width:none;padding:0}.toolbar,.skip{display:none}.figure{overflow:visible}}
+</style></head><body><a class="skip" href="#report">Skip to report</a><main id="report"><header><p class="eyebrow">Saved evidence report</p><h1>Fieldwork / Census</h1><p>Explore saved relationships and populations. Controls change the view, not the analysis.</p></header><div class="toolbar" data-enhance hidden><label>Figure scale<select data-scale><option value="actual">Actual size</option><option value="fit">Fit width</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1.5">150%</option><option value="2">200%</option></select></label><button type="button" id="reset-view">Reset view</button></div><p class="muted">Large figures and tables scroll within their panels. Use Fit width for an overview, or Actual size to read labels.</p><p>Conditional cohort · 8 evaluated / 12 input rows · 0 missing, 4 restricted exclusions</p><p>Observed paths; omitted branches retain their original mass.</p><div class="table-scroll"><table><thead><tr><th>Observed path</th><th>Rows / share of total</th><th>Share of parent</th><th>Share of total</th></tr></thead><tbody><tr data-tree-row="c0" data-parent=""><td style="padding-left:8px"><button data-collapse-row="c0" aria-expanded="true" aria-label="Toggle child branches of All evaluated rows">↕</button> All evaluated rows</td><td>8 / 100.0%</td><td>—</td><td><meter min="0" max="1" value="1.0" aria-label="Share of total: 100.0%"></meter></td></tr><tr data-tree-row="c1" data-parent="c0"><td style="padding-left:28px"><button data-collapse-row="c1" aria-expanded="true" aria-label="Toggle child branches of site=&#x27;North&#x27;">↕</button> site=&#x27;North&#x27;</td><td>5 / 62.5%</td><td>62.5%</td><td><meter min="0" max="1" value="0.625" aria-label="Share of total: 62.5%"></meter></td></tr><tr data-tree-row="c2" data-parent="c1"><td style="padding-left:48px">exam_id=&#x27;N01&#x27;</td><td>3 / 37.5%</td><td>60.0%</td><td><meter min="0" max="1" value="0.375" aria-label="Share of total: 37.5%"></meter></td></tr><tr data-tree-row="c3" data-parent="c1"><td style="padding-left:48px">exam_id=&#x27;N02&#x27;</td><td>2 / 25.0%</td><td>40.0%</td><td><meter min="0" max="1" value="0.25" aria-label="Share of total: 25.0%"></meter></td></tr><tr data-tree-row="c4" data-parent="c0"><td style="padding-left:28px"><button data-collapse-row="c4" aria-expanded="true" aria-label="Toggle child branches of site=&#x27;South&#x27;">↕</button> site=&#x27;South&#x27;</td><td>3 / 37.5%</td><td>37.5%</td><td><meter min="0" max="1" value="0.375" aria-label="Share of total: 37.5%"></meter></td></tr><tr data-tree-row="c5" data-parent="c4"><td style="padding-left:48px">exam_id=&#x27;S01&#x27;</td><td>2 / 25.0%</td><td>66.7%</td><td><meter min="0" max="1" value="0.25" aria-label="Share of total: 25.0%"></meter></td></tr><tr data-tree-row="c6" data-parent="c4"><td style="padding-left:48px">exam_id=&#x27;S02&#x27;</td><td>1 / 12.5%</td><td>33.3%</td><td><meter min="0" max="1" value="0.125" aria-label="Share of total: 12.5%"></meter></td></tr></tbody></table></div><details><summary>Static figure</summary><div tabindex="0" role="region" aria-label="Scrollable figure" class="figure actual"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Observed census" viewBox="0 0 980 361" width="980" height="361" font-family="Arial, sans-serif" fill="#193345"><title>Observed census</title><rect width="100%" height="100%" fill="#f6f8fb"/><text x="24" y="32" font-size="22" font-weight="600" >Observed census</text><text x="24" y="55" font-size="12" font-weight="400" >Observed paths; omitted branches retain their original mass.</text><text x="24" y="73" font-size="12" font-weight="400" >Conditional cohort · 8 evaluated / 12 input rows · 0 missing, 4 restricted exclusions</text><text x="24" y="111" font-size="14" font-weight="600" >Bars show share of all evaluated rows</text><g data-row="c0" data-parent=""><path d="M24,123 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="38" y="133" font-size="13" font-weight="400" >All evaluated rows</text><rect x="420" y="120" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="120" width="300.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="133" font-size="12" font-weight="400" >8 rows · 100.0%</text></g><g data-row="c1" data-parent="c0"><path d="M44,151 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="58" y="161" font-size="13" font-weight="400" >site=&#x27;North&#x27;</text><rect x="420" y="148" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="148" width="187.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="161" font-size="12" font-weight="400" >5 rows · 62.5%</text></g><g data-row="c2" data-parent="c1"><path d="M64,179 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="189" font-size="13" font-weight="400" >exam_id=&#x27;N01&#x27;</text><rect x="420" y="176" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="176" width="112.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="189" font-size="12" font-weight="400" >3 rows · 37.5%</text></g><g data-row="c3" data-parent="c1"><path d="M64,207 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="217" font-size="13" font-weight="400" >exam_id=&#x27;N02&#x27;</text><rect x="420" y="204" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="204" width="75.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="217" font-size="12" font-weight="400" >2 rows · 25.0%</text></g><g data-row="c4" data-parent="c0"><path d="M44,235 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="58" y="245" font-size="13" font-weight="400" >site=&#x27;South&#x27;</text><rect x="420" y="232" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="232" width="112.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="245" font-size="12" font-weight="400" >3 rows · 37.5%</text></g><g data-row="c5" data-parent="c4"><path d="M64,263 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="273" font-size="13" font-weight="400" >exam_id=&#x27;S01&#x27;</text><rect x="420" y="260" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="260" width="75.0" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="273" font-size="12" font-weight="400" >2 rows · 25.0%</text></g><g data-row="c6" data-parent="c4"><path d="M64,291 v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/><text x="78" y="301" font-size="13" font-weight="400" >exam_id=&#x27;S02&#x27;</text><rect x="420" y="288" width="300" height="16" rx="7" fill="#edf1f5" stroke="#cbd5df" /><rect x="420" y="288" width="37.5" height="16" rx="7" fill="#65a5b3" stroke="#cbd5df" /><text x="732" y="301" font-size="12" font-weight="400" >1 rows · 12.5%</text></g></svg></div></details></main><script>
+(() => {
+  const all = (s, root = document) => [...root.querySelectorAll(s)];
+  all('[data-enhance]').forEach(e => e.hidden = false);
+  all('[data-collection]').forEach(section => {
+    const cards = all('[data-record]', section);
+    const search = section.querySelector('[data-search]');
+    if (!search) return;
+    const pattern = section.querySelector('[data-pattern-filter]');
+    const exceptions = section.querySelector('[data-exceptions-filter]');
+    // Cache plain text once. Queries never become HTML or CSS selectors.
+    const text = new Map(cards.map(c => [c, c.textContent.toLocaleLowerCase()]));
+    const update = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      cards.forEach(card => card.hidden = !text.get(card).includes(query) ||
+        (pattern && pattern.value !== '' && card.dataset.pattern !== pattern.value) ||
+        (exceptions?.checked && card.dataset.exceptions !== 'true'));
+      const visible = cards.filter(c => !c.hidden).length;
+      section.querySelector('[data-status]').textContent =
+        `${visible} of ${cards.length} included records shown`;
+      section.querySelector('[data-no-matches]').hidden = visible !== 0 || cards.length === 0;
+    };
+    section.addEventListener('input', update);
+    section.addEventListener('change', update);
+    section.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.hasAttribute('data-reset')) {
+        search.value = ''; if (pattern) pattern.value = '';
+        if (exceptions) exceptions.checked = false;
+        update();
+      }
+      if (button.hasAttribute('data-expand')) cards.filter(c => !c.hidden).forEach(c => c.open = true);
+      if (button.hasAttribute('data-close')) cards.filter(c => !c.hidden).forEach(c => c.open = false);
+    });
+    update();
+  });
+  function revealHash() {
+    let id;
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+    const target = document.getElementById(id);
+    if (!target) return;
+    const collection = target.closest('[data-collection]');
+    collection?.querySelector('[data-reset]')?.click();
+    for (let parent = target; parent; parent = parent.parentElement) {
+      if (parent.tagName === 'DETAILS') parent.open = true;
+    }
+    target.querySelector('summary')?.focus({preventScroll: true});
+    target.scrollIntoView({block: 'start'});
+  }
+  window.addEventListener('hashchange', revealHash);
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest('a[href^="#"]');
+    if (anchor && anchor.hash === location.hash) revealHash();
+  });
+  if (location.hash) revealHash();
+  document.querySelector('[data-scale]')?.addEventListener('change', event => {
+    const scale = event.target.value;
+    all('.figure').forEach(figure => {
+      figure.classList.toggle('actual', scale !== 'fit');
+      const svg = figure.querySelector('svg');
+      if (svg) svg.style.width = scale === 'fit' || scale === 'actual' ? '' :
+        `${Number(svg.getAttribute('width')) * Number(scale)}px`;
+    });
+  });
+})();
+
+(() => {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 function selectFeature(id) {
   const select = $('#feature'); if (select) select.value = id;
   $$('[data-evidence]').forEach(e => { e.open = e.dataset.evidence === id; });
-  $$('[data-feature]').forEach(e => e.classList.toggle('active', e.dataset.feature === id));
+  $$('[data-feature]').forEach(e => {
+    e.classList.toggle('active', e.dataset.feature === id);
+    e.setAttribute('aria-pressed', String(e.dataset.feature === id));
+  });
+  const status = $('#selection-status'), link = $('#selection-link');
+  if (status) status.textContent = id ? `Selected: ${select.selectedOptions[0].textContent}` : 'No feature selected.';
+  if (link) { link.hidden = !id; link.href = '#evidence-' + id; }
   $$('[data-node]').forEach(e => e.classList.toggle('selected',
     e.dataset.features.split(' ').includes(id) && id !== ''));
 }
 $$('[data-feature]').forEach(e => {
+  e.setAttribute('role', 'button');
+  e.setAttribute('tabindex', '0');
+  e.setAttribute('aria-pressed', 'false');
   e.addEventListener('click', () => selectFeature(e.dataset.feature));
   e.addEventListener('keydown', ev => {
     if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectFeature(e.dataset.feature); }
+    if (ev.key === 'Escape') selectFeature('');
   });
 });
 $('#feature')?.addEventListener('change', e => selectFeature(e.target.value));
@@ -39,8 +149,13 @@ $('#focus')?.addEventListener('change', e => {
   $$('[data-source]').forEach(edge => edge.classList.toggle('dim', id !== '' &&
     !(keep.has(edge.dataset.source) && keep.has(edge.dataset.target))));
 });
-$('#view')?.addEventListener('change', e =>
-  $$('[data-view]').forEach(v => v.hidden = v.dataset.view !== e.target.value));
+$('#view')?.addEventListener('change', e => {
+  $$('[data-view]').forEach(v => v.hidden = v.dataset.view !== e.target.value);
+  if ($('#matrix-search')) $('[data-scale]').disabled = e.target.value === 'matrix';
+  ['collapse', 'exceptions', 'focus'].forEach(id => {
+    const control = $('#' + id); if (control) control.disabled = e.target.value !== 'map';
+  });
+});
 $('#context')?.addEventListener('change', e =>
   $$('[data-context]').forEach(v => v.hidden = e.target.value !== 'all' &&
     v.dataset.context !== e.target.value && v.dataset.context !== '0'));
@@ -56,4 +171,34 @@ $$('[data-collapse-row]').forEach(button => button.addEventListener('click', () 
     if (row.hidden) hidden.add(row.dataset.treeRow);
   });
 }));
+function filterMatrix() {
+  const search = $('#matrix-search'); if (!search) return;
+  const query = search.value.trim().toLocaleLowerCase();
+  const rows = $$('[data-matrix-feature]');
+  rows.forEach(row => row.hidden = !row.dataset.matrixFeature.toLocaleLowerCase().includes(query));
+  const key = $('#matrix-key').value;
+  $$('[data-matrix-key]').forEach(cell => cell.hidden = key !== '' && cell.dataset.matrixKey !== key);
+  const shown = rows.filter(row => !row.hidden).length;
+  $('#matrix-status').textContent = `${shown} of ${rows.length} features shown`;
+  $('#matrix-empty').hidden = shown !== 0 || rows.length === 0;
+}
+$('#matrix-search')?.addEventListener('input', filterMatrix);
+$('#matrix-key')?.addEventListener('change', filterMatrix);
+$('#matrix-reset')?.addEventListener('click', () => {
+  $('#matrix-search').value = ''; $('#matrix-key').value = ''; filterMatrix();
+});
+filterMatrix();
+$('#reset-view')?.addEventListener('click', () => {
+  $('#matrix-reset')?.click();
+  $$('.toolbar select').forEach(select => {
+    select.selectedIndex = 0; select.dispatchEvent(new Event('change'));
+  });
+  $$('.toolbar input[type=checkbox]').forEach(input => {
+    input.checked = false; input.dispatchEvent(new Event('change'));
+  });
+  $$('[data-collapse-row]').forEach(button => button.setAttribute('aria-expanded', 'true'));
+  $$('[data-tree-row]').forEach(row => row.hidden = false);
+  selectFeature('');
+});
+})();
 </script></body></html>

@@ -45,6 +45,28 @@ population-compatible views retain more evidence than a single intersected graph
 inspect result bytes as well as runtime. Narrow candidate and feature budgets for
 wide frames. At most one view is built per distinct supported candidate mask.
 
+## Qualify output interactions and responsive layouts
+
+The optional browser harness requires a development installation of Playwright
+with Chromium. It does not add a package runtime dependency. Use the package's
+Python environment for fixtures and Node for browser checks:
+
+```bash
+uv run python scripts/output_ux_fixtures.py /tmp/fieldwork-output-ux
+node scripts/check_output_ux.cjs /tmp/fieldwork-output-ux
+```
+
+If Playwright is installed outside Node's module search path, set
+`FIELDWORK_PLAYWRIGHT` to its absolute package directory. The harness opens only
+the generated local files. It writes screenshots and `browser-results.json` beside
+them, fails on viewport overflow, clipped SVG text, script errors, or external
+requests, and exercises filters, fragment links, matrix scrolling, keyboard
+selection, reset, census branches, and JavaScript-disabled disclosures.
+
+See the [output UX qualification](evaluation/output-ux.md) for fixtures, viewports,
+scales, results, and limitations. Inspect screenshots as well as automated bounds:
+geometry alone cannot establish that a sticky header is painted above its rows.
+
 ## Profile representative workloads
 
 ```bash

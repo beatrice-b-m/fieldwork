@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-import html
 import json
 from collections.abc import Mapping
 from typing import Any, Literal
+from urllib.parse import quote
 
-from ._explore.graphics import _SVG, _wrap
+from ._explore.graphics import _SVG, _esc, _wrap
 from ._explore.graphics import render_html as foundation_html
 from ._explore.graphics import render_svg as foundation_svg
 from ._explore.render import _clip, _safe
 from ._explore.render import render_plaintext as foundation_text
 from ._explore.result import ExplorerResult
 from ._explore.visual_data import visualization_data as foundation_data
+from ._html import collection, document
 from .evidence import limit, qualitative_analysis_unit
 
 
@@ -237,6 +238,8 @@ def visualization_data(
         candidate summaries and all completed dependency tests, even below the
         finding threshold. Legacy repeat measurements are recovered when possible;
         unavailable target coverage remains None, without changing saved data.
+        Full overviews include section_coverage keyed by analytical section;
+        each section retains its own search and retention limits.
 
     Raises
     ------
@@ -368,6 +371,12 @@ def visualization_data(
         ]
     if data["kind"] == "overview":
         sections = data["sections"]
+        if detail == "full":
+            output["section_coverage"] = {
+                name: section["coverage"]
+                for name, section in sections.items()
+                if "coverage" in section
+            }
         if "section_selection" in data:
             output["section_selection"] = data["section_selection"]
         output["overview"] = {
@@ -445,6 +454,38 @@ def _comparison_labels(data):
         if unit:
             labels.append(f"  {side.title()} analysis: " + _unit_label(unit))
     return labels
+
+
+def _coverage_lines(data):
+    """Describe saved work bounds without implying exhaustive discovery."""
+    coverages = data.get("section_coverage", {data["kind"]: data.get("coverage", {})})
+    lines = []
+    pairs = (
+        ("candidates_evaluated", "candidate_space", "candidate keys evaluated"),
+        ("dependency_tests", "dependency_tests_possible", "dependency tests completed"),
+        ("pairs_evaluated", "pair_candidates", "pairs evaluated"),
+        ("features_evaluated", "features_requested", "features evaluated"),
+        ("contexts_evaluated", "contexts_total", "contexts evaluated"),
+        ("contexts_shown", "contexts_total", "contexts retained"),
+        ("signatures_shown", "signatures_total", "signatures retained"),
+    )
+    for section, coverage in coverages.items():
+        for done, possible, label in pairs:
+            if done in coverage and possible in coverage:
+                n, total = coverage[done], coverage[possible]
+                if total or n:
+                    suffix = " (limited)" if n < total else ""
+                    lines.append(f"{section}: {n}/{total} {label}{suffix}")
+        if coverage.get("search_exhausted_budget"):
+            lines.append(f"{section}: path search reached its candidate budget")
+    return lines
+
+
+def _sample_label(label, sample):
+    positions = sample["positions"]
+    total = sample.get("total")
+    count = f"{len(positions)}/{total}" if total is not None else str(len(positions))
+    return f"{label}: {count} saved source positions {positions}"
 
 
 def render_plaintext(
@@ -537,6 +578,20 @@ def render_plaintext(
     if data.get("section_selection", {}).get("omitted"):
         lines.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
     lines.extend(_comparison_labels(data))
+    if detail == "full":
+        coverage = _coverage_lines(data)
+        if data["kind"] == "overview":
+            limited = any("(limited)" in line or "budget" in line for line in coverage)
+            lines.append(
+                "Search limits reached; review section coverage."
+                if limited
+                else "Search coverage is saved per section; untested work is unknown."
+            )
+        elif coverage:
+            lines.append("Search coverage (untested work is unknown)")
+            lines.extend("  " + line for line in coverage)
+    if not data["findings"]:
+        lines.append("No findings saved; review coverage and analysis settings.")
     if "analysis_unit" in data and data["kind"] != "comparison":
         lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
     if data["kind"] == "overview":
@@ -573,6 +628,8 @@ def render_plaintext(
         for candidate in data["candidates"][:max_nodes]:
             lines.append("  " + ", ".join(candidate["columns"]) + ": " + candidate["role"])
             lines.extend("  " + part for part in _candidate_explanation(candidate).split("; "))
+        if len(data["candidates"]) > max_nodes:
+            lines.append("... more candidate grains not rendered (max_nodes)")
     if "dependencies" in data:
         lines.append("Completed dependency tests (including below finding threshold)")
         for row in data["dependencies"][:max_nodes]:
@@ -600,9 +657,8 @@ def render_plaintext(
                 lines.append(
                     f"  {feature['feature']}: {feature['populated']}/{feature['denominator']} populated {row['counting_unit']}"
                 )
-            lines.append(
-                f"  Examples: {row['examples']['positions']}; exceptions: {row['exceptions']['positions']}"
-            )
+            lines.append("  " + _sample_label("Examples", row["examples"]))
+            lines.append("  " + _sample_label("Exceptions", row["exceptions"]))
     if data["kind"] != "overview" and len(data["findings"]) > max_nodes:
         lines.append("... more findings not rendered (max_nodes)")
     if len(lines) > max_lines:
@@ -637,7 +693,8 @@ def render_svg(
         structural labels and qualitative relationships, suppressing quantities,
         row positions, and distribution statistics. It does not anonymize labels.
     view : str or None, optional
-        Default None chooses the result's default view. Grain: 'map' or 'matrix';
+        Default None chooses the result's default view. Grain: 'map' or 'matrix'
+        (feature rows, candidate-key columns);
         pairs: 'mapping' or 'association'; levels: 'bars'; census: 'tree';
         joint counts: 'heatmap'; discovery: 'findings'. Association requires full
         detail. Other result/view combinations raise ValueError.
@@ -717,7 +774,9 @@ def render_svg(
         for line in _wrap(label, 102):
             svg.text(24, y, line, size=13)
             y += 20
+    displayed_lists = []
     if detail == "full" and "availability" in data:
+        displayed_lists.append(("availability features", len(data["availability"]), max_findings))
         for row in data["availability"][:max_findings]:
             for line in _wrap(row["feature"], 28):
                 svg.text(24, y + 18, line, size=13)
@@ -730,8 +789,10 @@ def render_svg(
             y += 28
     else:
         rows = data["findings"][:max_findings]
+        displayed_lists.append(("findings", len(data["findings"]), max_findings))
         if detail == "full" and data["kind"] in {"overview", "dependencies"}:
             candidates = data.get("candidates", data.get("overview", {}).get("grains", []))
+            displayed_lists.append(("candidate grains", len(candidates), min(5, max_findings)))
             rows = [
                 {
                     "statement": ", ".join(c["columns"]) + ": " + c["role"],
@@ -743,6 +804,10 @@ def render_svg(
                 for c in candidates[: min(5, max_findings)]
             ]
             if data["kind"] == "dependencies":
+                displayed_lists = [displayed_lists[-1]]
+                displayed_lists.append(
+                    ("dependency tests", len(data["dependencies"]), max_findings)
+                )
                 rows += [
                     {
                         "statement": _dependency_label(d),
@@ -783,21 +848,22 @@ def render_svg(
                 svg.text(34, cursor, line, size=12)
                 cursor += 17
             y += height + 10
-    total = (
-        len(data.get("availability", data["findings"]))
-        if detail == "full"
-        else len(data["findings"])
-    )
-    if total > max_findings:
+    if not any(total for _, total, _ in displayed_lists):
         svg.text(
-            24,
-            y + 14,
-            f"More evidence available · display limit {max_findings}"
-            if detail == "full"
-            else "More evidence available",
-            size=12,
+            24, y + 14, "No records saved · review search coverage and analysis settings", size=13
         )
         y += 30
+    for label, total, shown in displayed_lists:
+        if total > shown:
+            svg.text(
+                24,
+                y + 14,
+                f"{label.title()}: {shown}/{total} shown · display limit reached"
+                if detail == "full"
+                else "More evidence available · display limit reached",
+                size=12,
+            )
+            y += 30
     return svg.finish(864, y + 20)
 
 
@@ -835,6 +901,15 @@ def render_html(
     str
         Standalone HTML with embedded styles/graphics and local controls.
         Nothing is written to disk; no server or remote assets are required.
+        Discovery lists support text search, pattern/exception filters for findings,
+        visible counts, and expand/collapse controls. Search covers only records
+        included by max_findings. Evidence links reveal and focus their target.
+        Foundation figures support fit-width and fixed scaling with local scrolling.
+        The grain HTML matrix lists features as rows and candidate keys as columns,
+        with sticky headers, feature search, and a candidate-key filter. Its native
+        text follows browser scaling; figure scaling applies to SVG views.
+        Controls require JavaScript; native evidence disclosures remain readable
+        without it. Reports do not retrieve source rows or rerun analysis.
 
     Raises
     ------
@@ -865,36 +940,78 @@ def render_html(
         )
     limit("max_findings", max_findings)
     projected = visualization_data(data, detail=detail)
-    parts = [
-        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">',
-        "<title>Fieldwork evidence</title><style>body{font:16px system-ui;background:#f6f8fb;color:#193345;max-width:1000px;margin:2rem auto;padding:1rem}details{background:white;border:1px solid #cbd5df;border-radius:8px;padding:1rem;margin:1rem 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}svg{max-width:100%;height:auto}</style><body>",
-        render_svg(data, detail=detail, max_findings=min(12, max_findings)),
-        "<h1>Inspect findings</h1>",
-    ]
+    full = detail == "full"
+    title = "Fieldwork / " + projected["kind"].replace("_", " ").title()
+    parts = [f'<header><p class="eyebrow">Saved evidence report</p><h1>{_esc(title)}</h1>']
+    parts.append(
+        "<p>Explore the saved analysis below. Controls filter this report; "
+        "they do not rerun the analysis or retrieve source data.</p></header>"
+    )
+    if not full:
+        parts.append(
+            '<p class="notice">Topology only. Quantitative evidence and source positions '
+            "were removed before export. Structural labels remain.</p>"
+        )
     if projected["kind"] == "comparison":
-        for side in ("before", "after"):
-            if f"{side}_scope" in projected:
-                parts.append(
-                    f"<h2>{side.title()} population</h2>"
-                    + _html_evidence(
-                        {
-                            "scope": projected[f"{side}_scope"],
-                            "analysis_unit": projected.get(f"{side}_analysis_unit", {}),
-                        }
-                    )
-                )
-    elif "analysis_unit" in projected:
-        parts.append("<h2>Analysis population</h2>" + _html_evidence(projected["analysis_unit"]))
+        for label in _comparison_labels(projected):
+            parts.append("<p>" + _esc(label) + "</p>")
+    else:
+        if full and "scope" in projected:
+            scope = projected["scope"]
+            parts.append(
+                "<p><strong>Population:</strong> "
+                + _esc(scope.get("name", "input"))
+                + " · "
+                + _esc(scope.get("evaluated_rows", "unavailable"))
+                + " evaluated source rows</p>"
+            )
+        if "analysis_unit" in projected:
+            parts.append(
+                "<p><strong>Analysis:</strong> "
+                + _esc(_unit_label(projected["analysis_unit"]))
+                + "</p>"
+            )
     if projected.get("section_selection", {}).get("omitted"):
         parts.append(
-            "<p>Not requested: "
-            + html.escape(", ".join(projected["section_selection"]["omitted"]))
+            '<p class="notice">Not requested: '
+            + _esc(", ".join(projected["section_selection"]["omitted"]))
             + "</p>"
         )
+    if full:
+        coverage = _coverage_lines(projected)
+        parts.append(
+            '<details><summary>Search coverage and limits</summary><div class="content">'
+            "<p>Search limits restrict what was tested or retained. Untested work is unknown. "
+            "Display limits below only restrict this report.</p>"
+        )
+        parts.extend("<p>" + _esc(line) + "</p>" for line in coverage)
+        saved_coverage = projected.get("section_coverage", projected.get("coverage"))
+        if saved_coverage is not None:
+            parts.append(_html_evidence(saved_coverage))
+        else:
+            parts.append("<p>Search coverage is unavailable in this saved result.</p>")
+        parts.append("</div></details>")
+        if any("(limited)" in line or "budget" in line for line in coverage):
+            parts.append(
+                '<p class="notice">Some search or retention limits were reached. '
+                "Open Search coverage and limits before interpreting absent findings.</p>"
+            )
+    parts.append(
+        '<details><summary>Visual summary</summary><div class="figure">'
+        + render_svg(data, detail=detail, max_findings=min(12, max_findings))
+        + '</div><p class="content">The visual summary has its own display limit of '
+        "up to 12 items per list. Browse the included evidence below.</p></details>"
+    )
+
     if "feature_network" in projected:
-        parts.append("<h2>Browse feature connections</h2>")
+        cards = []
+        included_ids = {f["id"] for f in projected["findings"][:max_findings]} if full else set()
         for node in projected["feature_network"]["nodes"]:
-            parts.append("<details><summary>" + html.escape(node["column"]) + "</summary><ul>")
+            card = [
+                "<details data-record><summary>"
+                + _esc(node["column"])
+                + '</summary><div class="content"><ul>'
+            ]
             for edge in projected["feature_network"]["relationships"]:
                 if node not in edge["features"]:
                     continue
@@ -907,95 +1024,143 @@ def render_html(
                     label += " (" + ", ".join(edge["determinant"]) + " → " + edge["target"] + ")"
                 if edge.get("analysis_unit"):
                     label += " · " + _unit_label(edge["analysis_unit"])
-                parts.append("<li>" + html.escape(label))
-                if detail == "full":
+                card.append("<li>" + _esc(label))
+                if full:
                     finding_id = edge["evidence"]["overview_finding_id"]
-                    if any(f["id"] == finding_id for f in projected["findings"][:max_findings]):
-                        parts.append(
+                    if finding_id in included_ids:
+                        card.append(
                             ' · <a href="#'
-                            + html.escape(finding_id, quote=True)
+                            + _esc(quote(finding_id, safe=""))
                             + '">inspect evidence</a>'
                         )
                     else:
-                        parts.append(" · evidence outside display limit")
+                        card.append(" · evidence outside display limit")
                 if edge.get("structure"):
-                    parts.append(_html_evidence(edge["structure"]))
-                parts.append("</li>")
-            parts.append("</ul></details>")
-    if detail == "full":
+                    card.append(_html_evidence(edge["structure"]))
+                card.append("</li>")
+            cards.append("".join(card) + "</ul></div></details>")
+        parts.append(
+            '<details><summary>Browse feature connections</summary><div class="content">'
+            "<p>Connections are leads to inspect, not proof of equivalence or causation.</p>"
+            + collection("Feature connections", cards, len(cards), full=full)
+            + "</div></details>"
+        )
+    if full:
         candidates = projected.get("candidates", projected.get("overview", {}).get("grains", []))
         if candidates:
-            parts.append("<h2>Candidate grains</h2>")
-            for candidate in candidates[:max_findings]:
-                parts.append(
-                    "<p>"
-                    + html.escape(
-                        ", ".join(candidate["columns"])
-                        + ": "
-                        + candidate["role"]
-                        + "; "
-                        + _candidate_explanation(candidate)
-                    )
-                    + "</p>"
-                )
+            cards = [
+                "<details data-record><summary>"
+                + _esc(", ".join(c["columns"]))
+                + ' <span class="badge">'
+                + _esc(c["role"])
+                + "</span></summary>"
+                + '<div class="content"><p>'
+                + _esc(_candidate_explanation(c))
+                + "</p>"
+                + _html_evidence(c)
+                + "</div></details>"
+                for c in candidates[:max_findings]
+            ]
+            parts.append(collection("Candidate grains", cards, len(candidates), full=True))
         if "dependencies" in projected:
-            parts.append("<h2>Completed dependency tests (including below finding threshold)</h2>")
-            for row in projected["dependencies"][:max_findings]:
-                parts.append(
-                    "<details><summary>"
-                    + html.escape(_dependency_label(row))
-                    + "</summary><p>"
-                    + html.escape(row["explanation"])
-                    + "</p>"
-                    + _html_evidence({k: v for k, v in row.items() if k != "explanation"})
-                    + "</details>"
-                )
-            if len(projected["dependencies"]) > max_findings:
-                parts.append("<p>More dependency tests available; display limit reached.</p>")
-    for row in projected["findings"][:max_findings]:
-        anchor = f' id="{html.escape(row["id"], quote=True)}"' if detail == "full" else ""
-        parts.append(
-            "<details" + anchor + "><summary>" + html.escape(row["statement"]) + "</summary>"
-        )
-        parts.append("<p>Analysis: " + html.escape(_unit_label(row["analysis_unit"])) + "</p>")
-        if detail == "full":
+            cards = [
+                "<details data-record><summary>"
+                + _esc(_dependency_label(row))
+                + '</summary><div class="content"><p>'
+                + _esc(row["explanation"])
+                + "</p>"
+                + _html_evidence({k: v for k, v in row.items() if k != "explanation"})
+                + "</div></details>"
+                for row in projected["dependencies"][:max_findings]
+            ]
             parts.append(
+                collection(
+                    "Completed dependency tests (including below finding threshold)",
+                    cards,
+                    len(projected["dependencies"]),
+                    full=True,
+                )
+            )
+    cards = []
+    for row in projected["findings"][:max_findings]:
+        anchor = f' id="{_esc(row["id"])}"' if full else ""
+        has_exceptions = full and bool(row["exceptions"].get("total", 0))
+        card = [
+            f'<details data-record data-pattern="{_esc(row["pattern"])}"'
+            + (f' data-exceptions="{str(has_exceptions).lower()}"' if full else "")
+            + anchor
+            + '><summary><span class="badge">'
+            + _esc(row["pattern"].replace("_", " "))
+            + "</span>"
+            + _esc(row["statement"])
+            + '</summary><div class="content">'
+        ]
+        card.append("<p>Analysis: " + _esc(_unit_label(row["analysis_unit"])) + "</p>")
+        if full:
+            card.append(
                 "<p>Finding "
-                + html.escape(row["id"])
+                + _esc(row["id"])
                 + " · counting unit: "
-                + html.escape(row["counting_unit"])
+                + _esc(row["counting_unit"])
                 + "</p>"
             )
             if "explanation" in row:
-                parts.append("<p>" + html.escape(row["explanation"]) + "</p>")
-            parts.append(_html_evidence(row["measurements"]))
-            parts.append(
-                "<h3>Representative source rows</h3>"
-                + _html_evidence({"examples": row["examples"], "exceptions": row["exceptions"]})
-            )
+                card.append("<p>" + _esc(row["explanation"]) + "</p>")
+            card.append(_html_evidence(row["measurements"]))
+            if projected["kind"] == "comparison":
+                card.append(
+                    "<p>Change is after minus before. A fraction change of 0.25 means "
+                    "25 percentage points. Compare the two populations and denominators "
+                    "before interpreting a change as improvement. Inspect the original "
+                    "before/after results for source rows.</p>"
+                )
+            else:
+                card.append(
+                    "<h3>Representative source rows</h3>"
+                    "<p>Positions are zero-based offsets in the original ordered source, "
+                    "not dataframe index labels. Saved samples are the first matches in source "
+                    "order; their size is not the total support.</p>"
+                )
+                for key in ("examples", "exceptions"):
+                    card.append("<p>" + _esc(_sample_label(key.title(), row[key])) + "</p>")
+                card.append(
+                    "<p>In Python, with this result named <code>result</code> and its identical "
+                    "ordered source named <code>df</code>:</p><p><code>"
+                    + _esc(f"result.inspect(df, {row['id']!r})")
+                    + "</code></p><p>Use <code>all_matches=True</code> to retrieve all "
+                    "matching rows and <code>exceptions=True</code> for exception rows. "
+                    "These operations require the original source and a Python session.</p>"
+                )
         if row.get("structure"):
-            parts.append(_html_evidence(row["structure"]))
-        parts.append("</details>")
-    if len(projected["findings"]) > max_findings:
-        parts.append("<p>More findings available; display limit reached.</p>")
-    parts.append("</body></html>")
-    return "".join(parts)
+            card.append(_html_evidence(row["structure"]))
+        cards.append("".join(card) + "</div></details>")
+    parts.append(
+        collection(
+            "Inspect findings",
+            cards,
+            len(projected["findings"]),
+            full=full,
+            patterns=sorted({r["pattern"] for r in projected["findings"][:max_findings]}),
+            exceptions=full and projected["kind"] != "comparison",
+        )
+    )
+    return document(title, "".join(parts))
 
 
 def _html_evidence(value):
     """Readable saved evidence without making readers interpret serialized dictionaries."""
     if isinstance(value, dict):
         return (
-            "<table>"
+            '<div class="table-scroll"><table class="evidence-table">'
             + "".join(
-                "<tr><th style='text-align:left;vertical-align:top;padding-right:1rem'>"
-                + html.escape(str(key).replace("_", " "))
+                '<tr><th scope="row">'
+                + _esc(str(key).replace("_", " "))
                 + "</th><td>"
                 + _html_evidence(item)
                 + "</td></tr>"
                 for key, item in value.items()
             )
-            + "</table>"
+            + "</table></div>"
         )
     if isinstance(value, list):
         if any(isinstance(item, (dict, list)) for item in value):
@@ -1004,7 +1169,9 @@ def _html_evidence(value):
                 + "".join("<li>" + _html_evidence(item) + "</li>" for item in value)
                 + "</ul>"
             )
-        return html.escape(", ".join(str(item) for item in value) or "none")
+        return _esc(", ".join(str(item) for item in value) or "none")
     if isinstance(value, float):
         return f"{value:.4g}"
-    return html.escape("undefined" if value is None else str(value))
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    return _esc("unavailable / not defined" if value is None else str(value))
