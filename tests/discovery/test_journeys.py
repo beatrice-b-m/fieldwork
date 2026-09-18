@@ -26,7 +26,7 @@ def test_recommendation_census_preserves_context_and_original_population():
     assert paths.best.census(df)["tree"] == preview["tree"]
     with pytest.raises(ValueError, match="differs"):
         paths.best.census(df.iloc[::-1])
-    with pytest.raises(ValueError, match="context"):
+    with pytest.raises(TypeError, match="unexpected keyword argument.*missing"):
         paths.best.census(df, missing={})
     explicit = fw.explore(
         df, ["value"], discovery={"scope": scope, "missing": {"value": [-999]}}, dropna=True

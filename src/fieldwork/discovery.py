@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from itertools import combinations, islice
 from math import comb
+from typing import Any
 
 import numpy as np
+import pandas as pd
 
-from ._explore import KeySpec, grain
+from ._explore import KeySpec
 from ._explore._kernels import FDCache, first_indices, group_ids, modal_groups
 from ._explore.encoding import MissingCode, normalize_scalar
+from ._explore.grain import _grain
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
+    InvestigationResult,
+    Scope,
     bounded_rows,
     columns,
     context_statement,
@@ -21,28 +27,133 @@ from .evidence import (
     prepare,
     result,
 )
+from .progress import CancellationToken, Progress
 
 
 @operation("dependencies")
 def discover_dependencies(
-    df,
+    df: pd.DataFrame,
     *,
-    features=None,
-    max_key_size=2,
-    max_candidates=100,
-    min_accuracy=0.95,
-    by=None,
-    max_contexts=32,
-    dropna=True,
-    scope=None,
-    missing=None,
-    table_id="table",
-    example_limit=5,
-    include_grain=True,
-    max_grain_views=None,
-    max_dependency_tests=None,
-):
-    """Evaluate determinants in size/column order; accuracy is modal repair accuracy."""
+    features: Iterable[str] | None = None,
+    max_key_size: int = 2,
+    max_candidates: int = 100,
+    min_accuracy: float = 0.95,
+    by: Iterable[str] | None = None,
+    max_contexts: int = 32,
+    dropna: bool = True,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    example_limit: int = 5,
+    include_grain: bool = True,
+    max_grain_views: int | None = None,
+    max_dependency_tests: int | None = None,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
+) -> InvestigationResult:
+    """Find observed exact and approximate dependencies over bounded candidates.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Discovery requires unique string
+        column names. Duplicate index labels are supported; source selections use
+        integer row positions. Unsupported scalar objects raise TypeError.
+    features : iterable of str or None, optional
+        Unique column names to analyze, in requested order; default None selects
+        all columns. Restricts analysis, not full-source identity validation.
+    max_key_size : int, optional
+        Positive maximum determinant size; default 2. Candidate combinations are
+        visited in increasing size, then requested column order.
+    max_candidates : int, optional
+        Nonnegative maximum number of determinants; default 100. Zero searches
+        none. Candidate summaries are computed even when the test budget is zero.
+    min_accuracy : float, optional
+        Minimum reported modal repair accuracy in [0, 1]; default 0.95. Accuracy
+        is the sum of modal target counts per determinant group divided by
+        evaluated rows. This threshold filters reports, not test work.
+    by : iterable of str or None, optional
+        Additional joint context analyses besides the global population; default
+        None. Missing context values are categories.
+    max_contexts : int, optional
+        Nonnegative context-group budget in addition to global analysis; default
+        32. Zero keeps only global analysis.
+    dropna : bool, optional
+        Default True uses complete cases for each determinant/target test. False
+        treats native and declared missing values as one category. Different
+        tests may therefore have different populations.
+    scope : Scope or None, optional
+        Source-bound population selection; default None uses all rows. The scope
+        must match the ordered source. Fingerprinting still scans the full frame.
+    missing : mapping or None, optional
+        Additional missing sentinels per column; default None. Native missing
+        values are always absent. Numeric sentinels match integer/float values
+        numerically; booleans remain distinct. The source is not modified.
+    table_id : str, optional
+        Nonempty source label; default 'table'. Does not replace the fingerprint.
+    example_limit : int, optional
+        Nonnegative maximum saved example/exception source rows per finding side;
+        default 5. Zero retains totals without row examples. This display limit
+        does not restrict the population recovered by select or all_matches.
+    include_grain : bool, optional
+        Build exact foundation grain views when True (default). False skips graph
+        work while retaining dependency tests and candidate summaries.
+    max_grain_views : int or None, optional
+        Nonnegative maximum supported-population graph views; default None permits
+        all. Zero builds none. Independent of max_dependency_tests.
+    max_dependency_tests : int or None, optional
+        Nonnegative candidate/target/context test budget; default None tests all
+        within other budgets. Zero skips tests. Does not cap foundation graph work.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    InvestigationResult
+        Kind 'dependencies', with candidates, dependencies, conditional evidence,
+        grain views, findings, and coverage recording omitted tests/views.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Search and display budgets never sample rows. Evidence records evaluated
+    populations and omissions separately. Source identity covers ordered column
+    labels, index labels, and all cell values (not dtype metadata); changing or
+    reordering them invalidates inspection against saved findings.
+
+    A functional dependency here is observed evidence, not a guarantee about
+    future deliveries or causality. Singleton determinant groups satisfy exact
+    mappings trivially. Untested relationships are not negative evidence.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"site": ["A", "A", "B"], "region": ["N", "N", "S"]})
+    >>> result = fw.discover_dependencies(df, max_key_size=1, include_grain=False)
+    >>> result.kind
+    'dependencies'
+    """
     limit("max_key_size", max_key_size, minimum=1)
     limit("max_candidates", max_candidates)
     limit("max_contexts", max_contexts)
@@ -104,7 +215,7 @@ def discover_dependencies(
         if max_dependency_tests is not None
         else possible_tests
     )
-    with phase("dependency tests", total_tests, "tests") as progress:
+    with phase("dependency tests", total_tests, "tests") as tracker:
         for key in candidates:
             key_mask = np.ones(len(frame), dtype=bool)
             if dropna:
@@ -214,7 +325,7 @@ def discover_dependencies(
                                 "dropna": dropna,
                             },
                         )
-                    progress.advance(detail=f"{', '.join(key)} → {target}")
+                    tracker.advance(detail=f"{', '.join(key)} → {target}")
     graph_frame = frame[selected] if include_grain and max_grain_views != 0 else None
     graph_codes = (
         {c: (MissingCode(-1 if not present[c].all() else None), codes[c]) for c in selected}
@@ -230,10 +341,10 @@ def discover_dependencies(
     views = []
     ordered_anchors = sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0]))
     chosen_anchors = ordered_anchors[:max_grain_views] if include_grain else []
-    with phase("grain views", len(chosen_anchors), "views") as progress:
+    with phase("grain views", len(chosen_anchors), "views") as tracker:
         for _, mask in chosen_anchors:
             members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
-            analysis = grain(
+            analysis = _grain(
                 graph_frame,
                 [KeySpec(f"key{i}", candidates[i]) for i in members],
                 dropna=dropna,
@@ -258,7 +369,7 @@ def discover_dependencies(
                     "grain": contextual_result(analysis, df, base).to_dict(),
                 }
             )
-            progress.advance()
+            tracker.advance()
     base["grain_views"] = views
     base["exact_grain"] = views[0]["grain"] if views else None
     base["graph_selection"] = {

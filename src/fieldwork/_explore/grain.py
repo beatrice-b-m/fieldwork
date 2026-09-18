@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
+from ..progress import CancellationToken, Progress
+from ..typing import ColumnLabel, SchemaRole
 from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
 from .encoding import (
@@ -122,16 +124,19 @@ def _fd_record(
 
 
 @operation("grain")
-def grain(
+def _grain(
     df: pd.DataFrame,
     candidate_keys: Iterable[Any],
     *,
     dropna: bool = False,
-    schema: dict[Any, str] | None = None,
+    schema: dict[ColumnLabel, SchemaRole] | None = None,
     engine_metadata: bool = False,
     scope_metadata: dict[str, Any] | None = None,
     _encoded=None,
     _cache=None,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
 ) -> ExplorerResult:
     """Evaluate exact observed FDs for explicit determinant candidates."""
 
@@ -142,17 +147,17 @@ def grain(
     encoded = _encoded
     if encoded is None:
         encoded = {}
-        with phase("grain encoding", len(df.columns), "columns") as progress:
+        with phase("grain encoding", len(df.columns), "columns") as tracker:
             for column in df.columns:
                 values, codes = encode_series(df[column])
                 encoded[column] = (MissingCode(missing_code(values)), codes)
-                progress.advance(detail=str(column))
+                tracker.advance(detail=str(column))
     encoded = EncodedColumns(encoded, _cache)
     pool = MaskPool()
     evaluated_sets = {}
     with phase(
         "exact dependencies", sum(len(df.columns) - len(s.columns) for s in specs), "tests"
-    ) as progress:
+    ) as tracker:
         for spec in specs:
             checkpoint()
             components = {normalize_scalar(c, label=True) for c in spec.columns}
@@ -182,7 +187,7 @@ def grain(
                 evaluated_sets[(spec.name, target)] = pool.intern(evaluated)
                 if record["holds"] is True:
                     holds_by_target[target].append(spec.name)
-                progress.advance(detail=f"{spec.name} → {target}")
+                tracker.advance(detail=f"{spec.name} → {target}")
     target_summaries: list[dict[str, Any]] = []
     specs_by_name = {spec.name: spec for spec in specs}
     holds_lookup = {
@@ -288,3 +293,99 @@ def grain(
     if engine_metadata:
         payload["engine"] = {"name": "normalized_pandas_fd"}
     return ExplorerResult("grain", payload)
+
+
+def grain(
+    df: pd.DataFrame,
+    candidate_keys: Iterable[ColumnLabel | KeySpec],
+    *,
+    dropna: bool = False,
+    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    engine_metadata: bool = False,
+    scope_metadata: Mapping[str, Any] | None = None,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
+) -> ExplorerResult:
+    """Evaluate exact observed dependencies for explicitly supplied keys.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Column labels must be unique strings,
+        non-boolean integers, or recursively tuple-valued labels. Native missing
+        scalars share one identity; integer and float values remain distinct.
+        Unsupported column labels or scalar objects raise TypeError.
+    candidate_keys : iterable of column labels or KeySpec
+        Nonempty determinant candidates. A label means a single-column key; use
+        KeySpec(name, columns) for composites. A tuple label denotes one column,
+        not a composite. Candidate names and each key's columns must be unique.
+    dropna : bool, optional
+        Default False treats missing values as a category. True evaluates each
+        determinant/target pair on its complete cases and records that population.
+    schema : dict or None, optional
+        Reserved compatibility argument; default None. Currently has no effect
+        on grain evidence. Role suggestions are available from infer_schema.
+    engine_metadata : bool, optional
+        Include analytical producer metadata when True; default False.
+    scope_metadata : mapping or None, optional
+        Optional descriptive lineage supplied by composition; default None. This
+        does not select rows. Use a Scope with census/explore for row selection.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    ExplorerResult
+        Kind 'grain', with explicit keys, dependency evidence, target placements,
+        scopes, and a graph over compatible candidate populations. Graph aliases
+        indicate equivalent observed partitions.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Exact dependencies describe the observed delivery, not future guarantees.
+    Singleton groups satisfy a dependency trivially; repeated and violating groups
+    are reported separately. Candidate key uniqueness and dependency accuracy are
+    different questions. Graph relationships use compatible populations rather
+    than composing dependencies across differing complete-case cohorts.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"site": ["A", "A"], "visit": [1, 2], "value": [3, 4]})
+    >>> result = fw.grain(df, ["site", fw.KeySpec("visit_key", ("site", "visit"))])
+    >>> result.kind
+    'grain'
+    """
+    return _grain(
+        df,
+        candidate_keys,
+        dropna=dropna,
+        schema=schema,
+        engine_metadata=engine_metadata,
+        scope_metadata=scope_metadata,
+        progress=progress,
+        cancel=cancel,
+        timeout=timeout,
+    )

@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation
+from ..progress import CancellationToken, Progress
+from ..typing import ColumnLabel
 from ._kernels import exact_pair_ids
 from .census import _scope, _source
 from .encoding import (
@@ -83,7 +85,7 @@ def _declared_domain(
 @operation("pairs")
 def pairs(
     df: pd.DataFrame,
-    dimensions: Iterable[Any],
+    dimensions: Iterable[ColumnLabel],
     *,
     dropna: bool = False,
     include_absence: bool = False,
@@ -93,7 +95,90 @@ def pairs(
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
     scope_metadata: dict[str, Any] | None = None,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
 ) -> ExplorerResult:
+    """Measure sparse pair mappings, association, and optional absence.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Column labels must be unique strings,
+        non-boolean integers, or recursively tuple-valued labels. Native missing
+        scalars share one identity; integer and float values remain distinct.
+        Unsupported column labels or scalar objects raise TypeError.
+    dimensions : iterable of column labels
+        Nonempty unique columns. Pairs are generated in requested column order.
+    dropna : bool, optional
+        Default False includes missing categories. True excludes missing values
+        from each tested pair and its context columns, so populations may differ.
+    include_absence : bool, optional
+        Include absent domain combinations when True; default False. Observed
+        mapping and association evidence is computed independently.
+    reference_domains : mapping or None, optional
+        Optional declared value domains by column; default None uses observed
+        domains. Absence means unobserved in the evaluated population, not invalid.
+    pair_contexts : iterable of mappings or None, optional
+        Additional exact column-to-value context filters; default None. Context
+        columns must be disjoint from the evaluated pair. Global evidence remains.
+    max_absence_cells : int or None, optional
+        Nonnegative absent-cell output budget; default 1000. None is unbounded;
+        zero retains absence totals without enumerating cells.
+    max_contexts : int or None, optional
+        Nonnegative total context budget, including the global population; default
+        32. None is unbounded; zero skips all pair/context records; one keeps
+        only global pair evidence.
+    max_pairs : int or None, optional
+        Nonnegative pair budget; default 15. None is unbounded; zero skips pairs.
+        Omitted tests are reported, not treated as failed relationships.
+    scope_metadata : mapping or None, optional
+        Optional descriptive lineage supplied by composition; default None. This
+        does not select rows. Use a Scope with census/explore for row selection.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    ExplorerResult
+        Kind 'pairs', with per-pair/context scopes, mapping and association
+        measurements, optional absence summaries, and omission coverage.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Association is uncorrected Cramer's V and does not imply causality.
+    Undefined statistics and their reasons remain explicit for degenerate tables.
+    Absence uses declared domains when supplied, otherwise observed domains;
+    limits bound output/search without sampling rows.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.pairs(pd.DataFrame({"a": [1, 2], "b": ["x", "y"]}), ["a", "b"])
+    >>> result.kind
+    'pairs'
+    """
     selected = resolve_columns(df, dimensions, argument="dimensions")
     validate_limit("max_absence_cells", max_absence_cells)
     validate_limit("max_contexts", max_contexts)
@@ -334,17 +419,78 @@ def pairs(
 @operation("joint counts")
 def joint_counts(
     df: pd.DataFrame,
-    dimensions: Iterable[Any],
+    dimensions: Iterable[ColumnLabel],
     *,
     context: Mapping[Any, Any] | None = None,
     dropna: bool = False,
     max_cells: int = 2500,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
 ) -> ExplorerResult:
-    """Compute observed joint counts for one selected pair, on demand.
+    """Count observed cells for one selected pair and optional context.
 
-    ``max_cells`` bounds the supported-domain Cartesian product (including blank
-    heatmap cells). Exceeding it raises rather than silently dropping cell mass.
-    Context columns must be disjoint from the selected pair.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Column labels must be unique strings,
+        non-boolean integers, or recursively tuple-valued labels. Native missing
+        scalars share one identity; integer and float values remain distinct.
+        Unsupported column labels or scalar objects raise TypeError.
+    dimensions : iterable of column labels
+        Exactly two distinct column labels, in axis order.
+    context : mapping or None, optional
+        Exact context values by column; default None. Context columns must be
+        disjoint from the selected pair. An unmatched value yields an empty result.
+    dropna : bool, optional
+        Default False includes missing categories. True excludes rows with
+        missing values in the selected pair or context columns.
+    max_cells : int, optional
+        Positive supported-domain Cartesian cell budget; default 2500. Includes
+        blank heatmap cells, not only nonzero cells. None is not supported.
+        Exceeding the budget raises ValueError instead of dropping cell mass.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    ExplorerResult
+        Kind 'joint_counts', with axis dictionaries a and b, observed cells,
+        context, and a population scope. Cells index the axis dictionaries.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Only observed cells are stored. The budget applies to the cross-product of
+    axis values supported in the evaluated context. Use a narrower context or
+    increase max_cells when that product exceeds the limit.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> counts = fw.joint_counts(pd.DataFrame({"a": [1, 1], "b": ["x", "x"]}), ["a", "b"])
+    >>> counts["cells"][0]["count"]
+    2
     """
     selected = resolve_columns(df, dimensions, argument="dimensions")
     if len(selected) != 2:

@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import math
 from collections import OrderedDict
+from collections.abc import Iterable, Mapping
 from functools import cache
 from itertools import combinations
+from typing import Any, Literal
 
 import numpy as np
+import pandas as pd
 
 from ._explore import census
 from ._explore._kernels import group_ids, modal_groups, pair_groups
+from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
     InvestigationResult,
+    Scope,
     columns,
     finding,
     fingerprint,
@@ -21,56 +26,358 @@ from .evidence import (
     prepare,
     saved_context,
 )
+from .progress import CancellationToken, Progress
+from .typing import ColumnLabel, SchemaRole
 
 
 class PathResult(InvestigationResult):
+    """A discovery result containing ranked, source-bound census recommendations.
+
+    Parameters
+    ----------
+    kind : str
+        'paths' for results returned by suggest_paths.
+    payload : dict, optional
+        Path evidence; normally supplied by suggest_paths or from_dict.
+    schema_version : str, optional
+        Producers/loaders use discovery '1.0'; the inherited raw constructor
+        defaults to foundation '0.3'. Prefer the producer/loader.
+    stability : str, optional
+        Evidence stability marker; default 'unstable'.
+
+    Attributes
+    ----------
+    best : Path or None
+        First ranked path, or None if none is available.
+    payload : dict[str, Any]
+        Paths with dimensions, measurements, reasons, and previews, plus aliases,
+        nesting and search coverage. Also includes common investigation evidence.
+
+    Notes
+    -----
+    Inherits the mapping, serialization, inspection, and selection methods of
+    InvestigationResult. Path rankings concern observed prefixes, not guarantees
+    about the data's true schema. JSON restoration retains context-aware handoff.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> paths = fw.suggest_paths(pd.DataFrame({'x': [1, 2]}))
+    >>> paths.best.dimensions
+    ('x',)
+    """
+
     @property
-    def best(self):
+    def best(self) -> Path | None:
+        """Return the highest-ranked path, when one is available.
+
+        Returns
+        -------
+        Path or None
+            Source-bound first recommendation, or None for an empty path list.
+        """
         return self.path(0) if self.payload["paths"] else None
 
-    def path(self, index=0):
+    def path(self, index: int = 0) -> Path:
+        """Return a ranked recommendation with its original analysis context.
+
+        Parameters
+        ----------
+        index : int, optional
+            Zero-based path position; default 0. Negative positions follow Python list
+            indexing. This indexes paths, not the findings list.
+
+        Returns
+        -------
+        Path
+            Recommended dimensions plus saved source, scope, and missing conventions.
+
+        Raises
+        ------
+        IndexError
+            The requested path does not exist.
+        """
         return Path(self.payload["paths"][index]["dimensions"], self.payload)
 
 
 class Path:
-    def __init__(self, dimensions, context):
+    """An ordered census recommendation retaining its source analysis context.
+
+    Parameters
+    ----------
+    dimensions : iterable of str
+        Recommended ordered columns, normalized to a tuple.
+    context : mapping
+        Saved path-result payload containing source, scope, and missing
+        conventions. Obtain Path from PathResult.best or PathResult.path instead
+        of assembling this context manually.
+
+    Attributes
+    ----------
+    dimensions : tuple[str, ...]
+        Ordered recommended columns. This tuple alone does not carry source
+        context; call census on this Path to retain it.
+
+    Notes
+    -----
+    The context references saved evidence; it is not a copy of the source frame.
+    The census handoff verifies the original source and preserves its scope and
+    sentinels. To change population or delivery, rerun suggest_paths.
+    """
+
+    dimensions: tuple[str, ...]
+    """Ordered recommended columns; use census() to preserve source context."""
+
+    def __init__(self, dimensions: Iterable[str], context: Mapping[str, Any]) -> None:
         self.dimensions = tuple(dimensions)
         self._context = context
 
     @operation("path census")
-    def census(self, df, **options):
-        """Evaluate this recommendation on its original scope and missing conventions."""
+    def census(
+        self,
+        df: pd.DataFrame,
+        *,
+        top_n: int | None = None,
+        top_n_mode: Literal["pre", "post"] = "post",
+        top_n_per_parent: bool = False,
+        min_retained_fraction: float = 0.01,
+        max_depth: int | None = None,
+        max_levels: int | None = 100,
+        max_nodes: int | None = 10000,
+        min_count: int = 1,
+        dropna: bool = False,
+        schema: dict[ColumnLabel, SchemaRole] | None = None,
+        engine_metadata: bool = False,
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+    ) -> ExplorerResult:
+        """Evaluate this recommendation with its original scope and missing conventions.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Original ordered source frame; labels, index, and values must match the
+            saved fingerprint. Duplicate index labels are supported.
+        top_n : int or None, optional
+            Positive number of leading levels; default None keeps all eligible levels.
+            With pre mode this selects a cohort; with post mode it only limits output.
+        top_n_mode : {'pre', 'post'}, optional
+            Default 'post' counts the full eligible population before limiting output.
+            'pre' restricts rows to selected levels before counting, records exclusions,
+            and can warn about low retention.
+        top_n_per_parent : bool, optional
+            Default False chooses leading levels globally for each dimension. True
+            chooses them separately within each parent prefix.
+        min_retained_fraction : float, optional
+            Retention warning threshold in [0, 1]; default 0.01. Does not reject or
+            change the selected population.
+        max_depth : int or None, optional
+            Positive number of active dimensions; default None uses all dimensions.
+        max_levels : int or None, optional
+            Nonnegative displayed child-level limit per parent; default 100. None is
+            unbounded; zero omits all child levels. Omitted mass remains reported.
+        max_nodes : int or None, optional
+            Nonnegative total non-root node budget; default 10000. None is unbounded;
+            zero keeps only the root and omission evidence.
+        min_count : int, optional
+            Nonnegative minimum displayed count; default 1. Does not filter input rows.
+        dropna : bool, optional
+            Default False includes missing values as levels. True excludes rows
+            missing any active dimension before census counting.
+        schema : dict or None, optional
+            Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
+            Default None. Roles annotate evidence and warnings; they do not cast values.
+        engine_metadata : bool, optional
+            Include analytical producer metadata when True; default False.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+
+        Returns
+        -------
+        ExplorerResult
+            Census for the recommended ordered dimensions with original-source scope
+            accounting. Display/cohort options use ordinary census defaults.
+
+        Raises
+        ------
+        ValueError
+            The source differs or census options are invalid.
+        TypeError
+            Unsupported options, including scope, missing, table_id, or dimensions,
+            are supplied. Context cannot be overridden through a recommendation.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops analysis.
+
+        Notes
+        -----
+        The handoff preserves context after JSON restoration. Display limits can be
+        changed; explicit census preselection can further restrict the evaluated
+        cohort and records the additional exclusion. Rerun discovery to change source
+        scope or missing conventions.
+        """
         if fingerprint(df) != self._context["source"]["dataset_id"]:
             raise ValueError("Source dataset differs; reapply a path recipe for a new delivery")
-        if {"scope", "missing", "table_id"} & options.keys():
-            raise ValueError(
-                "Path census preserves its analysis context; rerun discovery to change it"
-            )
-        return census(df, self.dimensions, **saved_context(self._context), **options)
+        return census(
+            df,
+            self.dimensions,
+            **saved_context(self._context),
+            top_n=top_n,
+            top_n_mode=top_n_mode,
+            top_n_per_parent=top_n_per_parent,
+            min_retained_fraction=min_retained_fraction,
+            max_depth=max_depth,
+            max_levels=max_levels,
+            max_nodes=max_nodes,
+            min_count=min_count,
+            dropna=dropna,
+            schema=schema,
+            engine_metadata=engine_metadata,
+        )
 
 
 @operation("paths")
 def suggest_paths(
-    df,
+    df: pd.DataFrame,
     *,
-    objective="structure",
-    features=None,
-    start_with=None,
-    before=None,
-    exclude=None,
-    target=None,
-    max_dimensions=4,
-    max_candidates=200,
-    max_features=20,
-    max_pairs=200,
-    beam_width=12,
-    n_paths=3,
-    display_budget=40,
-    scope=None,
-    missing=None,
-    table_id="table",
-):
-    """Rank observed intermediate prefixes, not order-invariant joint information."""
+    objective: Literal["structure", "availability", "compact", "target", "context"] = "structure",
+    features: Iterable[str] | None = None,
+    start_with: Iterable[str] | None = None,
+    before: Iterable[tuple[str, str]] | None = None,
+    exclude: Iterable[str] | None = None,
+    target: str | None = None,
+    max_dimensions: int = 4,
+    max_candidates: int = 200,
+    max_features: int = 20,
+    max_pairs: int = 200,
+    beam_width: int = 12,
+    n_paths: int = 3,
+    display_budget: int = 40,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
+) -> PathResult:
+    """Recommend ordered census dimensions from observed prefix evidence.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Discovery requires unique string
+        column names. Duplicate index labels are supported; source selections use
+        integer row positions. Unsupported scalar objects raise TypeError.
+    objective : {'structure', 'availability', 'compact', 'target', 'context'}, optional
+        Default 'structure' favors coarse-to-fine nesting. 'compact' favors small
+        prefixes; 'availability' separates presence signatures; 'target' separates
+        target values and requires target; 'context' favors nesting after required
+        start_with dimensions. Scores are heuristic costs, not probabilities.
+    features : iterable of str or None, optional
+        Unique column names to analyze, in requested order; default None selects
+        all columns. Restricts analysis, not full-source identity validation.
+    start_with : iterable of str or None, optional
+        Required ordered initial columns; default None. Must fit both feature and
+        dimension budgets. Required for the context objective.
+    before : iterable of (str, str) pairs or None, optional
+        Acyclic precedence constraints; default None. Both columns must occur in
+        the path. Constraints must agree with start_with and exclusions.
+    exclude : iterable of str or None, optional
+        Columns excluded from paths; default None. Cannot contain required columns.
+    target : str or None, optional
+        Feature to explain; default None. Required by the target objective. Omitted
+        from candidate paths unless also explicitly required by steering.
+    max_dimensions : int, optional
+        Positive maximum path length; default 4. Must accommodate steering columns.
+    max_candidates : int, optional
+        Positive maximum path extensions evaluated; default 200. Exhaustion is
+        reported and can leave paths shorter than the requested depth.
+    max_features : int, optional
+        Positive candidate feature budget; default 20. Required columns survive
+        truncation; other columns follow requested order.
+    max_pairs : int, optional
+        Nonnegative pair budget for observed nesting and aliases; default 200.
+        Zero skips nesting/alias tests.
+    beam_width : int, optional
+        Positive alternatives retained per depth; default 12. Keeps the best order
+        per feature set so alternatives need not be permutations of one set.
+    n_paths : int, optional
+        Positive maximum returned alternatives; default 3. Alias substitutions
+        are collapsed; fewer paths may be available.
+    display_budget : int, optional
+        Positive preview node limit and prefix-cost reference; default 40. Affects
+        ranking as well as preview size, but never samples source rows.
+    scope : Scope or None, optional
+        Source-bound population selection; default None uses all rows. The scope
+        must match the ordered source. Fingerprinting still scans the full frame.
+    missing : mapping or None, optional
+        Additional missing sentinels per column; default None. Native missing
+        values are always absent. Numeric sentinels match integer/float values
+        numerically; booleans remain distinct. The source is not modified.
+    table_id : str, optional
+        Nonempty source label; default 'table'. Does not replace the fingerprint.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    PathResult
+        Kind 'paths', with ranked paths, measurements, explanations, aliases,
+        nesting, and coverage. best is None when no nonempty path is available.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Search and display budgets never sample rows. Evidence records evaluated
+    populations and omissions separately. Source identity covers ordered column
+    labels, index labels, and all cell values (not dtype metadata); changing or
+    reordering them invalidates inspection against saved findings.
+
+    Missing values form categories under the saved missing convention. Rankings
+    use intermediate prefixes: joint information alone is invariant to order.
+    Call paths.best.census(df) to preserve source, scope, and sentinel context;
+    copying best.dimensions alone discards that context.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
+    >>> paths = fw.suggest_paths(df, start_with=["site"])
+    >>> paths.best is not None
+    True
+    >>> paths.best.census(df).kind
+    'census'
+    """
     objectives = {"structure", "availability", "compact", "target", "context"}
     if objective not in objectives:
         raise ValueError(f"objective must be one of {sorted(objectives)}")
@@ -121,7 +428,7 @@ def suggest_paths(
     active = [c for c in selected if cardinality[c] > 1 or c in required]
     edges, aliases = set(), []
     tested_pairs = 0
-    with phase("path nesting", min(math.comb(len(active), 2), max_pairs), "pairs") as progress:
+    with phase("path nesting", min(math.comb(len(active), 2), max_pairs), "pairs") as tracker:
         for a, b in combinations(active, 2):
             if tested_pairs >= max_pairs:
                 break
@@ -135,7 +442,7 @@ def suggest_paths(
                 edges.add((b, a))  # coarse before finer
             elif b_to_a:
                 edges.add((a, b))
-            progress.advance(detail=f"{a} / {b}")
+            tracker.advance(detail=f"{a} / {b}")
     for a, b in constraints:
         if a == b:
             raise ValueError("before constraints must be acyclic")
@@ -236,7 +543,7 @@ def suggest_paths(
     width = min(max_dimensions, len(active))
     beam = [tuple(starts)]
     evaluated = 0
-    with phase("path search", max_candidates, "extensions budget") as progress:
+    with phase("path search", max_candidates, "extensions budget") as tracker:
         for depth in range(len(starts), width):
             expanded = []
             for path in beam:
@@ -250,7 +557,7 @@ def suggest_paths(
                         break
                     evaluated += 1
                     expanded.append((measure(next_path)["score"], next_path))
-                    progress.advance(detail=" → ".join(next_path))
+                    tracker.advance(detail=" → ".join(next_path))
                 if evaluated >= max_candidates:
                     break
             if not expanded:

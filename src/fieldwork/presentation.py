@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import html
 import json
+from collections.abc import Mapping
+from typing import Any, Literal
 
 from ._explore.graphics import _SVG, _wrap
 from ._explore.graphics import render_html as foundation_html
 from ._explore.graphics import render_svg as foundation_svg
 from ._explore.render import _clip, _safe
 from ._explore.render import render_plaintext as foundation_text
+from ._explore.result import ExplorerResult
 from ._explore.visual_data import visualization_data as foundation_data
 from .evidence import limit, qualitative_analysis_unit
 
@@ -72,7 +75,55 @@ def _data(result, section=None):
     return data
 
 
-def visualization_data(result, *, section=None, detail="full"):
+def visualization_data(
+    result: ExplorerResult | Mapping[str, Any],
+    *,
+    section: str | None = None,
+    detail: Literal["full", "topology"] = "full",
+) -> dict[str, Any]:
+    """Project saved evidence into presentation data with explicit disclosure.
+
+    Parameters
+    ----------
+    result : ExplorerResult or mapping
+        Saved analytical result or its ordinary dictionary export. Rendering does
+        not need the source dataframe and does not recompute analyses. Restore a
+        compact envelope with from_dict before rendering.
+    section : str or None, optional
+        Analytical section to render; default None. Foundation explore defaults
+        to grain; discovery overviews default to the combined overview. Unrequested
+        or incompatible sections raise ValueError.
+    detail : {'full', 'topology'}, optional
+        Default 'full' includes measurements and evidence. 'topology' allowlists
+        structural labels and qualitative relationships, suppressing quantities,
+        row positions, and distribution statistics. It does not anonymize labels.
+
+    Returns
+    -------
+    dict[str, Any]
+        Fresh allowlisted presentation projection; not an analytical round-trip
+        export. Use to_dict for full serialization.
+
+    Raises
+    ------
+    ValueError
+        Detail or requested section is invalid or unsupported.
+
+    Notes
+    -----
+    Display limits do not change the saved analytical population or search
+    coverage. Topology is a disclosure projection, not anonymization: feature
+    names and structural value labels can remain identifying. HTML/SVG labels
+    and terminal control characters are escaped before presentation.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.missingness(pd.DataFrame({"x": [1, None]}))
+    >>> fw.visualization_data(result, detail="topology")["detail"]
+    'topology'
+    """
     data = _data(result, section)
     if data.get("kind") not in KINDS:
         return foundation_data(
@@ -235,15 +286,69 @@ def _comparison_labels(data):
 
 
 def render_plaintext(
-    result,
+    result: ExplorerResult | Mapping[str, Any],
     *,
-    width=100,
-    max_lines=200,
-    max_nodes=1000,
-    detail="full",
-    missing_label="<NA>",
-    unicode_mode="safe",
-):
+    width: int = 100,
+    max_lines: int = 200,
+    max_nodes: int = 1000,
+    detail: Literal["full", "topology"] = "full",
+    missing_label: str = "<NA>",
+    unicode_mode: Literal["safe", "display"] = "safe",
+) -> str:
+    """Render saved evidence as bounded, escaped plaintext.
+
+    Parameters
+    ----------
+    result : ExplorerResult or mapping
+        Saved analytical result or its ordinary dictionary export. Rendering does
+        not need the source dataframe and does not recompute analyses. Restore a
+        compact envelope with from_dict before rendering.
+    width : int, optional
+        Positive maximum plaintext line width; default 100. Long lines are clipped.
+    max_lines : int, optional
+        Positive maximum output lines; default 200. Truncation is marked in output.
+    max_nodes : int, optional
+        Nonnegative displayed node/finding budget; default 1000. Zero omits
+        node/finding details, not analytical evidence in the saved result.
+    detail : {'full', 'topology'}, optional
+        Default 'full' includes measurements and evidence. 'topology' allowlists
+        structural labels and qualitative relationships, suppressing quantities,
+        row positions, and distribution statistics. It does not anonymize labels.
+    missing_label : str, optional
+        Displayed foundation missing-value label; default "<NA>". Discovery
+        findings retain their producer wording.
+    unicode_mode : {'safe', 'display'}, optional
+        Default 'safe' escapes non-ASCII text. 'display' preserves Unicode and
+        requires fieldwork[unicode] for width calculation. Control characters are
+        escaped in either mode.
+
+    Returns
+    -------
+    str
+        Bounded, terminal-safe plaintext. Nothing is printed or written.
+
+    Raises
+    ------
+    ValueError
+        Detail, Unicode mode, or display limits are invalid.
+    ImportError
+        unicode_mode='display' requires the optional unicode extra.
+
+    Notes
+    -----
+    Display limits do not change the saved analytical population or search
+    coverage. Topology is a disclosure projection, not anonymization: feature
+    names and structural value labels can remain identifying. HTML/SVG labels
+    and terminal control characters are escaped before presentation.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.missingness(pd.DataFrame({"x": [1, None]}))
+    >>> isinstance(fw.render_plaintext(result), str)
+    True
+    """
     if _data(result).get("kind") not in KINDS:
         return foundation_text(
             result,
@@ -325,8 +430,68 @@ def render_plaintext(
 
 
 def render_svg(
-    result, *, section=None, detail="full", view=None, show_exceptions=False, max_findings=12
-):
+    result: ExplorerResult | Mapping[str, Any],
+    *,
+    section: str | None = None,
+    detail: Literal["full", "topology"] = "full",
+    view: Literal["map", "matrix", "mapping", "association", "bars", "tree", "heatmap", "findings"]
+    | None = None,
+    show_exceptions: bool = False,
+    max_findings: int = 12,
+) -> str:
+    """Render saved evidence as a self-contained static SVG.
+
+    Parameters
+    ----------
+    result : ExplorerResult or mapping
+        Saved analytical result or its ordinary dictionary export. Rendering does
+        not need the source dataframe and does not recompute analyses. Restore a
+        compact envelope with from_dict before rendering.
+    section : str or None, optional
+        Analytical section to render; default None. Foundation explore defaults
+        to grain; discovery overviews default to the combined overview. Unrequested
+        or incompatible sections raise ValueError.
+    detail : {'full', 'topology'}, optional
+        Default 'full' includes measurements and evidence. 'topology' allowlists
+        structural labels and qualitative relationships, suppressing quantities,
+        row positions, and distribution statistics. It does not anonymize labels.
+    view : str or None, optional
+        Default None chooses the result's default view. Grain: 'map' or 'matrix';
+        pairs: 'mapping' or 'association'; levels: 'bars'; census: 'tree';
+        joint counts: 'heatmap'; discovery: 'findings'. Association requires full
+        detail. Other result/view combinations raise ValueError.
+    show_exceptions : bool, optional
+        Default False. True includes supported exact-dependency exception edges
+        in the foundation grain map; other result kinds do not use this option.
+    max_findings : int, optional
+        Nonnegative discovery finding limit; default 12. Zero omits findings.
+        Foundation rendering uses its saved analytical bounds instead.
+
+    Returns
+    -------
+    str
+        Self-contained SVG markup. Nothing is written to disk.
+
+    Raises
+    ------
+    ValueError
+        Detail, view, section, or finding limit is invalid or unsupported.
+
+    Notes
+    -----
+    Display limits do not change the saved analytical population or search
+    coverage. Topology is a disclosure projection, not anonymization: feature
+    names and structural value labels can remain identifying. HTML/SVG labels
+    and terminal control characters are escaped before presentation.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.missingness(pd.DataFrame({"x": [1, None]}))
+    >>> "<svg" in fw.render_svg(result)
+    True
+    """
     data = _data(result, section)
     if data.get("kind") not in KINDS:
         return foundation_svg(
@@ -425,7 +590,59 @@ def render_svg(
     return svg.finish(864, y + 20)
 
 
-def render_html(result, *, section=None, detail="full", max_findings=100):
+def render_html(
+    result: ExplorerResult | Mapping[str, Any],
+    *,
+    section: str | None = None,
+    detail: Literal["full", "topology"] = "full",
+    max_findings: int = 100,
+) -> str:
+    """Render a standalone interactive HTML evidence document.
+
+    Parameters
+    ----------
+    result : ExplorerResult or mapping
+        Saved analytical result or its ordinary dictionary export. Rendering does
+        not need the source dataframe and does not recompute analyses. Restore a
+        compact envelope with from_dict before rendering.
+    section : str or None, optional
+        Analytical section to render; default None. Foundation explore defaults
+        to grain; discovery overviews default to the combined overview. Unrequested
+        or incompatible sections raise ValueError.
+    detail : {'full', 'topology'}, optional
+        Default 'full' includes measurements and evidence. 'topology' allowlists
+        structural labels and qualitative relationships, suppressing quantities,
+        row positions, and distribution statistics. It does not anonymize labels.
+    max_findings : int, optional
+        Nonnegative discovery finding limit; default 100. Zero omits findings.
+        Foundation rendering uses its saved analytical bounds instead.
+
+    Returns
+    -------
+    str
+        Standalone HTML with embedded styles/graphics and local controls.
+        Nothing is written to disk; no server or remote assets are required.
+
+    Raises
+    ------
+    ValueError
+        Detail, section, or finding limit is invalid or unsupported.
+
+    Notes
+    -----
+    Display limits do not change the saved analytical population or search
+    coverage. Topology is a disclosure projection, not anonymization: feature
+    names and structural value labels can remain identifying. HTML/SVG labels
+    and terminal control characters are escaped before presentation.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.missingness(pd.DataFrame({"x": [1, None]}))
+    >>> "<!doctype html>" in fw.render_html(result)
+    True
+    """
     data = _data(result, section)
     if data.get("kind") not in KINDS:
         return foundation_html(

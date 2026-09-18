@@ -4,14 +4,64 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Self
+
+from ..typing import ColumnLabel
 
 SCHEMA_VERSION = "0.3"
 
 
 @dataclass(frozen=True, repr=False)
 class ExplorerResult(Mapping[str, Any]):
-    """Immutable top-level result with a strict-JSON-compatible payload."""
+    """A versioned mapping of analytical evidence with shallowly frozen attributes.
+
+    Parameters
+    ----------
+    kind : str
+        Operation kind, such as 'levels', 'census', 'grain', 'pairs',
+        'joint_counts', 'schema_proposal', or 'explore'.
+    payload : dict, optional
+        Analytical sections; default is a new empty dictionary. Usually supplied
+        by an analysis rather than constructed manually.
+    schema_version : str, optional
+        Evidence schema version; default '0.3' for foundation results. This is
+        independent of the package version.
+    stability : str, optional
+        Evidence stability marker; default 'unstable'.
+
+    Attributes
+    ----------
+    kind : str
+        Producer operation kind.
+    payload : dict[str, Any]
+        Mutable nested evidence. Field meanings depend on kind: counts in levels,
+        observed prefix tree in census, dependencies/graph in grain, pair
+        measurements in pairs, and axis dictionaries/cells in joint_counts.
+        Combined explore results contain a sections mapping. Foundation values
+        are tagged identities; dictionaries resolve feature and level references.
+    schema_version : str
+        Serialized evidence schema version.
+    stability : str
+        Schema stability marker.
+
+    Notes
+    -----
+    Indexing exposes metadata and payload keys: result['kind'] and
+    result['scopes'], for example. Frozen attributes do not make nested lists and
+    dictionaries immutable. Ordinary exports also share nested containers.
+    Generated evidence is compatible with json.dumps(..., allow_nan=False);
+    nonfinite scalar values use tagged encodings. Rendering is bounded and does
+    not require the original dataframe.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.levels(pd.DataFrame({'site': ['A', 'B']}))
+    >>> restored = fw.ExplorerResult.from_dict(result.to_dict())
+    >>> restored.kind
+    'levels'
+    """
 
     kind: str
     payload: dict[str, Any] = field(default_factory=dict)
@@ -19,13 +69,40 @@ class ExplorerResult(Mapping[str, Any]):
     stability: str = "unstable"
 
     def to_dict(self, *, resolve_references: bool = False, compact: bool = False) -> dict[str, Any]:
-        """Export JSON data, optionally labeling references or sharing containers.
+        """Export analytical evidence as ordinary, resolved, or compact JSON data.
 
-        Resolved exports retain IDs and typed values, adding local labels and
-        values for inspection. They contain all quantitative evidence; use
-        ``visualization_data(detail="topology")`` for disclosure filtering.
-        ``compact=True`` wraps the data in a versioned shared-container envelope;
-        restore it with the appropriate result class's ``from_dict`` method.
+        Parameters
+        ----------
+        resolve_references : bool, optional
+            Default False keeps local IDs. True adds labels and typed values beside
+            references in an independent resolved copy; IDs remain intact.
+        compact : bool, optional
+            Default False returns the ordinary evidence mapping. True wraps the
+            export in a versioned fieldwork.compact envelope sharing repeated
+            containers through references. Can be combined with resolve_references.
+
+        Returns
+        -------
+        dict[str, Any]
+            Strict-JSON-compatible evidence. The ordinary default export is a new
+            top-level dictionary but shares nested containers with the result.
+
+        Notes
+        -----
+        All modes retain quantitative evidence. Compact encoding is not disclosure
+        filtering and may enlarge tiny exports; use visualization_data(detail='topology')
+        for a structural projection. Restore with the corresponding result class's
+        from_dict method. JSON serialization converts tuples to lists.
+
+        Examples
+        --------
+        >>> import json
+        >>> import pandas as pd
+        >>> import fieldwork as fw
+        >>> result = fw.levels(pd.DataFrame({'x': [1, 1]}))
+        >>> data = json.loads(json.dumps(result.to_dict(compact=True), allow_nan=False))
+        >>> fw.ExplorerResult.from_dict(data).kind
+        'levels'
         """
         data = {
             "schema_version": self.schema_version,
@@ -44,8 +121,33 @@ class ExplorerResult(Mapping[str, Any]):
         return data
 
     @classmethod
-    def from_dict(cls, data):
-        """Restore a foundation result from its ordinary or compact JSON export."""
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
+        """Restore foundation evidence from an ordinary or compact export.
+
+        Parameters
+        ----------
+        data : mapping
+            Foundation schema 0.3 export or fieldwork.compact envelope containing one.
+            JSON-decoded input is accepted. Discovery schema 1.0 uses InvestigationResult.
+
+        Returns
+        -------
+        Self
+            Restored result. Ordinary nested containers are reused; no source frame
+            or original analysis is needed.
+
+        Raises
+        ------
+        ValueError
+            The schema/envelope version or compact reference graph is unsupported.
+        KeyError
+            Required export fields are missing.
+
+        Notes
+        -----
+        This restores saved evidence rather than verifying it against source data.
+        It does not validate every nested analytical record or migrate old schemas.
+        """
         from .._serialization import expand_result
 
         data = expand_result(data)
@@ -82,10 +184,45 @@ class ExplorerResult(Mapping[str, Any]):
 
 @dataclass(frozen=True)
 class KeySpec:
-    """An explicit, named determinant; required for composite keys."""
+    """Declare an explicitly named single-column or composite determinant.
+
+    Parameters
+    ----------
+    name : str
+        Nonempty unique name within one candidate collection.
+    columns : tuple of column labels
+        Nonempty determinant columns, normalized to a tuple. Supported labels
+        are strings, non-boolean integers, or recursively nested tuples.
+
+    Attributes
+    ----------
+    name : str
+        Candidate identifier used in evidence.
+    columns : tuple of column labels
+        Ordered determinant components; the record is frozen.
+
+    Raises
+    ------
+    ValueError
+        The name or columns are empty. Analysis also rejects repeated or unknown
+        components and duplicate candidate names.
+
+    Notes
+    -----
+    A bare tuple passed as a grain candidate names one tuple-labeled column.
+    Use KeySpec to make composite intent explicit. This Python object cannot be
+    persisted directly in a Recipe's strict JSON parameters.
+
+    Examples
+    --------
+    >>> import fieldwork as fw
+    >>> key = fw.KeySpec('visit', ('site', 'participant', 'visit_number'))
+    >>> key.name
+    'visit'
+    """
 
     name: str
-    columns: tuple[Any, ...]
+    columns: tuple[ColumnLabel, ...]
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:

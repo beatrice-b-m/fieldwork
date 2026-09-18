@@ -3,15 +3,29 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable, Mapping
 from itertools import combinations, islice
 from math import comb
+from typing import Any, Literal
 
 import numpy as np
+import pandas as pd
 
 from ._explore._kernels import first_indices, group_ids
 from ._explore.encoding import normalize_scalar
 from ._runtime import checkpoint, operation, phase
-from .evidence import EvidenceRows, columns, context_statement, finding, limit, prepare, result
+from .evidence import (
+    EvidenceRows,
+    InvestigationResult,
+    Scope,
+    columns,
+    context_statement,
+    finding,
+    limit,
+    prepare,
+    result,
+)
+from .progress import CancellationToken, Progress
 
 
 class _Units:
@@ -37,24 +51,130 @@ class _Units:
 
 @operation("missingness")
 def missingness(
-    df,
+    df: pd.DataFrame,
     *,
-    features=None,
-    by=None,
-    entity=None,
-    unit="rows",
-    entity_presence="any",
-    missing=None,
-    scope=None,
-    table_id="table",
-    min_implication=0.9,
-    min_similarity=0.8,
-    max_pairs=200,
-    max_signatures=50,
-    max_contexts=32,
-    example_limit=5,
-):
-    """Count rows or equally weighted entities using explicit any/all presence aggregation."""
+    features: Iterable[str] | None = None,
+    by: Iterable[str] | None = None,
+    entity: str | Iterable[str] | None = None,
+    unit: Literal["rows", "entities"] = "rows",
+    entity_presence: Literal["any", "all"] = "any",
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    scope: Scope | None = None,
+    table_id: str = "table",
+    min_implication: float = 0.9,
+    min_similarity: float = 0.8,
+    max_pairs: int = 200,
+    max_signatures: int = 50,
+    max_contexts: int = 32,
+    example_limit: int = 5,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
+) -> InvestigationResult:
+    """Measure availability, co-presence, and patterns of absence.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Discovery requires unique string
+        column names. Duplicate index labels are supported; source selections use
+        integer row positions. Unsupported scalar objects raise TypeError.
+    features : iterable of str or None, optional
+        Unique column names to analyze, in requested order; default None selects
+        all columns. Restricts analysis, not full-source identity validation.
+    by : iterable of str or None, optional
+        Joint context columns; default None. Missing context values form categories.
+        An entity spanning contexts contributes once within each relevant context.
+    entity : str, iterable of str, or None, optional
+        Single or composite entity key; default None. Entity analyses exclude and
+        count rows with incomplete keys. Supplying entity alone keeps unit="rows"
+        and adds entity summaries.
+    unit : {'rows', 'entities'}, optional
+        Default 'rows' weights each row equally. 'entities' requires entity keys
+        and weights each distinct populated key equally.
+    entity_presence : {'any', 'all'}, optional
+        Default 'any' counts an entity as populated if any of its rows is populated.
+        'all' requires all its rows and is valid only with unit='entities'.
+    missing : mapping or None, optional
+        Additional missing sentinels per column; default None. Native missing
+        values are always absent. Numeric sentinels match integer/float values
+        numerically; booleans remain distinct. The source is not modified.
+    scope : Scope or None, optional
+        Source-bound population selection; default None uses all rows. The scope
+        must match the ordered source. Fingerprinting still scans the full frame.
+    table_id : str, optional
+        Nonempty source label; default 'table'. Does not replace the fingerprint.
+    min_implication : float, optional
+        Minimum directional presence fraction in [0, 1]; default 0.9. Its
+        denominator is units with the antecedent feature populated.
+    min_similarity : float, optional
+        Minimum Jaccard presence similarity in [0, 1]; default 0.8. Its denominator
+        is units with either feature populated.
+    max_pairs : int, optional
+        Nonnegative pair-search budget in requested column order; default 200.
+        Zero skips pair tests while retaining single-feature summaries.
+    max_signatures : int, optional
+        Nonnegative number of saved availability signatures; default 50. Omitted
+        units and source rows are counted; zero saves no signatures.
+    max_contexts : int, optional
+        Nonnegative number of joint context groups to analyze; default 32.
+        Zero skips context summaries while retaining global evidence.
+    example_limit : int, optional
+        Nonnegative maximum saved example/exception source rows per finding side;
+        default 5. Zero retains totals without row examples. This display limit
+        does not restrict the population recovered by select or all_matches.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    InvestigationResult
+        Kind 'missingness', with availability, signatures, families, contexts,
+        entity summaries, findings, analysis_unit, and search coverage. Fractions
+        name their denominators; empty denominators have undefined fractions.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Search and display budgets never sample rows. Evidence records evaluated
+    populations and omissions separately. Source identity covers ordered column
+    labels, index labels, and all cell values (not dtype metadata); changing or
+    reordering them invalidates inspection against saved findings.
+
+    Examples and exceptions count source rows even when metrics count entities.
+    Selecting an entity finding returns all rows of matching entities inside the
+    scope/context, including rows with absent features. Entity summaries' 'all'
+    and 'one' overlap for singletons; 'some' means at least one but fewer than all.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"id": [1, 1, 2], "value": [10, None, 20]})
+    >>> result = fw.missingness(df, features=["value"], entity="id",
+    ...                         unit="entities", entity_presence="all")
+    >>> result["availability"][0]["populated_fraction"]
+    0.5
+    """
     for name, value in [
         ("max_pairs", max_pairs),
         ("max_signatures", max_signatures),
@@ -97,7 +217,7 @@ def missingness(
 
     def masks_for(units):
         masks = {}
-        with phase("availability masks", len(selected), "columns") as progress:
+        with phase("availability masks", len(selected), "columns") as tracker:
             for c in selected:
                 if units.ids is None:
                     masks[c] = (
@@ -106,7 +226,7 @@ def missingness(
                 else:
                     counts = units.counts(present[c])
                     masks[c] = counts > 0 if entity_presence == "any" else counts == units.sizes
-                progress.advance(detail=c)
+                tracker.advance(detail=c)
         return masks
 
     units = units_for(np.arange(len(frame)))
@@ -182,11 +302,11 @@ def missingness(
             exception_mask=~mask,
             selector={"operation": "presence", "feature": c},
         )
-    with phase("packing availability", len(selected), "columns") as progress:
+    with phase("packing availability", len(selected), "columns") as tracker:
         packed = np.zeros((n, (len(selected) + 7) // 8), dtype=np.uint8)
         for j, c in enumerate(selected):
             packed[:, j // 8] |= masks[c].astype(np.uint8) << (7 - j % 8)
-            progress.advance(detail=c)
+            tracker.advance(detail=c)
     with phase("availability signatures"):
         if selected:
             signatures, signature_ids, counts = np.unique(
@@ -247,7 +367,7 @@ def missingness(
                 }
             )
     evaluated = 0
-    with phase("availability pairs", min(comb(len(selected), 2), max_pairs), "pairs") as progress:
+    with phase("availability pairs", min(comb(len(selected), 2), max_pairs), "pairs") as tracker:
         for a, b in islice(combinations(selected, 2), max_pairs):
             evaluated += 1
             x, y = masks[a], masks[b]
@@ -301,7 +421,7 @@ def missingness(
                             "target": target,
                         },
                     )
-            progress.advance(detail=f"{a} / {b}")
+            tracker.advance(detail=f"{a} / {b}")
     context_ids = group_ids(codes[c] for c in contexts)
     context_count = int(context_ids.max()) + 1 if len(context_ids) else 0
     base["contexts"] = []

@@ -14,6 +14,7 @@ import pandas as pd
 from ._explore.encoding import MISSING, encode_series, normalize_scalar, validate_frame
 from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, current_session, operation, phase
+from .progress import CancellationToken, Progress
 
 
 def fingerprint(df: pd.DataFrame) -> str:
@@ -23,8 +24,8 @@ def fingerprint(df: pd.DataFrame) -> str:
     if session and id(df) in session.fingerprints:
         checkpoint()
         return session.fingerprints[id(df)][1]
-    with phase("fingerprinting", len(df.columns), "columns") as progress:
-        identity = _fingerprint(df, progress)
+    with phase("fingerprinting", len(df.columns), "columns") as tracker:
+        identity = _fingerprint(df, tracker)
     if session:
         session.fingerprints[id(df)] = (df, identity)
     return identity
@@ -84,6 +85,55 @@ def _fingerprint(df, progress):
 
 @dataclass(frozen=True)
 class Scope:
+    """Identify a reusable population by positions in one ordered source frame.
+
+    Parameters
+    ----------
+    dataset_id : str
+        Canonical source fingerprint. Prefer from_positions to compute it.
+    positions : tuple of int
+        Unique nonnegative source row positions, sorted into source order.
+        from_positions additionally validates bounds against the dataframe.
+    name : str, optional
+        Population label; default 'selection'.
+    parent : str or None, optional
+        Parent scope name recording lineage; default None.
+
+    Attributes
+    ----------
+    dataset_id : str
+        Identity of ordered column labels, index labels, and cell values.
+    positions : tuple[int, ...]
+        Absolute source positions, never dataframe index labels or offsets within
+        a parent selection. Duplicate dataframe indexes are therefore safe.
+    name : str
+        Displayed population label.
+    parent : str or None
+        Parent scope name, when refined or selected from saved evidence.
+
+    Raises
+    ------
+    ValueError
+        Positions repeat or are negative/noninteger (booleans are invalid).
+
+    Notes
+    -----
+    Scopes are frozen and source-bound. Reordering or changing values/labels
+    invalidates reuse; dtype metadata alone is not part of identity. Scopes store
+    positions, not source cells. Search/display budgets do not modify a scope.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({'x': [10, 20, 30]}, index=['a', 'a', 'b'])
+    >>> selected = fw.Scope.from_positions(df, [2, 0], name='eligible')
+    >>> selected.positions
+    (0, 2)
+    >>> selected.refine(df, [2]).parent
+    'eligible'
+    """
+
     dataset_id: str
     positions: tuple[int, ...]
     name: str = "selection"
@@ -101,7 +151,62 @@ class Scope:
 
     @classmethod
     @operation("scope selection")
-    def from_positions(cls, df: pd.DataFrame, positions: Iterable[int], *, name="selection"):
+    def from_positions(
+        cls,
+        df: pd.DataFrame,
+        positions: Iterable[int | np.integer[Any]],
+        *,
+        name: str = "selection",
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+    ) -> Scope:
+        """Create a source-bound scope from absolute row positions.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Source frame, read without mutation. Labels may be unique strings, integers,
+            or recursively nested tuples. Duplicate index labels are supported;
+            selections use integer row positions. Unsupported scalars raise TypeError.
+        positions : iterable of int
+            Unique, nonnegative, in-bounds positions in the original source frame.
+            Input order is normalized to source order; an empty iterable is valid.
+        name : str, optional
+            Scope label; default 'selection'.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+
+        Returns
+        -------
+        Scope
+            Frozen selection with the full source fingerprint and sorted positions.
+
+        Raises
+        ------
+        KeyError
+            A requested column is unknown.
+        ValueError
+            Columns, limits, thresholds, constraints, or source scope are invalid.
+        TypeError
+            The frame, column labels, or scalar values are unsupported.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops analysis.
+
+        Notes
+        -----
+        Reads and fingerprints the whole frame without mutation. Positions are not
+        index labels; duplicate dataframe indexes are allowed.
+        """
         selected = tuple(positions)
         if any(
             isinstance(p, bool) or not isinstance(p, (int, np.integer)) or p < 0 or p >= len(df)
@@ -113,7 +218,62 @@ class Scope:
         return cls(fingerprint(df), tuple(sorted(int(p) for p in selected)), name)
 
     @operation("scope refinement")
-    def refine(self, df: pd.DataFrame, positions: Iterable[int], *, name="refined"):
+    def refine(
+        self,
+        df: pd.DataFrame,
+        positions: Iterable[int | np.integer[Any]],
+        *,
+        name: str = "refined",
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+    ) -> Scope:
+        """Select a subset of this scope using absolute source positions.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Source frame, read without mutation. Labels may be unique strings, integers,
+            or recursively nested tuples. Duplicate index labels are supported;
+            selections use integer row positions. Unsupported scalars raise TypeError.
+        positions : iterable of int
+            Unique absolute source positions contained in this scope, not offsets
+            within its selected rows. An empty iterable creates an empty child.
+        name : str, optional
+            Child scope label; default 'refined'.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+
+        Returns
+        -------
+        Scope
+            Child scope with this scope's name as parent; the parent is unchanged.
+
+        Raises
+        ------
+        KeyError
+            A requested column is unknown.
+        ValueError
+            Columns, limits, thresholds, constraints, or source scope are invalid.
+        TypeError
+            The frame, column labels, or scalar values are unsupported.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops analysis.
+
+        Notes
+        -----
+        The supplied frame must match the parent's ordered source. A valid row
+        position outside the parent is rejected with ValueError.
+        """
         child = Scope.from_positions(df, positions, name=name)
         if child.dataset_id != self.dataset_id or not set(child.positions) <= set(self.positions):
             raise ValueError("Refinement must select positions from its parent scope")
@@ -121,13 +281,109 @@ class Scope:
 
 
 class InvestigationResult(ExplorerResult):
-    """Saved evidence with dataframe projections and validated source-row inspection."""
+    """Browse saved discovery evidence and recover verified source populations.
+
+    Parameters
+    ----------
+    kind : str
+        'missingness', 'dependencies', 'paths', 'value_patterns', 'overview', or
+        'comparison'. Public analyses and from_dict construct these results.
+    payload : dict, optional
+        Saved evidence; default is a new empty dictionary. Analytical constructors
+        populate source, scope, missing_convention, findings, and kind-specific
+        sections. Empty hand-built payloads do not support inspection.
+    schema_version : str, optional
+        Discovery analyses and from_dict use '1.0'. The inherited raw constructor
+        defaults to foundation '0.3'; use the producer/loader for discovery data.
+    stability : str, optional
+        Inherited stability marker; default 'unstable'.
+
+    Attributes
+    ----------
+    kind : str
+        Discovery operation kind.
+    payload : dict[str, Any]
+        Mutable nested evidence. Findings contain id, pattern, statement,
+        features, metrics, counting_unit/analysis_unit, structural predicates,
+        and bounded examples/exceptions. Row selections record positions,
+        total, omitted, and limit. IDs identify findings within this result.
+    schema_version : str
+        '1.0' for supported discovery exports.
+    stability : str
+        Evidence stability marker.
+
+    Notes
+    -----
+    Use to_frame for findings or list sections such as availability, candidates,
+    changes, or summaries. Overview sections hold ordinary result exports; restore
+    one with from_dict before calling its methods. Each finding retains its own
+    population and counting unit. Search omissions are not negative findings.
+
+    Top-level attributes are frozen, but nested payloads and ordinary exports are
+    mutable. Findings contain representative positions, not source rows. inspect,
+    select, and recompute require the identical ordered source. Use Recipe to
+    reapply parameters to a new delivery. Methods inherited from ExplorerResult
+    provide mapping access and ordinary/resolved/compact exports.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({'x': [1, None]})
+    >>> result = fw.missingness(df)
+    >>> result.to_frame().empty
+    False
+    >>> fw.InvestigationResult.from_dict(result.to_dict()).kind
+    'missingness'
+    """
 
     def to_frame(self, section: str = "findings") -> pd.DataFrame:
+        """Project a saved list section into a normalized dataframe.
+
+        Parameters
+        ----------
+        section : str, optional
+            List section name; default 'findings'. Common alternatives include
+            'availability', 'dependencies', 'candidates', 'changes', and 'summaries',
+            depending on kind. Missing sections yield an empty dataframe.
+
+        Returns
+        -------
+        pandas.DataFrame
+            pandas.json_normalize projection with nested mapping fields flattened
+            into dotted column names. This contains evidence, not source rows.
+
+        Notes
+        -----
+        The result is a projection of saved data; it does not rerun analysis or
+        validate source identity. Nested object values may remain shared.
+        """
         return pd.json_normalize(self.payload.get(section, []))
 
-    def relationships(self, feature=None, *, kinds=None):
-        """Browse typed feature connections, with finding IDs for evidence inspection."""
+    def relationships(
+        self, feature: str | None = None, *, kinds: Iterable[str] | None = None
+    ) -> pd.DataFrame:
+        """Browse saved feature connections and their supporting finding references.
+
+        Parameters
+        ----------
+        feature : str or None, optional
+            Restrict to connections containing this column; default None includes all.
+        kinds : iterable of str or None, optional
+            Relationship kinds to retain; default None includes all saved kinds.
+            Use returned kind values to discover available categories.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Normalized feature-network relationship records. Empty when no matching
+            network is saved. Records retain their units and evidence references.
+
+        Notes
+        -----
+        Connectedness means reachability, not equivalence or a composed functional
+        dependency. No dataframe or recomputation is needed.
+        """
         records = self.payload.get("feature_network", {}).get("relationships", [])
         return pd.json_normalize(
             [
@@ -152,16 +408,149 @@ class InvestigationResult(ExplorerResult):
         return record
 
     @operation("inspection")
-    def inspect(self, df: pd.DataFrame, finding: str | int, *, exceptions=False, all_matches=False):
-        """Return saved examples, or recompute the complete matching source population."""
+    def inspect(
+        self,
+        df: pd.DataFrame,
+        finding: str | int,
+        *,
+        exceptions: bool = False,
+        all_matches: bool = False,
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+    ) -> pd.DataFrame:
+        """Return representative or complete matching source rows as a copy.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Original ordered source frame; labels, index, and values must match the
+            saved fingerprint. Duplicate index labels are supported.
+        finding : str or int
+            Finding ID such as "f0", or zero-based position in this result's findings
+            list. Integer indexing follows Python list rules, including negative indices.
+        exceptions : bool, optional
+            Default False selects supporting rows. True selects saved counterexample
+            rows or their complete matching population.
+        all_matches : bool, optional
+            Default False returns only saved representative examples/exceptions,
+            bounded by example_limit. True recovers the entire matching population.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Source rows in source order, selected with iloc and copied. Original
+            column labels and index labels, including duplicates, are preserved.
+
+        Raises
+        ------
+        ValueError
+            The source differs or a saved selector cannot resolve a population.
+        KeyError
+            The string finding ID is unknown or required saved fields are missing.
+        IndexError
+            An integer finding position is outside the findings list.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops source verification or selection.
+
+        Notes
+        -----
+        all_matches=True uses the saved selector and conventions; unsupported saved
+        selector forms can fall back to recomputing the owning section. Overview
+        findings resolve through their section. Entity selections include all rows of
+        matching entities within the analyzed scope/context, including absent values.
+        Comparison findings do not have a single recoverable source population.
+        """
         record = self._finding(df, finding)
         if all_matches:
             return df.iloc[list(self.select(df, finding, exceptions=exceptions).positions)].copy()
         return df.iloc[record["exceptions" if exceptions else "examples"]["positions"]].copy()
 
     @operation("selection")
-    def select(self, df, finding, *, exceptions=False, name="finding selection"):
-        """Recover all matching source positions as a reusable, source-bound Scope."""
+    def select(
+        self,
+        df: pd.DataFrame,
+        finding: str | int,
+        *,
+        exceptions: bool = False,
+        name: str = "finding selection",
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+    ) -> Scope:
+        """Recover all matching source positions as a reusable Scope.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Original ordered source frame; labels, index, and values must match the
+            saved fingerprint. Duplicate index labels are supported.
+        finding : str or int
+            Finding ID such as "f0", or zero-based position in this result's findings
+            list. Integer indexing follows Python list rules, including negative indices.
+        exceptions : bool, optional
+            Default False selects supporting rows. True selects saved counterexample
+            rows or their complete matching population.
+        name : str, optional
+            Returned scope label; default 'finding selection'.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+
+        Returns
+        -------
+        Scope
+            Complete matching source positions with parent scope lineage. Selection
+            is independent of saved example limits and does not mutate the source.
+
+        Raises
+        ------
+        ValueError
+            The source differs or a saved selector cannot resolve a population.
+        KeyError
+            The string finding ID is unknown or required saved fields are missing.
+        IndexError
+            An integer finding position is outside the findings list.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops source verification or selection.
+
+        Notes
+        -----
+        Evaluates the saved predicate under its scope and missing conventions;
+        unsupported selector forms may fall back to section recomputation. Overview
+        finding IDs are routed to their owning section. Entity selectors retain all
+        source rows of matching entities inside that population. Comparison findings
+        do not support source selection.
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> import fieldwork as fw
+        >>> df = pd.DataFrame({'x': [1, 2, 3]})
+        >>> result = fw.missingness(df, example_limit=1)
+        >>> scope = result.select(df, 0)
+        >>> isinstance(scope, fw.Scope)
+        True
+        """
         record = self._finding(df, finding)
         selector = record["selector"]
         analysis = self
@@ -210,8 +599,59 @@ class InvestigationResult(ExplorerResult):
         )
 
     @operation("recomputation")
-    def recompute(self, df: pd.DataFrame, **overrides):
-        """Reapply saved conventions and scope to the same source, with explicit budget overrides."""
+    def recompute(
+        self,
+        df: pd.DataFrame,
+        *,
+        progress: Progress = None,
+        cancel: CancellationToken | None = None,
+        timeout: float | None = None,
+        **overrides: Any,
+    ) -> InvestigationResult:
+        """Reapply a saved individual analysis to its verified source.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Original ordered source frame; labels, index, and values must match the
+            saved fingerprint. Duplicate index labels are supported.
+        progress : bool or callable, optional
+            Default None is silent; True uses the built-in display. A callback receives
+            ProgressEvent objects synchronously. False is also silent. Callback errors
+            propagate unchanged; do not mutate the frame from a callback.
+        cancel : CancellationToken or None, optional
+            Cooperative cancellation token; default None. A cancelled token raises
+            AnalysisCancelled at the next checkpoint, with no partial result.
+        timeout : float or None, optional
+            Finite nonnegative seconds from call start; default None disables the
+            deadline. Expiration raises AnalysisCancelled cooperatively, after the
+            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **overrides : Any
+            Keyword options accepted by the saved operation. Explicit values replace
+            saved parameters/context; use, for example, example_limit=20 to save more
+            representatives. Options depend on the result kind.
+
+        Returns
+        -------
+        InvestigationResult
+            New result with the overrides applied. Paths restore as PathResult.
+
+        Raises
+        ------
+        ValueError
+            The source differs, kind is overview/comparison, or overrides are invalid.
+        TypeError
+            An override is not accepted by the saved operation.
+        AnalysisCancelled
+            Cancellation or the cooperative timeout stops recomputation.
+
+        Notes
+        -----
+        Supports missingness, dependencies, paths, and value_patterns. Restore and
+        recompute an individual overview section rather than the composition. To
+        analyze another delivery use Recipe; recompute checks the saved fingerprint.
+        The original result is not modified.
+        """
         from .availability import missingness
         from .discovery import discover_dependencies
         from .navigation import suggest_paths
@@ -255,7 +695,34 @@ class InvestigationResult(ExplorerResult):
         return operations[self.kind](df, **parameters)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]):
+    def from_dict(cls, data: Mapping[str, Any]) -> InvestigationResult:
+        """Restore discovery evidence, including path behavior, from saved data.
+
+        Parameters
+        ----------
+        data : mapping
+            Ordinary discovery schema 1.0 export or a fieldwork.compact envelope
+            containing one. JSON-decoded data is accepted.
+
+        Returns
+        -------
+        InvestigationResult
+            Restored evidence; kind='paths' produces PathResult with best/path/census
+            handoff behavior. Ordinary nested containers are reused.
+
+        Raises
+        ------
+        ValueError
+            The schema/envelope version or compact reference graph is unsupported.
+        KeyError
+            Required saved fields are missing.
+
+        Notes
+        -----
+        Does not recompute analyses or verify source identity. Source checks happen
+        when inspecting, selecting, recomputing, or handing a path to census. This is
+        not a full validator of every nested evidence field.
+        """
         from ._serialization import expand_result
 
         data = expand_result(data)
@@ -366,7 +833,7 @@ def prepare_context(
             return ("number", float.fromhex(v.value))
         return v
 
-    with phase("encoding", len(needed), "columns") as progress:
+    with phase("encoding", len(needed), "columns") as tracker:
         for c in needed:
             dtype = frame[c].dtype
             native_only = (
@@ -377,7 +844,7 @@ def prepare_context(
             )
             if c not in selected and not sentinel_values[c] and native_only:
                 all_available[c] = frame[c].notna().to_numpy(dtype=bool)
-                progress.advance(detail=str(c))
+                tracker.advance(detail=str(c))
                 continue
             values, codes = encode_series(frame[c])
             sentinel_keys = {sentinel_key(v) for v in sentinel_values[c]}
@@ -389,7 +856,7 @@ def prepare_context(
                 all_encoded[c] = codes
                 if session:
                     session.remember_encoding((id(frame), c), (frame, values, codes))
-            progress.advance(detail=str(c))
+            tracker.advance(detail=str(c))
     encoded = {c: all_encoded[c] for c in selected}
     available = {c: all_available[c] for c in presence_columns}
     base = {

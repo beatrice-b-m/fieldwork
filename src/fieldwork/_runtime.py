@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import inspect
 import math
 import statistics
 import time
 from collections import OrderedDict, deque
+from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
+from typing import ParamSpec, TypeVar, cast
 
 from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
 
@@ -178,10 +179,14 @@ def current_session():
     return _current.get()
 
 
-def operation(name):
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Add common runtime controls without putting them in analytical payloads."""
 
-    def decorate(function):
+    def decorate(function: Callable[P, R]) -> Callable[P, R]:
         @wraps(function)
         def run(*args, progress=None, cancel=None, timeout=None, **kwargs):
             parent = _current.get()
@@ -201,16 +206,6 @@ def operation(name):
                     owned.close()
                     _current.reset(token)
 
-        signature = inspect.signature(function)
-        parameters = list(signature.parameters.values())
-        insertion = next(
-            (i for i, p in enumerate(parameters) if p.kind == p.VAR_KEYWORD), len(parameters)
-        )
-        parameters[insertion:insertion] = [
-            inspect.Parameter(key, inspect.Parameter.KEYWORD_ONLY, default=None)
-            for key in ("progress", "cancel", "timeout")
-        ]
-        run.__signature__ = signature.replace(parameters=parameters)
-        return run
+        return cast(Callable[P, R], run)
 
     return decorate

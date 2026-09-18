@@ -1,4 +1,21 @@
-"""Explore unfamiliar data through patterns and inspectable evidence."""
+"""Explore unfamiliar pandas tables through patterns and inspectable evidence.
+
+Use ``explore(df)`` for an automatic overview, or call ``missingness``,
+``discover_dependencies``, ``suggest_paths``, and ``value_patterns`` separately.
+``explore(df, dimensions)`` composes explicit foundation analyses; ``levels``,
+``census``, ``grain``, ``pairs``, and ``joint_counts`` expose their individual tools.
+Analyses do not mutate the source. Search/display budgets report omissions;
+only explicit scopes, missing exclusions, and census preselection restrict rows.
+
+Discovery results support ``to_frame``, verified ``inspect``/``select``, and
+source-bound recomputation. Use ``Recipe`` for new deliveries. Renderers consume
+saved evidence and return strings, while ``to_dict`` exports analytical data.
+All dataframe analyses accept progress, cancel, and timeout runtime controls.
+Import reusable option dictionary types from ``fieldwork.typing``. Only this
+module's __all__, the public members/returned Path interface, and the exported
+types in fieldwork.typing form the documented API; underscore modules and
+unexported implementation helpers are private.
+"""
 
 from ._explore import (
     ExplorerResult,

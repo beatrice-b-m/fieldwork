@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from ..evidence import Scope
+
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
+from ..progress import CancellationToken, Progress
+from ..typing import ColumnLabel, SchemaRole
 from ._kernels import dense_counts
 from .encoding import (
     MISSING,
@@ -89,17 +96,93 @@ def _mixed_warning(
 @operation("levels")
 def levels(
     df: pd.DataFrame,
-    features: Iterable[Any] | None = None,
+    features: Iterable[ColumnLabel] | None = None,
     *,
     top_n: int | None = None,
     max_levels: int | None = 100,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[Any, str] | None = None,
+    schema: dict[ColumnLabel, SchemaRole] | None = None,
     engine_metadata: bool = False,
     scope_metadata: dict[str, Any] | None = None,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
 ) -> ExplorerResult:
-    """Count levels independently for every requested feature."""
+    """Count observed values independently for each requested column.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Column labels must be unique strings,
+        non-boolean integers, or recursively tuple-valued labels. Native missing
+        scalars share one identity; integer and float values remain distinct.
+        Unsupported column labels or scalar objects raise TypeError.
+    features : iterable of column labels or None, optional
+        Nonempty unique columns to count; default None counts every column.
+    top_n : int or None, optional
+        Positive number of most frequent levels per feature; default None.
+        Limits output only, never the counting population.
+    max_levels : int or None, optional
+        Nonnegative displayed levels per feature; default 100. None is unbounded;
+        zero hides all levels while preserving totals and omission metadata.
+    min_count : int, optional
+        Nonnegative minimum displayed count; default 1. Does not filter input rows.
+    dropna : bool, optional
+        Default False includes missing values as a level. True excludes missing
+        values independently for each feature, so denominators can differ.
+    schema : dict or None, optional
+        Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
+        Default None. Roles annotate evidence and warnings; they do not cast values.
+    engine_metadata : bool, optional
+        Include analytical producer metadata when True; default False.
+    scope_metadata : mapping or None, optional
+        Optional descriptive lineage supplied by composition; default None. This
+        does not select rows. Use a Scope with census/explore for row selection.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    ExplorerResult
+        Kind 'levels', with features, feature/level dictionaries, per-feature
+        scopes, omitted mass, and warnings. Ranking uses count then typed value
+        order for deterministic ties.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    This is independent univariate counting, not a joint distribution. Each
+    reported share uses its feature's evaluated row count. schema is advisory;
+    ID/continuous roles can warn about unsuitable categorical interpretation.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> result = fw.levels(pd.DataFrame({"site": ["A", "A", "B"]}), top_n=1)
+    >>> result.kind
+    'levels'
+    """
 
     selected = resolve_columns(df, features, argument="features", default_all=True)
     validate_schema(df, schema)
@@ -109,7 +192,7 @@ def levels(
     records: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     scopes: list[dict[str, Any]] = []
-    with phase("level counts", len(selected), "columns") as progress:
+    with phase("level counts", len(selected), "columns") as tracker:
         for position, column in enumerate(selected):
             feature_id = f"f{position}"
             values, codes = encode_series(df[column])
@@ -168,7 +251,7 @@ def levels(
                         "role": role,
                     }
                 )
-            progress.advance(detail=str(column))
+            tracker.advance(detail=str(column))
     payload: dict[str, Any] = {
         "status": "empty" if len(df) == 0 else "computed",
         "source": _source(df),
@@ -221,7 +304,7 @@ def _pre_mask_per_parent(
 
 def _census(
     df: pd.DataFrame,
-    dimensions: Iterable[Any],
+    dimensions: Iterable[ColumnLabel],
     *,
     top_n: int | None = None,
     top_n_mode: str = "post",
@@ -232,7 +315,7 @@ def _census(
     max_nodes: int | None = 10000,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[Any, str] | None = None,
+    schema: dict[ColumnLabel, SchemaRole] | None = None,
     engine_metadata: bool = False,
     _encoded=None,
 ) -> ExplorerResult:
@@ -362,14 +445,14 @@ def _census(
     }
     node_lookup: dict[str, dict[str, Any]] = {"root": root}
     next_id = 0
-    with phase("census tree", unit="parents") as progress:
+    with phase("census tree", unit="parents") as tracker:
         while queue:
             parent_id, depth, rows, parent_count = queue.popleft()
             checkpoint()
             parent = node_lookup[parent_id]
             if depth >= len(active):
                 parent["expansion_state"] = "complete"
-                progress.advance()
+                tracker.advance()
                 continue
             counts = dense_counts(code_arrays[depth], rows)
             ranked = _rank_counts(counts, dictionaries[depth])
@@ -428,7 +511,7 @@ def _census(
                 emitted_levels.add((depth, code))
                 if depth + 1 < len(active):
                     queue.append((node_id, depth + 1, child_rows, count))
-            progress.advance()
+            tracker.advance()
     # Pre-selection metadata must remain decodable even when no corresponding
     # tree node survives the output budgets or the conjunctive pre filter.
     referenced_levels = emitted_levels.copy()
@@ -482,8 +565,140 @@ def _census(
 
 
 @operation("census")
-def census(df, dimensions, *, scope=None, missing=None, table_id="table", **options):
-    """Build an observed-prefix census, optionally preserving a discovery scope and sentinels."""
+def census(
+    df: pd.DataFrame,
+    dimensions: Iterable[ColumnLabel],
+    *,
+    scope: Scope | None = None,
+    missing: Mapping[ColumnLabel, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    top_n: int | None = None,
+    top_n_mode: Literal["pre", "post"] = "post",
+    top_n_per_parent: bool = False,
+    min_retained_fraction: float = 0.01,
+    max_depth: int | None = None,
+    max_levels: int | None = 100,
+    max_nodes: int | None = 10000,
+    min_count: int = 1,
+    dropna: bool = False,
+    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    engine_metadata: bool = False,
+    progress: Progress = None,
+    cancel: CancellationToken | None = None,
+    timeout: float | None = None,
+) -> ExplorerResult:
+    """Build a bounded tree of observed dimension prefixes.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation. Column labels must be unique strings,
+        non-boolean integers, or recursively tuple-valued labels. Native missing
+        scalars share one identity; integer and float values remain distinct.
+        Unsupported column labels or scalar objects raise TypeError.
+    dimensions : iterable of column labels
+        Nonempty ordered columns defining the census prefixes. Order changes the
+        tree; use KeySpec only for grain candidates, not for dimensions.
+    scope : Scope or None, optional
+        Source-bound population selection; default None uses all rows. The scope
+        must match the ordered source. Fingerprinting still scans the full frame.
+    missing : mapping or None, optional
+        Additional missing sentinels per column; default None. Native missing
+        values are always absent. Numeric sentinels match integer/float values
+        numerically; booleans remain distinct. The source is not modified.
+    table_id : str, optional
+        Nonempty source label; default 'table'. Does not replace the fingerprint.
+    top_n : int or None, optional
+        Positive number of leading levels; default None keeps all eligible levels.
+        With pre mode this selects a cohort; with post mode it only limits output.
+    top_n_mode : {'pre', 'post'}, optional
+        Default 'post' counts the full eligible population before limiting output.
+        'pre' restricts rows to selected levels before counting, records exclusions,
+        and can warn about low retention.
+    top_n_per_parent : bool, optional
+        Default False chooses leading levels globally for each dimension. True
+        chooses them separately within each parent prefix.
+    min_retained_fraction : float, optional
+        Retention warning threshold in [0, 1]; default 0.01. Does not reject or
+        change the selected population.
+    max_depth : int or None, optional
+        Positive number of active dimensions; default None uses all dimensions.
+    max_levels : int or None, optional
+        Nonnegative displayed child-level limit per parent; default 100. None is
+        unbounded; zero omits all child levels. Omitted mass remains reported.
+    max_nodes : int or None, optional
+        Nonnegative total non-root node budget; default 10000. None is unbounded;
+        zero keeps only the root and omission evidence.
+    min_count : int, optional
+        Nonnegative minimum displayed count; default 1. Does not filter input rows.
+    dropna : bool, optional
+        Default False includes missing values as levels. True excludes rows
+        missing any active dimension before census counting.
+    schema : dict or None, optional
+        Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
+        Default None. Roles annotate evidence and warnings; they do not cast values.
+    engine_metadata : bool, optional
+        Include analytical producer metadata when True; default False.
+    progress : bool or callable, optional
+        Default None is silent; True uses the built-in display. A callback receives
+        ProgressEvent objects synchronously. False is also silent. Callback errors
+        propagate unchanged; do not mutate the frame from a callback.
+    cancel : CancellationToken or None, optional
+        Cooperative cancellation token; default None. A cancelled token raises
+        AnalysisCancelled at the next checkpoint, with no partial result.
+    timeout : float or None, optional
+        Finite nonnegative seconds from call start; default None disables the
+        deadline. Expiration raises AnalysisCancelled cooperatively, after the
+        current pandas/NumPy work item returns, rather than at a hard deadline.
+
+    Returns
+    -------
+    ExplorerResult
+        Kind 'census', with tree nodes, feature and level dictionaries, scopes,
+        and warnings. Nodes record parent/total shares, omitted child mass, and
+        stop reasons. No unobserved Cartesian branches are invented.
+
+    Raises
+    ------
+    KeyError
+        A requested column is unknown.
+    ValueError
+        Columns, limits, thresholds, constraints, or source scope are invalid.
+    TypeError
+        The frame, column labels, or scalar values are unsupported.
+    AnalysisCancelled
+        Cancellation or the cooperative timeout stops analysis.
+
+    Notes
+    -----
+    Counts are exact for the evaluated population. Display budgets preserve
+    ancestor closure and report omissions; preselection explicitly changes the
+    population and records its exclusions. Native and declared missing values
+    share a level. When source context is supplied, scopes retain original-source
+    row accounting and distinguish restrictions from missing exclusions.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
+    >>> tree = fw.census(df, ["site", "visit"], max_nodes=10)
+    >>> tree.kind
+    'census'
+    """
+    options = {
+        "top_n": top_n,
+        "top_n_mode": top_n_mode,
+        "top_n_per_parent": top_n_per_parent,
+        "min_retained_fraction": min_retained_fraction,
+        "max_depth": max_depth,
+        "max_levels": max_levels,
+        "max_nodes": max_nodes,
+        "min_count": min_count,
+        "dropna": dropna,
+        "schema": schema,
+        "engine_metadata": engine_metadata,
+    }
     if scope is None and missing is None and table_id == "table":
         return _census(df, dimensions, **options)
     from ..evidence import foundation_context
