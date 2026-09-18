@@ -43,6 +43,7 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `patterns.py` | Populated strings/numbers, indexed families, context constancy |
 | `workflow.py` | Composition, recipes, delivery comparisons |
 | `presentation.py` | Discovery projections and dispatch to foundation renderers |
+| `_html.py` | Shared offline document, responsive styles, filtering and evidence-link controls |
 
 ## Extension boundaries
 

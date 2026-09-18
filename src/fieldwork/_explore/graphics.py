@@ -221,15 +221,24 @@ def _grain_svg(data, *, exceptions=False, collapsed=False):
     return svg.finish(width, y + 20)
 
 
+def _matrix_keys(data):
+    return list(
+        dict.fromkeys(
+            [key for node in data["nodes"] for key in node["key_names"]]
+            + [row["key"] for row in data["evidence"]]
+        )
+    )
+
+
 def _matrix_svg(data):
     svg = _SVG("Candidate key × target feature")
     y = _heading(svg, data, "Candidate key × target feature")
     svg.text(24, y, "Constant · varying · undefined · untested | * different target population")
     y += 32
     features = data["features"]
-    keys = [key for node in data["nodes"] for key in node["key_names"]]
-    label_width = max(180, min(500, max((len(k) for k in keys), default=10) * 8 + 30))
-    header_lines = [list(_wrap(f["label"], 16)) for f in features]
+    keys = _matrix_keys(data)
+    label_width = 300
+    header_lines = [_wrap(key, 16) for key in keys]
     header_height = max((len(lines) for lines in header_lines), default=1) * 18 + 10
     for index, lines in enumerate(header_lines):
         for line_index, line in enumerate(lines):
@@ -238,16 +247,15 @@ def _matrix_svg(data):
                 y + line_index * 18,
                 line,
                 size=12,
-                attrs=f'data-feature="{features[index]["id"]}" class="feature"',
             )
     y += header_height
     lookup = {(r["key"], r["feature"]): r for r in data["evidence"]}
-    for key in keys:
-        lines = _wrap(key, max(12, (label_width - 35) // 8))
+    for feature in features:
+        lines = _wrap(feature["label"], 30)
         height = max(44, 20 * len(lines) + 10)
         for i, line in enumerate(lines):
             svg.text(24, y + 24 + i * 20, line)
-        for index, feature in enumerate(features):
+        for index, key in enumerate(keys):
             record = lookup.get((key, feature["id"]))
             state = record["state"] if record else "untested"
             x = label_width + index * 140
@@ -260,7 +268,71 @@ def _matrix_svg(data):
                 attrs=f'data-feature="{feature["id"]}" class="feature" tabindex="0"',
             )
         y += height
-    return svg.finish(max(900, label_width + 140 * len(features) + 24), y + 20)
+    return svg.finish(max(900, label_width + 140 * len(keys) + 24), y + 20)
+
+
+def _matrix_html(data):
+    """Keep wide grain evidence readable without scaling text down to fit."""
+    keys = _matrix_keys(data)
+    lookup = {(r["key"], r["feature"]): r for r in data["evidence"]}
+    parts = [
+        (
+            "<h2>Feature behavior by candidate key</h2>"
+            "<p>Each row is a feature; each column is a tested grouping. "
+            "Constant means one observed value per group; varying means conflicting values. "
+            "Undefined means no evaluated support; untested means no saved test. "
+            "* marks a different target population. Select a cell, then View selected evidence. "
+            "Long labels are shortened visually; full names appear in placement evidence.</p>"
+        ),
+        (
+            '<div class="toolbar" data-enhance hidden><label>Find matrix features'
+            '<input type="search" id="matrix-search" placeholder="Feature name"></label>'
+            '<label>Candidate key<select id="matrix-key"><option value="">All candidate keys</option>'
+        ),
+    ]
+    for index, key in enumerate(keys):
+        parts.append(f'<option value="{index}">{_esc(key)}</option>')
+    parts.append(
+        '</select></label><button type="button" id="matrix-reset">Clear matrix filters</button>'
+        '</div><p id="matrix-status" role="status" aria-live="polite"></p>'
+        '<p id="matrix-empty" class="empty" hidden>No features match this search.</p>'
+        '<div class="matrix-scroll" tabindex="0" role="region" aria-label="Grain evidence matrix">'
+        '<table class="grain-matrix"><caption>Feature behavior by candidate key</caption>'
+        '<thead><tr><th scope="col">Feature</th>'
+    )
+    for index, key in enumerate(keys):
+        parts.append(
+            f'<th scope="col" data-matrix-key="{index}" title="{_esc(key)}">'
+            f'<span class="matrix-label">{_esc(key)}</span></th>'
+        )
+    parts.append("</tr></thead><tbody>")
+    for feature in data["features"]:
+        label = _esc(feature["label"])
+        parts.append(
+            f'<tr data-matrix-feature="{label}"><th scope="row">'
+            f'<button type="button" data-feature="{feature["id"]}" class="feature" '
+            f'title="{label}"><span class="matrix-label">{label}</span></button></th>'
+        )
+        for index, key in enumerate(keys):
+            record = lookup.get((key, feature["id"]))
+            state = record["state"] if record else "untested"
+            different = bool(record and not record["compatible"])
+            description = f"{feature['label']} by {key}: {state}"
+            if different:
+                description += "; different target population"
+            parts.append(
+                f'<td data-matrix-key="{index}" style="background:{_COLORS[state]}">'
+                f'<button type="button" data-feature="{feature["id"]}" class="feature" '
+                f'aria-label="{_esc(description)}">{state}{" *" if different else ""}'
+                "</button></td>"
+            )
+        parts.append("</tr>")
+    parts.append("</tbody></table></div>")
+    if not keys or not data["features"]:
+        parts.append(
+            '<p class="empty">No candidate/feature cells are available in this saved result.</p>'
+        )
+    return "".join(parts)
 
 
 def _bars_svg(data):
@@ -377,8 +449,10 @@ def _pairs_svg(data, *, association=False):
 def _joint_svg(data):
     svg = _SVG("Selected-pair joint cells")
     y = _heading(svg, data, "Selected-pair joint cells")
-    svg.text(24, y, "Rows: " + data["columns"][0] + " · Columns: " + data["columns"][1])
-    y += 28
+    for line in _wrap("Rows: " + data["columns"][0] + " · Columns: " + data["columns"][1], 100):
+        svg.text(24, y, line)
+        y += 20
+    y += 8
     headers = [_wrap(v, 13) for v in data["b"]]
     for j, lines in enumerate(headers):
         for k, line in enumerate(lines):
@@ -470,7 +544,7 @@ def _evidence_html(data):
     nodes = {n["id"]: " / ".join(n["titles"]) for n in data["nodes"]}
     for feature in data["features"]:
         chunks.append(
-            f'<details data-evidence="{feature["id"]}"><summary>{_esc(feature["label"])}</summary>'
+            f'<details id="evidence-{feature["id"]}" data-evidence="{feature["id"]}"><summary>{_esc(feature["label"])}</summary>'
         )
         placement = "; ".join(nodes[n] for n in feature["nodes"])
         chunks.append(
@@ -483,7 +557,8 @@ def _evidence_html(data):
             + "</p>"
         )
         chunks.append(
-            "<table><thead><tr><th>Candidate grouping</th><th>Behavior</th><th>Scope</th>"
+            '<div class="table-scroll"><table><thead><tr><th>Candidate grouping</th>'
+            "<th>Behavior</th><th>Scope</th>"
         )
         if data["detail"] == "full":
             chunks.append(
@@ -506,37 +581,35 @@ def _evidence_html(data):
                     f"<td>{row['affected_rows']} / {row['evaluated_rows']}</td>"
                 )
             chunks.append("</tr>")
-        chunks.append("</tbody></table></details>")
+        chunks.append("</tbody></table></div></details>")
     return "".join(chunks) + "</section>"
 
 
-_STYLE = """
-body{margin:0;background:#f6f8fb;color:#193345;font:15px/1.5 Arial,sans-serif}
-main{padding:24px;max-width:1600px;margin:auto}h1{font-size:26px}h2{font-size:20px}
-.toolbar{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0;align-items:center}
-select,button{font:inherit;padding:6px;border:1px solid #b8c8d3;border-radius:5px;background:white}
-.figure{overflow:auto;border:1px solid #d5dee6;border-radius:12px;margin:16px 0}
-svg{display:block}.feature{cursor:pointer}.selected rect{stroke:#087c9a;stroke-width:3}
-.dim{opacity:.22}.feature.active{fill:#006880;font-weight:bold}
-table{border-collapse:collapse;background:white}th,td{border:1px solid #d5dee6;padding:8px;text-align:left}
-summary{cursor:pointer;padding:8px;font-weight:bold}details{margin:8px 0}details p{padding:0 8px}
-[hidden]{display:none!important}
-"""
-
 _SCRIPT = """
+(() => {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 function selectFeature(id) {
   const select = $('#feature'); if (select) select.value = id;
   $$('[data-evidence]').forEach(e => { e.open = e.dataset.evidence === id; });
-  $$('[data-feature]').forEach(e => e.classList.toggle('active', e.dataset.feature === id));
+  $$('[data-feature]').forEach(e => {
+    e.classList.toggle('active', e.dataset.feature === id);
+    e.setAttribute('aria-pressed', String(e.dataset.feature === id));
+  });
+  const status = $('#selection-status'), link = $('#selection-link');
+  if (status) status.textContent = id ? `Selected: ${select.selectedOptions[0].textContent}` : 'No feature selected.';
+  if (link) { link.hidden = !id; link.href = '#evidence-' + id; }
   $$('[data-node]').forEach(e => e.classList.toggle('selected',
     e.dataset.features.split(' ').includes(id) && id !== ''));
 }
 $$('[data-feature]').forEach(e => {
+  e.setAttribute('role', 'button');
+  e.setAttribute('tabindex', '0');
+  e.setAttribute('aria-pressed', 'false');
   e.addEventListener('click', () => selectFeature(e.dataset.feature));
   e.addEventListener('keydown', ev => {
     if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectFeature(e.dataset.feature); }
+    if (ev.key === 'Escape') selectFeature('');
   });
 });
 $('#feature')?.addEventListener('change', e => selectFeature(e.target.value));
@@ -553,8 +626,13 @@ $('#focus')?.addEventListener('change', e => {
   $$('[data-source]').forEach(edge => edge.classList.toggle('dim', id !== '' &&
     !(keep.has(edge.dataset.source) && keep.has(edge.dataset.target))));
 });
-$('#view')?.addEventListener('change', e =>
-  $$('[data-view]').forEach(v => v.hidden = v.dataset.view !== e.target.value));
+$('#view')?.addEventListener('change', e => {
+  $$('[data-view]').forEach(v => v.hidden = v.dataset.view !== e.target.value);
+  if ($('#matrix-search')) $('[data-scale]').disabled = e.target.value === 'matrix';
+  ['collapse', 'exceptions', 'focus'].forEach(id => {
+    const control = $('#' + id); if (control) control.disabled = e.target.value !== 'map';
+  });
+});
 $('#context')?.addEventListener('change', e =>
   $$('[data-context]').forEach(v => v.hidden = e.target.value !== 'all' &&
     v.dataset.context !== e.target.value && v.dataset.context !== '0'));
@@ -570,6 +648,36 @@ $$('[data-collapse-row]').forEach(button => button.addEventListener('click', () 
     if (row.hidden) hidden.add(row.dataset.treeRow);
   });
 }));
+function filterMatrix() {
+  const search = $('#matrix-search'); if (!search) return;
+  const query = search.value.trim().toLocaleLowerCase();
+  const rows = $$('[data-matrix-feature]');
+  rows.forEach(row => row.hidden = !row.dataset.matrixFeature.toLocaleLowerCase().includes(query));
+  const key = $('#matrix-key').value;
+  $$('[data-matrix-key]').forEach(cell => cell.hidden = key !== '' && cell.dataset.matrixKey !== key);
+  const shown = rows.filter(row => !row.hidden).length;
+  $('#matrix-status').textContent = `${shown} of ${rows.length} features shown`;
+  $('#matrix-empty').hidden = shown !== 0 || rows.length === 0;
+}
+$('#matrix-search')?.addEventListener('input', filterMatrix);
+$('#matrix-key')?.addEventListener('change', filterMatrix);
+$('#matrix-reset')?.addEventListener('click', () => {
+  $('#matrix-search').value = ''; $('#matrix-key').value = ''; filterMatrix();
+});
+filterMatrix();
+$('#reset-view')?.addEventListener('click', () => {
+  $('#matrix-reset')?.click();
+  $$('.toolbar select').forEach(select => {
+    select.selectedIndex = 0; select.dispatchEvent(new Event('change'));
+  });
+  $$('.toolbar input[type=checkbox]').forEach(input => {
+    input.checked = false; input.dispatchEvent(new Event('change'));
+  });
+  $$('[data-collapse-row]').forEach(button => button.setAttribute('aria-expanded', 'true'));
+  $$('[data-tree-row]').forEach(row => row.hidden = false);
+  selectFeature('');
+});
+})();
 """
 
 
@@ -577,7 +685,7 @@ def _tree_html(data):
     """An expandable HTML version of the same aligned-bar tree."""
     rows = data["rows"]
     parents = {r["parent"] for r in rows}
-    output = ["<table><thead><tr><th>Observed path</th>"]
+    output = ['<div class="table-scroll"><table><thead><tr><th>Observed path</th>']
     full = data["detail"] == "full"
     if full:
         output.append(
@@ -592,7 +700,7 @@ def _tree_html(data):
         if row["id"] in parents:
             output.append(
                 f'<button data-collapse-row="{row["id"]}" aria-expanded="true" '
-                'aria-label="Toggle child branches">↕</button> '
+                f'aria-label="Toggle child branches of {_esc(row["label"])}">↕</button> '
             )
         output.append(_esc(row["label"]) + "</td>")
         if full:
@@ -606,7 +714,7 @@ def _tree_html(data):
                 f'aria-label="Share of total: {fraction}"></meter></td>'
             )
         output.append("</tr>")
-    return "".join(output) + "</tbody></table>"
+    return "".join(output) + "</tbody></table></div>"
 
 
 def render_html(
@@ -623,12 +731,38 @@ def render_html(
     """
     data = visualization_data(result, section=section, detail=detail)
     kind = data["kind"]
-    parts = ["<h1>Feature explorer</h1>"]
+    from .._html import document
+
+    title = "Fieldwork / " + {
+        "grain": "Observed grain",
+        "pairs": "Pair relationships",
+        "census": "Census",
+        "levels": "Feature levels",
+        "joint_counts": "Joint counts",
+    }.get(kind, kind.replace("_", " ").title())
+    parts = [
+        (
+            f'<header><p class="eyebrow">Saved evidence report</p><h1>{_esc(title)}</h1>'
+            "<p>Explore saved relationships and populations. Controls change the view, "
+            "not the analysis.</p></header>"
+        ),
+        (
+            '<div class="toolbar" data-enhance hidden><label>Figure scale<select data-scale>'
+            '<option value="actual">Actual size</option><option value="fit">Fit width</option>'
+            '<option value="0.5">50%</option><option value="0.75">75%</option>'
+            '<option value="1.5">150%</option><option value="2">200%</option></select></label>'
+            '<button type="button" id="reset-view">Reset view</button></div>'
+        ),
+        (
+            '<p class="muted">Large figures and tables scroll within their panels. '
+            "Use Fit width for an overview, or Actual size to read labels.</p>"
+        ),
+    ]
     if detail == "topology":
         parts.append("<p>Topology only. Quantitative evidence was removed before export.</p>")
     if kind == "grain":
         parts.append(
-            '<div class="toolbar"><label>Feature <select id="feature">'
+            '<div class="toolbar" data-enhance hidden><label>Feature <select id="feature">'
             '<option value="">Select a feature</option>'
         )
         for feature in data["features"]:
@@ -646,10 +780,15 @@ def render_html(
             '</select></label><label><input type="checkbox" id="collapse">Collapse attributes</label>'
             '<label><input type="checkbox" id="exceptions">Show varying features</label></div>'
             "<p>Focus highlights a key and its neighbors; other connections remain visible.</p>"
+            '<p id="selection-status" role="status" aria-live="polite">No feature selected.</p>'
+            '<a id="selection-link" href="#" hidden>View selected evidence</a>'
         )
         for view in ("map", "matrix"):
             parts.append(f'<div data-view="{view}" {"hidden" if view == "matrix" else ""}>')
-            for exceptions in (False, True) if view == "map" else (False,):
+            if view == "matrix":
+                parts.append(_matrix_html(data) + "</div>")
+                continue
+            for exceptions in (False, True):
                 marker = (
                     ('id="map-exceptions" hidden' if exceptions else 'id="map-normal"')
                     if view == "map"
@@ -670,6 +809,7 @@ def render_html(
                             f'data-node="{node["id"]}"',
                             f'data-node="{node["id"]}" data-features="{assigned}"',
                         )
+                    figure = figure.replace('role="img"', 'role="group"')
                     suffix = f"{view}-{exceptions}-{collapsed}"
                     figure = figure.replace('id="arrow"', f'id="arrow-{suffix}"').replace(
                         "url(#arrow)", f"url(#arrow-{suffix})"
@@ -677,7 +817,7 @@ def render_html(
                     state = "collapsed" if collapsed else "expanded"
                     attrs = f'data-attributes="{state}"' if view == "map" else ""
                     parts.append(
-                        f'<div class="figure" {attrs} '
+                        f'<div class="figure actual" {attrs} '
                         f"{'hidden' if collapsed else ''}>{figure}</div>"
                     )
                 parts.append("</div>")
@@ -685,7 +825,7 @@ def render_html(
         parts.append(_evidence_html(data))
     elif kind == "pairs":
         parts.append(
-            '<div class="toolbar"><label>Context <select id="context">'
+            '<div class="toolbar" data-enhance hidden><label>Context <select id="context">'
             '<option value="all">All contexts</option>'
         )
         for i, context in enumerate(data["contexts"]):
@@ -705,7 +845,7 @@ def render_html(
             parts.append(f'<div data-view="{view}" {"hidden" if view == "association" else ""}>')
             for i, context in enumerate(data["contexts"]):
                 parts.append(
-                    f'<div class="figure" data-context="{i}">'
+                    f'<div class="figure actual" data-context="{i}">'
                     + _figure({**data, "contexts": [context]}, view, False)
                     + "</div>"
                 )
@@ -714,20 +854,10 @@ def render_html(
         parts.append("<p>" + _esc(data["scope"]) + "</p><p>" + _esc(data["caption"]) + "</p>")
         parts.append(_tree_html(data))
         parts.append(
-            '<details><summary>Static figure</summary><div class="figure">'
+            '<details><summary>Static figure</summary><div class="figure actual">'
             + _figure(data, None, False)
             + "</div></details>"
         )
     else:
-        parts.append('<div class="figure">' + _figure(data, None, False) + "</div>")
-    return (
-        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        "<title>Feature explorer</title><style>"
-        + _STYLE
-        + "</style></head><body><main>"
-        + "".join(parts)
-        + "</main><script>"
-        + _SCRIPT
-        + "</script></body></html>"
-    )
+        parts.append('<div class="figure actual">' + _figure(data, None, False) + "</div>")
+    return document(title, "".join(parts), _SCRIPT)

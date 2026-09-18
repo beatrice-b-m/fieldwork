@@ -1,4 +1,10 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Fieldwork / Paths</title><style>
+"""Shared, offline HTML presentation primitives; no analytical data access."""
+
+from __future__ import annotations
+
+from ._explore.graphics import _esc
+
+STYLE = """
 :root{color-scheme:light;--ink:#193345;--muted:#4c6474;--line:#cbd5df;--accent:#006880}
 *{box-sizing:border-box}body{margin:0;background:#f6f8fb;color:var(--ink);font:16px/1.55 system-ui,sans-serif}
 main{max-width:1200px;margin:auto;padding:28px}h1{font-size:28px;margin:8px 0}h2{font-size:21px}h3{font-size:17px}
@@ -42,7 +48,10 @@ code{font:14px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}pre{white-space
 .evidence-table,.evidence-table>tbody,.evidence-table>tbody>tr,.evidence-table>tbody>tr>th,.evidence-table>tbody>tr>td{display:block;width:100%}
 .evidence-table>tbody>tr>td{border-top:0;margin-bottom:8px}.evidence-table .table-scroll{margin:0}}
 @media print{body{background:white}main{max-width:none;padding:0}.toolbar,.skip{display:none}.figure{overflow:visible}}
-</style></head><body><a class="skip" href="#report">Skip to report</a><main id="report"><header><p class="eyebrow">Saved evidence report</p><h1>Fieldwork / Paths</h1><p>Explore the saved analysis below. Controls filter this report; they do not rerun the analysis or retrieve source data.</p></header><p><strong>Population:</strong> MR export slots · 8 evaluated source rows</p><details><summary>Search coverage and limits</summary><div class="content"><p>Search limits restrict what was tested or retained. Untested work is unknown. Display limits below only restrict this report.</p><p>paths: 1/1 pairs evaluated</p><p>paths: 2/2 features evaluated</p><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">features requested</th><td>2</td></tr><tr><th scope="row">features evaluated</th><td>2</td></tr><tr><th scope="row">features omitted</th><td>none</td></tr><tr><th scope="row">pairs evaluated</th><td>1</td></tr><tr><th scope="row">pair candidates</th><td>1</td></tr><tr><th scope="row">paths evaluated</th><td>1</td></tr><tr><th scope="row">distinct alternatives</th><td>1</td></tr><tr><th scope="row">alternative policy</th><td>best_order_per_feature_set_collapsing_alias_substitutions</td></tr><tr><th scope="row">search exhausted budget</th><td>no</td></tr><tr><th scope="row">requested depth</th><td>2</td></tr><tr><th scope="row">returned depth</th><td>2</td></tr></table></div></div></details><details><summary>Visual summary</summary><div tabindex="0" role="region" aria-label="Scrollable figure" class="figure"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fieldwork paths" viewBox="0 0 864 202" width="864" height="202" font-family="Arial, sans-serif" fill="#193345"><title>Fieldwork paths</title><rect width="100%" height="100%" fill="#f6f8fb"/><text x="24" y="36" font-size="23" font-weight="600" >Fieldwork / Paths</text><text x="24" y="62" font-size="13" font-weight="400" >8 evaluated rows · saved evidence</text><rect x="20" y="92" width="820" height="80" rx="7" fill="#ffffff" stroke="#cbd5df" /><text x="34" y="116" font-size="14" font-weight="600" >site → exam_id</text><text x="34" y="136" font-size="12" font-weight="400" >Observed prefix groups: site: 2 → exam_id: 4; Supported coarse-to-fine nesting: site → exam_id;</text><text x="34" y="153" font-size="12" font-weight="400" >Availability nonmodal fractions: 0, 0</text></svg></div><p class="content">The visual summary has its own display limit of up to 12 items per list. Browse the included evidence below.</p></details><section data-collection><h2>Inspect findings</h2><div class="toolbar" data-enhance hidden><label>Search included records<input type="search" data-search placeholder="Feature, finding, or evidence text"></label><label>Pattern<select data-pattern-filter><option value="">All patterns</option><option value="census_path">census path</option></select></label><label><input type="checkbox" data-exceptions-filter>With exception rows</label><button type="button" data-reset>Clear filters</button><button type="button" data-expand>Expand shown</button><button type="button" data-close>Collapse shown</button></div><p class="muted" data-status role="status" aria-live="polite"></p><p class="empty" data-no-matches hidden>No included records match these filters. Clear filters to see the included evidence.</p><details data-record data-pattern="census_path" data-exceptions="false" id="f0"><summary><span class="badge">census path</span>site → exam_id</summary><div class="content"><p>Analysis: rows; presence=per_row</p><p>Finding f0 · counting unit: rows</p><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">score</th><td>0.15</td></tr><tr><th scope="row">prefix counts</th><td>2, 4</td></tr><tr><th scope="row">prefix cost</th><td>0.15</td></tr><tr><th scope="row">overflow</th><td>0</td></tr><tr><th scope="row">nesting inversions</th><td>0</td></tr><tr><th scope="row">redundant steps</th><td>0</td></tr><tr><th scope="row">alias steps</th><td>0</td></tr><tr><th scope="row">target impurity sum</th><td>0</td></tr><tr><th scope="row">target impurity by depth</th><td>none</td></tr><tr><th scope="row">availability impurity sum</th><td>0</td></tr><tr><th scope="row">availability impurity by depth</th><td>0.0, 0.0</td></tr><tr><th scope="row">explanation</th><td>Observed prefix groups: site: 2 → exam_id: 4; Supported coarse-to-fine nesting: site → exam_id; Availability nonmodal fractions: 0, 0</td></tr><tr><th scope="row">reasons</th><td><ul><li><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">kind</th><td>branching</td></tr><tr><th scope="row">dimensions</th><td>site, exam_id</td></tr><tr><th scope="row">prefix groups</th><td>2, 4</td></tr><tr><th scope="row">overflow cost</th><td>0</td></tr></table></div></li><li><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">kind</th><td>nesting</td></tr><tr><th scope="row">coarse to fine</th><td><ul><li>site, exam_id</li></ul></td></tr><tr><th scope="row">reversed edges</th><td>0</td></tr></table></div></li><li><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">kind</th><td>redundancy</td></tr><tr><th scope="row">no new groups</th><td>none</td></tr><tr><th scope="row">equivalent pairs</th><td>none</td></tr></table></div></li><li><div class="table-scroll"><table class="evidence-table"><tr><th scope="row">kind</th><td>availability_separation</td></tr><tr><th scope="row">nonmodal fraction by depth</th><td>0.0, 0.0</td></tr></table></div></li></ul></td></tr></table></div><h3>Representative source rows</h3><p>Positions are zero-based offsets in the original ordered source, not dataframe index labels. Saved samples are the first matches in source order; their size is not the total support.</p><p>Examples: 3/8 saved source positions [0, 1, 2]</p><p>Exceptions: 0/0 saved source positions []</p><p>In Python, with this result named <code>result</code> and its identical ordered source named <code>df</code>:</p><p><code>result.inspect(df, &#x27;f0&#x27;)</code></p><p>Use <code>all_matches=True</code> to retrieve all matching rows and <code>exceptions=True</code> for exception rows. These operations require the original source and a Python session.</p></div></details></section></main><script>
+"""
+
+
+SCRIPT = """
 (() => {
   const all = (s, root = document) => [...root.querySelectorAll(s)];
   all('[data-enhance]').forEach(e => e.hidden = false);
@@ -108,4 +117,74 @@ code{font:14px/1.6 ui-monospace,monospace;overflow-wrap:anywhere}pre{white-space
     });
   });
 })();
-</script></body></html>
+"""
+
+
+def document(title: str, body: str, script: str = "") -> str:
+    body = body.replace(
+        'class="figure', 'tabindex="0" role="region" aria-label="Scrollable figure" class="figure'
+    )
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        f"<title>{_esc(title)}</title><style>{STYLE}</style></head><body>"
+        '<a class="skip" href="#report">Skip to report</a><main id="report">'
+        + body
+        + "</main><script>"
+        + SCRIPT
+        + script
+        + "</script></body></html>"
+    )
+
+
+def collection(
+    title: str,
+    cards: list[str],
+    total: int,
+    *,
+    full: bool,
+    patterns: list[str] | None = None,
+    exceptions: bool = False,
+) -> str:
+    """Bounded record collection with progressive enhancement and honest limits."""
+    shown = len(cards)
+    parts = [f"<section data-collection><h2>{_esc(title)}</h2>"]
+    if shown < total:
+        label = f"{shown} of {total} records included. " if full else "More evidence available. "
+        parts.append(
+            '<p class="notice">' + label + "Display limit reached; "
+            "increase max_findings when rendering to include more. "
+            "Search only covers included records.</p>"
+        )
+    if cards:
+        parts.append(
+            '<div class="toolbar" data-enhance hidden>'
+            '<label>Search included records<input type="search" data-search '
+            'placeholder="Feature, finding, or evidence text"></label>'
+        )
+        if patterns:
+            parts.append(
+                '<label>Pattern<select data-pattern-filter><option value="">All patterns</option>'
+            )
+            parts.extend(
+                f'<option value="{_esc(p)}">{_esc(p.replace("_", " "))}</option>' for p in patterns
+            )
+            parts.append("</select></label>")
+        if exceptions:
+            parts.append(
+                '<label><input type="checkbox" data-exceptions-filter>With exception rows</label>'
+            )
+        parts.append(
+            '<button type="button" data-reset>Clear filters</button>'
+            '<button type="button" data-expand>Expand shown</button>'
+            '<button type="button" data-close>Collapse shown</button></div>'
+            '<p class="muted" data-status role="status" aria-live="polite"></p>'
+            '<p class="empty" data-no-matches hidden>No included records match these filters. '
+            "Clear filters to see the included evidence.</p>"
+        )
+    elif total == 0:
+        parts.append(
+            '<p class="empty">No records were saved for this section. '
+            "Review search coverage and analysis settings before concluding there is no pattern.</p>"
+        )
+    return "".join(parts + cards) + "</section>"
