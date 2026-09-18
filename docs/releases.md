@@ -47,8 +47,9 @@ requests `id-token: write` and uses `uv publish --trusted-publishing always`.
 See [PyPI's pending-publisher setup](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
 Project-name availability must be established by the maintainer.
 
-After preparation and CI pass, publish a GitHub release for `v0.1.0` to trigger
-the initial upload. Creating the publisher alone does not publish the package.
+After preparation and CI pass on the exact release candidate, publish a GitHub
+release for its `v<version>` tag to trigger publication. Creating a trusted
+publisher alone does not publish the package. Never move a published tag.
 
 ## Two documentation audiences
 
@@ -56,11 +57,12 @@ the initial upload. Creating the publisher alone does not publish the package.
 architecture to contracts and algorithms. `fieldwork-docs` contains the user-facing
 Astro/Starlight site: orient, choose, inspect, refine, and save.
 
-The initial user site is explicitly unreleased and records its exact source commit
-in `docs-source.json` under channel `unreleased`. At the first stable release,
-change the channel to `stable`, record GitHub's latest stable release tag and exact
-commit, replace prerelease installation wording, and remove the unreleased banner.
-Subsequent synchronization follows the docs repository's stable-release policy.
+The user site tracks GitHub's latest non-draft, non-prerelease release and records
+its exact tagged source commit in `docs-source.json` under channel `stable`.
+Prepare synchronization on a separate branch, update every provenance field
+together, and merge its PR only after the corresponding release is published
+and the documentation checks and deployment preview have been reviewed.
+Do not describe a later development commit as the stable release.
 
 Copy generated assets from the release archive into `public/generated/` in
 fieldwork-docs in the same synchronization change as the content and source
