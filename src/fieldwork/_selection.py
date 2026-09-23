@@ -116,7 +116,7 @@ def _values(rows: _Rows, pattern: str, exceptions: bool) -> np.ndarray:
     if pattern == "indexed_family":
         return rows.positions.copy()
     present, features = rows.present, rows.features
-    numeric = {c: numbers(rows.frame, c, present[c]) for c in features}
+    numeric = {c: numbers(rows.frame[c], present[c]) for c in features}
     if pattern != "string_patterns" and any(value is None for value in numeric.values()):
         raise ValueError("Saved finding does not resolve to one matching population")
     if pattern in {"string_patterns", "numeric_range"}:

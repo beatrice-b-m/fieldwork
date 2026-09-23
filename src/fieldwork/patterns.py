@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import combinations, islice
 from typing import Any, Unpack
 
@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from ._explore._kernels import group_ids, modal_groups
-from ._explore.encoding import encode_column
+from ._explore.encoding import encode_series
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
     Scope,
@@ -126,6 +126,16 @@ class _Patterns:
     present: dict[str, np.ndarray]
     base: dict[str, Any]
     example_limit: int
+    numeric: dict[str, np.ndarray | None] = field(default_factory=dict)
+
+    def number(
+        self, c: str, series: pd.Series | None = None, kind: str | None = None
+    ) -> np.ndarray | None:
+        """The column as floats when numeric (see numbers), computed once."""
+        if c not in self.numeric:
+            series = self.frame[c] if series is None else series
+            self.numeric[c] = numbers(series, self.present[c], kind)
+        return self.numeric[c]
 
     def emit(self, kind, statement, features, metrics, rows, **extra) -> None:
         finding(
@@ -140,19 +150,26 @@ class _Patterns:
         )
 
 
-def numbers(frame: pd.DataFrame, column: str, present: np.ndarray) -> np.ndarray | None:
+def numbers(series: pd.Series, present: np.ndarray, kind: str | None = None) -> np.ndarray | None:
     """The column as floats (NaN where absent) when every present value is a number.
 
     Numeric-ness follows the values, not the dtype: an object or categorical
     column of numbers is numeric, and booleans never are. A column with no
-    present value is numeric when its dtype is.
+    present value is numeric when its dtype is. ``kind`` is the present values'
+    ``pandas.api.types.infer_dtype``, when the caller already has it.
     """
-    dtype = frame[column].dtype
+    dtype = series.dtype
     native = pd.api.types.is_numeric_dtype(dtype) and not pd.api.types.is_bool_dtype(dtype)
-    if native and not isinstance(dtype, pd.CategoricalDtype):
-        output = frame[column].to_numpy(dtype=float, na_value=np.nan)
+    if _native_numbers(dtype):
+        output = series.to_numpy(dtype=float, na_value=np.nan)
     else:
-        values, codes = encode_column(frame, column)
+        if not isinstance(dtype, pd.CategoricalDtype):
+            # Reject strings and other non-numbers without encoding the column.
+            if kind is None:
+                kind = pd.api.types.infer_dtype(series.to_numpy()[present], skipna=True)
+            if kind not in ("integer", "floating", "mixed-integer-float", "empty"):
+                return None
+        values, codes = encode_series(series)
         used = [values[i] for i in np.unique(codes[present])]
         if not (all(type(v) in (int, float) for v in used) if used else native):
             return None
@@ -163,9 +180,19 @@ def numbers(frame: pd.DataFrame, column: str, present: np.ndarray) -> np.ndarray
     return np.where(present, output, np.nan)
 
 
+def _native_numbers(dtype) -> bool:
+    """A numeric, non-boolean, non-categorical dtype: its values are numbers."""
+    return (
+        pd.api.types.is_numeric_dtype(dtype)
+        and not pd.api.types.is_bool_dtype(dtype)
+        and not isinstance(dtype, pd.CategoricalDtype)
+    )
+
+
 def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
     present = patterns.present[c]
-    values = patterns.frame[c].iloc[np.flatnonzero(present)]
+    series = patterns.frame[c]
+    values = series.iloc[np.flatnonzero(present)]
     record = {"feature": c, "populated": len(values), "missing": len(patterns.frame) - len(values)}
     examples = bounded_rows(patterns.positions, present, patterns.example_limit)
     kind = pd.api.types.infer_dtype(values.to_numpy(copy=False), skipna=True)
@@ -174,9 +201,13 @@ def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
         patterns.emit(
             "string_patterns", f"{c}: string formats, lengths and prefixes", [c], record, examples
         )
-    number = numbers(patterns.frame, c, present)
+    if _native_numbers(series.dtype):
+        number = values.to_numpy(dtype=float, na_value=np.nan)
+    else:
+        number = patterns.number(c, series, kind)
+        number = None if number is None else number[present]
     if number is not None:
-        record.update(_numeric_summary(number[present]))
+        record.update(_numeric_summary(number))
         patterns.emit(
             "numeric_range", f"{c}: numeric range and observed spacing", [c], record, examples
         )
@@ -248,19 +279,17 @@ def _indexed_families(patterns: _Patterns, selected: list[str]) -> list[dict[str
 
 def _numeric_pairs(patterns: _Patterns, selected: list[str], max_pairs: int) -> int:
     """Constant offsets (b - a) and ratios (b / a) between numeric columns."""
-    tested, cached = 0, {}
+    tested = 0
     for a, b in islice(combinations(selected, 2), max_pairs):
         checkpoint()
         tested += 1
         eligible = patterns.present[a] & patterns.present[b]
         if not eligible.any():
             continue
-        for c in (a, b):
-            if c not in cached:
-                cached[c] = numbers(patterns.frame, c, patterns.present[c])
-        if cached[a] is None or cached[b] is None:
+        x, y = patterns.number(a), patterns.number(b)
+        if x is None or y is None:
             continue
-        x, y = cached[a][eligible], cached[b][eligible]
+        x, y = x[eligible], y[eligible]
         finite = np.isfinite(x) & np.isfinite(y)
         x, y = x[finite], y[finite]
         if len(x) < 2:
