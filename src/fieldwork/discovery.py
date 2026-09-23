@@ -335,13 +335,16 @@ def _test(search: _Search, key, key_ids, target, context, population, determinan
     }
     if context is None:
         # Grain views reuse global tests instead of regrouping.
-        search.cache.global_records[(key, target, search.dropna)] = {
-            "evaluated_groups": len(sizes),
-            "violating_groups": record["violating_groups"],
-            "affected_rows": record["affected_rows"],
-            "singleton_groups": int(np.count_nonzero(sizes == 1)),
-            "evaluated_rows": n,
-        }
+        search.cache.put(
+            (key, target, search.dropna),
+            {
+                "evaluated_groups": len(sizes),
+                "violating_groups": record["violating_groups"],
+                "affected_rows": record["affected_rows"],
+                "singleton_groups": int(np.count_nonzero(sizes == 1)),
+                "evaluated_rows": n,
+            },
+        )
     search.base["dependencies"].append(record)
     accuracy = record["modal_accuracy"]
     if accuracy is not None and accuracy >= search.min_accuracy:

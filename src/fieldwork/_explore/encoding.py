@@ -311,18 +311,8 @@ def encode_series(series: pd.Series) -> tuple[list[Any], np.ndarray]:
 
 
 def encode_column(df: pd.DataFrame, column: str) -> tuple[list[Any], np.ndarray]:
-    """Encode one column once per analysis call, however many components need it."""
-    from .._runtime import current_session
-
-    session = current_session()
-    key = (id(df), column)
-    cached = session.encodings.get(key) if session else None
-    if cached is not None and cached[0] is df:
-        return cached[1], cached[2]
-    values, codes = encode_series(df[column])
-    if session:
-        session.remember_encoding(key, (df, values, codes))
-    return values, codes
+    """Encode one column of a frame; see encode_series."""
+    return encode_series(df[column])
 
 
 def validate_limit(name: str, value: int | None, *, zero: bool = True) -> None:

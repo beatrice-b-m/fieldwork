@@ -24,6 +24,11 @@ public API without migration shims.
   (`progress`, `cancel`, `timeout`), and appear in signatures as
   `**runtime: Unpack[Runtime]`. Calls are unchanged; unknown keywords still
   raise `TypeError`, and `inspect.signature` still lists the three controls.
+- `ProgressEvent.estimated_remaining_seconds` is removed, and the built-in
+  display no longer shows a phase ETA; it shows a percentage instead. The
+  estimate needed rate sampling and stability heuristics for a figure that
+  covered only the current phase. Code constructing `ProgressEvent`
+  positionally drops that argument.
 
 ## Values and column labels
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections import OrderedDict
-
 import numpy as np
 import pandas as pd
 
@@ -105,42 +103,21 @@ def same_mask(left, right):
 
 
 class FDCache:
-    """Full-population metrics plus bounded exact subset-population reuse."""
+    """Dependency counts on each test's full population, reused by later views."""
 
     def __init__(self):
-        self.global_records = {}
-        self.subsets = OrderedDict()
-        self.bytes = 0
+        self.records = {}
 
     def get(self, key, mask):
-        full = self.global_records.get(key)
-        # _fd_record always intersects a restriction with this pair's global
+        full = self.records.get(key)
+        # check_dependency always intersects a restriction with this test's full
         # eligibility. Equal counts of nested populations mean equal membership.
         if full is not None and full["evaluated_rows"] == int(mask.sum()):
             return full
-        token = (key, np.packbits(mask).tobytes())
-        cached = self.subsets.get(token)
-        if cached is not None:
-            self.subsets.move_to_end(token)
-        return cached
+        return None
 
-    def put(self, key, mask, record, *, global_population=False):
-        if global_population:
-            self.global_records[key] = record
-            return
-        token = (key, np.packbits(mask).tobytes())
-        if token not in self.subsets:
-            self.bytes += len(token[1])
-        self.subsets[token] = record
-        while len(self.subsets) > 512 or self.bytes > 16 * 1024 * 1024:
-            removed, _ = self.subsets.popitem(last=False)
-            self.bytes -= len(removed[1])
-
-
-class EncodedColumns(dict):
-    def __init__(self, values, cache=None):
-        super().__init__(values)
-        self.fd_cache = cache if cache is not None else FDCache()
+    def put(self, key, record):
+        self.records[key] = record
 
 
 def first_indices(mask, limit):

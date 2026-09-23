@@ -173,7 +173,7 @@ persist these settings. HTML renders named evidence tables and source selections
 
 ## Runtime controls
 
-[Performance controls](performance.md) specify progress event ordering, phase ETA,
+[Performance controls](performance.md) specify progress event ordering,
 cooperative cancellation, call-scoped cache lifetimes, independent overview sections,
 and dependency/graph budgets. Defaults preserve the analytical payload. Explicit
 omissions carry coverage or `not_requested` status and remain visible in presentations.

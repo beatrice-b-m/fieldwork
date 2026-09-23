@@ -37,7 +37,7 @@ analysis = fw.discover_dependencies(df, progress=report)
 
 Callbacks receive immutable `ProgressEvent` objects with `operation`, `phase`,
 `phase_id`, `parent_id`, `completed`, nullable `total`, `unit`, `elapsed_seconds`,
-`phase_elapsed_seconds`, nullable `estimated_remaining_seconds`, nullable `detail`,
+`phase_elapsed_seconds`, nullable `detail`,
 and `status`. IDs identify nested phase instances within one call. Status is
 `started`, `running`, `completed`, `cancelled`, or `failed`. The operation names
 are descriptive; use IDs and parent IDs to track nested work.
@@ -48,12 +48,9 @@ quick and do not mutate the dataframe during analysis. An exception raised by a
 callback stops the analysis and propagates unchanged; a broken callback is not
 called again during cleanup.
 
-The displayed ETA estimates **only the current phase**, after at least four
-rate samples, half a second of observation, and sufficiently stable throughput.
-It disappears when throughput varies or the latest sample is stale. It is not a
-guaranteed duration or a whole-overview ETA. Phases with unknown work totals show
-elapsed time and available counters. Mixed column sizes and high-cardinality
-work can remain unpredictable even after an initially stable estimate.
+The built-in display shows the current phase, a completion bar and percentage
+when the phase's total is known, elapsed time and the current detail. There is
+no time estimate.
 
 ## Cancel or bound elapsed time
 
@@ -127,7 +124,8 @@ Candidate summaries are still computed up to `max_candidates`, including when
 ## What is reused and what still costs time
 
 One public call owns a private context. Nested overview components share its
-source fingerprint, scoped frame, selected value encodings, and presence masks.
+source fingerprint, string column labels, scoped frame, column codes and presence
+masks.
 The context is discarded after success, failure, or cancellation. A later call
 revalidates the source, including mutations. There is no persistent dataframe
 cache or public session to invalidate manually.
@@ -147,13 +145,14 @@ once and weight their frequencies. Bounded examples avoid allocating every match
 `select` evaluates a finding's saved predicate directly rather than replaying
 unrelated graphs and summaries; source identity is still validated.
 
-Graph metrics are reused only for identical eligible populations. Retained graph
-masks are packed and interned. The subset-metric cache is capped at 512 entries
-and 16 MiB of packed mask keys; the path-prefix array cache is capped at 32 MiB.
-The shared preparation dictionary cache is capped at 100,000 total identities;
-larger dictionaries are released after encoding. Grain reuses integer groups and missing
-codes without retaining cell dictionaries.
-These are cache budgets, not whole-operation memory limits. Input frames, encoded
+A dependency test's full-population counts are reused by grain views whose
+population equals it; other view populations are counted afresh. Retained graph
+masks are packed and interned. Grain reuses integer groups and missing codes
+without retaining cell dictionaries. Path search caches prefix groupings up to
+32 MiB (worth about 10% of path search on 500,000 rows). Once encoding became
+`pandas.factorize`, the bounded caches of value dictionaries and of
+subset-population test metrics no longer changed measured runtime and were removed.
+The prefix cache is not a memory budget for a whole operation. Input frames, encoded
 columns, output graphs, and source-position lists can still be large. Work grows
 with rows, selected features, candidate/target tests, distinct context groups,
 and graph views. Unique IDs, continuous values, long strings, and mixed scalar

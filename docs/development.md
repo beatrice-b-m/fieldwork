@@ -177,14 +177,13 @@ documentation site can offer the exact example alongside its SVG/HTML/JSON expor
 
 ## Performance regression workflow
 
-[Current performance controls](performance.md) document runtime APIs and cache
-bounds; [implementation measurements](performance-results.md) record representative
+[Current performance controls](performance.md) document runtime APIs and what is
+reused within a call; [implementation measurements](performance-results.md) record representative
 before/after runs. `tests/discovery/test_performance_contracts.py`, `test_runtime.py`,
 and `test_scaling_controls.py` check fingerprint change detection, vectorized group
 oracles, scoped/entity selections, population-exact graph comparisons, progress
 ordering, cancellation, callback errors, session cleanup, omitted work and
-saved-export round trips. ETA arithmetic, cache sizes and internal call sequences
-are deliberately not tested.
+saved-export round trips. Internal call sequences are deliberately not tested.
 
 For a revision-to-revision default-output check, run the same parity script with
 both source trees and identical pandas/NumPy versions:
