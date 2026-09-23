@@ -700,3 +700,139 @@ Acceptance:
 - 2026-09-23: **released as v0.2.1** at `77685d0` (release PR #7), published to
   PyPI, and `fieldwork-docs` was synchronized (PR #6). See
   `docs/releases/v0.2.1.md`. Step 5 starts from this release.
+- 2026-09-23, **step 5 complete** (branch `step5-simplify-architecture`, from
+  `main` at v0.2.1). Order as planned: baseline benchmarks, then 5.4, 5.2, 5.1,
+  5.3, 5.5, 5.6. Every commit passed the validation commands and the
+  installed-wheel check. Breaking changes and public API changes are in
+  `docs/release-notes/unreleased.md`.
+  - **5.4** `5dcd551` (legacy dependency-ranking adapter and its fixture),
+    `8d83d8d` (`grain(schema=)`, `engine_metadata`, `stability`, constant pair
+    fields, `python_prefix_counts`), `0eb205a` (runtime controls declared once
+    as `**runtime: Unpack[Runtime]`; the decorator rejects unknown keywords and
+    publishes the expanded signature), `226cc91` (one pre-selection helper,
+    one key-comparison helper, one warnings helper).
+  - **5.2** `d37995b`: `pd.factorize` codes with canonical Python dictionaries
+    (missing last); plain JSON values; `ScalarIdentity`, the three decoders and
+    `to_dict(resolve_references=True)` are gone; census nodes carry values
+    inline. `oracle.record_token` and the literal records were adapted, no
+    oracle changed.
+  - **5.1** `f5e484a` (one `Result`, schema 2.0), `9cfe559` (one scope and
+    population record; every analysis takes `scope`/`missing`/`table_id`;
+    `foundation_context`/`contextual_result` gone; the grain graph keeps a
+    compact `tests` table), `1688601` (`explore(df)` overview with leads that
+    reference section findings; `profile(df, dimensions)`), `e67b40a` (one
+    projection layer and one text, SVG and HTML renderer in `_present/`).
+  - **5.3** `9ca3b11` (missingness), `10e1f90` (discover_dependencies),
+    `ff95100` (suggest_paths; weights named in `navigation.py` and documented in
+    `docs/algorithms.md`), `0cb3d99` (value_patterns, select_rows), `e3a89f2`
+    (prepare). Each split was checked with `benchmarks/parity.py` against the
+    previous commit (identical except where a decision below changed output).
+  - **5.5** `fca071d`: progress keeps phases, counts, a percentage,
+    cancellation and timeouts; `ProgressEvent.estimated_remaining_seconds` and
+    rate sampling are gone. The bounded value-dictionary cache is removed (no
+    measurable effect). The path-prefix cache stays (about 10% of path search
+    at 500k rows). FDCache's subset cache was removed here by mistake and
+    restored in `b8bd48d` (see bugs).
+  - **5.6** `95b72d3` (work budgets grouped into `limits` mappings typed by
+    `PathLimits`, `MissingnessLimits`, `DependencyLimits`, `PatternLimits`,
+    `PairLimits`; `profile` takes `census=`/`pairs=` mappings; census and
+    levels keep their flat arguments, which are output settings rather than
+    search budgets), `dce2a81` (AGENTS.md and `docs/inline-api.md` relaxed
+    together; public docstrings 1,416 → 1,141 lines), `c6f63a9`
+    (`docs/contracts.md` rewritten around what an analyst can rely on),
+    `7d1426b` (retired `temp-docs/evidence-support-plan.md`,
+    `performance-audit.md`, `performance-kernels.py`, `performance-results/`,
+    `docs/releases/*.md` and the raw JSON under `docs/performance-results/` and
+    `docs/evaluation/`; `docs/assets/README.pypi.md` stays because
+    `generate_assets.py` writes it and fieldwork-docs copies it to
+    `public/generated/`). Follow-ups: `c0356c5` (value_patterns back to 0.2.1
+    speed), `f155865` (grain populations documented).
+  - **Decisions:**
+    - `1` and `1.0` stay distinct levels in object columns (mixed numeric
+      representations are themselves a lead); native missing spellings collapse;
+      numeric sentinels match numerically, others by exported value.
+    - Columns are identified by `str(label)` everywhere, so discovery accepts
+      non-string labels (headerless CSVs); string forms must be unique.
+    - `explore` split into `explore(df)` (overview) and `profile(df, dimensions)`.
+      The overview stores `leads` referencing section findings, resolved by
+      `Result.findings`.
+    - Numeric summaries follow the values, not the dtype (object and categorical
+      columns of numbers get numeric findings).
+    - `context_constancy` is not reported for the context columns themselves.
+    - Grain records keep their own pair populations while the graph compares keys
+      on its common rows; kept and documented in `docs/algorithms.md`.
+    - Timedeltas export as pandas text (`-1 days +23:59:55`), fixing the sign.
+    - `exact_pair_ids` keeps sorted-pair numbering (documented in its docstring).
+    - Displays quote a string only when it could be read as a number, boolean or
+      missing value.
+  - **Benchmarks** (`benchmarks/scaling.py`, analysis seconds and export bytes,
+    baseline `61239b2` → final tree; one run each unless noted):
+
+    | Workload | Before | After |
+    | --- | ---: | ---: |
+    | mixed-100k explore | 3.844 s, 1,549,991 B | 2.402 s, 940,642 B |
+    | mixed-100k dependencies | 3.192 s | 1.756 s |
+    | mixed-100k paths | 2.097 s | 0.729 s |
+    | mixed-100k levels / census / grain | 2.054 / 0.539 / 1.506 s | 0.400 / 0.134 / 0.383 s |
+    | mixed-100k pairs | 3.679 s, 45.3 MB | 1.220 s, 26.2 MB |
+    | mixed-100k infer_schema | 1.412 s | 0.319 s |
+    | mixed-100k missingness / patterns / fingerprint | 0.086 / 0.089 / 0.027 s | 0.086 / 0.090 / 0.029 s |
+    | sparse-10k explore | 1.000 s, 12.0 MB | 0.639 s, 7.4 MB |
+    | sparse-10k dependencies | 0.885 s, 9.8 MB | 0.540 s, 6.3 MB |
+    | sparse-10k patterns (median of 5) | 0.033 s | 0.031 s |
+    | structured-300k explore | 6.335 s, 3.6 MB | 5.585 s, 1.9 MB |
+    | structured-300k dependencies | 4.978 s | 4.153 s |
+    | structured-300k paths / levels / census / grain | 1.752 / 0.751 / 0.714 / 0.868 s | 1.165 / 0.204 / 0.160 / 0.384 s |
+    | 500k × 14 explore | 11.691 s, 715,849 B | 6.085 s, 443,903 B |
+    | 500k × 14 levels (float column) | 2.395 s | 0.323 s |
+    | 500k × 14 missingness | 0.235 s | 0.237 s |
+    | lab-table overview | 0.193 s, 2,560,237 B | 0.147 s, 1,610,043 B |
+
+    No regressions. `joint_counts` on mixed-100k fails the `max_cells` guard in
+    both runs (a continuous column), as intended.
+  - **Function sizes** (total lines / lines excluding docstrings, blanks and
+    comments): missingness 502/374 → 130/67; discover_dependencies 442/295 →
+    143/78; suggest_paths 412/278 → 152/88; pairs 331/235 → 115/60;
+    `render._section_lines` 307/299 → gone (largest text function now under 60);
+    value_patterns 288/184 → 85/33; the three `render_*` 286/200/188 total →
+    39/46/60; `visual_data.visualization_data` 267/256 → one projector per kind;
+    `census._census` 260/241 → census 137/67; select_rows 155/154 → 14/12;
+    build_grain_graph 172/161 → 54/39. Every function body (signature and code)
+    is now at most 88 lines; seven public functions (suggest_paths,
+    discover_dependencies, census, missingness, profile, pairs, joint_counts)
+    exceed 100 lines only with their docstrings (41–50 lines, one entry per
+    parameter). Source: 11,297 → 9,879 lines.
+  - **Tests:** 342 items (317 tests plus 25 doctests; merging the result
+    classes merged their examples) in about 7.7 s. New tests
+    cover only new behavior: saved foundation results recompute with their
+    source context, timestamp sentinels survive a JSON round trip, value-based
+    numeric summaries, context columns skipped by `context_constancy`,
+    `limits` validation and key-by-key merging, and `profile` option
+    validation. `tests/typing/public_api.py` also rejects the removed flat
+    budget keywords and unknown `limits` keys.
+  - **Bugs found:**
+    - Timedelta labels lost their sign when parsed back (fixed in `d37995b`).
+    - `docs/investigation.md` still showed the removed `discovery=` overview
+      recipe, and `Recipe.run`'s docstring described it (fixed in `95b72d3`
+      and `dce2a81`).
+    - My own regression: `fca071d` removed FDCache's subset cache based on
+      in-process patches that never reached `scaling.py`'s subprocess workers.
+      Structured-300k discovery went from 4.2 s to 6.4 s; `b8bd48d` restores
+      the cache and records why. Measure caches with direct calls or by
+      comparing two source trees, not by patching around `scaling.py`.
+    - Value-based numeric detection first made value_patterns 10–15% slower;
+      `c0356c5` fixes it.
+  - **fieldwork-docs will need to synchronize** (tracked in
+    `temp-docs/fieldwork-docs-sync.md` once this plan is retired): every item in
+    `docs/release-notes/unreleased.md`; walkthroughs and snippets using
+    `explore(df, dims)`, `discovery=`, `section_options=`, flat budget keywords,
+    `include_pairs`, `to_dict(resolve_references=True)`, `ExplorerResult` /
+    `InvestigationResult` / `PathResult`, `overview["findings"]`,
+    `ProgressEvent.estimated_remaining_seconds`, or tagged `{"type", "value"}`
+    output; the rewritten contracts page; regenerated `public/generated/`
+    assets; and links to the retired `docs/releases/*.md`,
+    `docs/performance-results/` and `docs/evaluation/*.json`.
+  - **What remains:** synchronizing fieldwork-docs at the next release;
+    `scripts/check_output_ux.cjs` was checked statically against the new
+    fixtures (every selector is present) but not run, because Playwright is not
+    installed here.
