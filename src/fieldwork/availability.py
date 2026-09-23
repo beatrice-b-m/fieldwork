@@ -299,6 +299,9 @@ def missingness(
             "populated_fraction": float(mask.mean()) if n else None,
         }
         base["availability"].append({"feature": c, **metrics})
+        if mask.all():
+            # Complete columns stay in the table; a finding would say nothing.
+            continue
         emit(
             "availability",
             f"{c}: populated values",
@@ -356,7 +359,7 @@ def missingness(
         groups[np.packbits(masks[c]).tobytes()].append(c)
     base["families"] = []
     for group in groups.values():
-        if len(group) > 1:
+        if len(group) > 1 and not masks[group[0]].all():
             f = emit(
                 "availability_family",
                 "Same availability: " + ", ".join(group),
@@ -405,6 +408,9 @@ def missingness(
                     x | y,
                 )
             for source, target, first, second in [(a, b, x, y), (b, a, y, x)]:
+                if second.all() or np.array_equal(x, y):
+                    # Vacuous: the target is always present, or a family covers it.
+                    continue
                 denominator = int(first.sum())
                 rate = both / denominator if denominator else None
                 if rate is not None and rate >= min_implication:

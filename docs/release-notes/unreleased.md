@@ -20,3 +20,12 @@ between releases without migration.
   naming the column.
 - A progress count that exceeds its phase estimate is clamped. Previously it
   raised `ValueError` and aborted the analysis.
+
+## Overview usefulness
+
+- `missingness` no longer emits vacuous findings: no per-feature availability
+  finding for always-present columns, no family of always-present columns, and
+  no presence implication whose target is always present or whose two features
+  have identical availability. The `availability` table still lists every
+  feature. On a complete 43-column table this removes about 440 findings and
+  lets the feature network separate into meaningful components.

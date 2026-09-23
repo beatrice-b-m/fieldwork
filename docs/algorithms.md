@@ -7,14 +7,18 @@ columns use missing masks. Row presence or explicit any/all entity
 aggregation provides the analysis masks. Repeated boolean availability signatures
 are ranked by descending analysis-unit count with lexical signature ties. `max_signatures=50`
 limits stored signatures, with omitted row mass reported. Identical masks form
-families even for always-missing or always-present columns.
+families, including always-missing columns. Always-present columns form no family
+and receive no per-feature availability finding; they remain in the `availability`
+table with their counts.
 
 Pairs are enumerated in input-column combination order, bounded by `max_pairs=200`.
 For A and B, presence Jaccard is both-present / either-present. If neither is ever
 present, it is undefined, never perfect similarity. Agreement additionally includes
 co-absence and is reported separately. A implies B has conditional presence
 both-present / A-present, an exception rate, and B's baseline presence. No antecedent
-support means no implication finding. Similarity and implication thresholds default
+support means no implication finding. Implications are omitted when they are
+vacuous: B is present in every analysis unit, or A and B have identical
+availability (their family finding already states it). Similarity and implication thresholds default
 to 0.8 and 0.9. Mutually exclusive pairs require each field to have observed support
 and no co-presence; exact families let users interpret exclusive field groups.
 

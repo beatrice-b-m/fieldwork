@@ -315,7 +315,9 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
 
 @pytest.mark.parametrize("aggregation", ["any", "all"])
 def test_topology_retains_entity_relationship_meaning(aggregation):
-    df = pd.DataFrame({"e": [1, 1, 2, 2], "a": [1, None, 1, None], "b": [None, 1, None, 1]})
+    df = pd.DataFrame(
+        {"e": [1, 1, 2, 2, 3], "a": [1, None, 1, None, None], "b": [None, 1, None, 1, None]}
+    )
     config = {
         "features": ["a", "b", "e"],
         "entity": "e",

@@ -466,3 +466,23 @@ def test_unsupported_cells_skip_automatic_columns_but_reject_explicit_ones():
         assert analysis(df)["parameters"]["features"] == ["site"]
         with pytest.raises(TypeError, match="'tags'"):
             analysis(df, features=["site", "tags"])
+
+
+def test_availability_omits_vacuous_findings_but_keeps_measurements():
+    df = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "complete": ["a", "b", "c", "d"],
+            "left": [1, 2, None, None],
+            "twin": [5, 6, None, None],
+            "mostly": [1, 2, 3, None],
+        }
+    )
+    result = fw.missingness(df)
+    assert [r["feature"] for r in result["availability"]] == list(df.columns)
+    found = {(f["pattern"], tuple(c["column"] for c in f["features"])) for f in result["findings"]}
+    availability = {cols[0] for pattern, cols in found if pattern == "availability"}
+    assert availability == {"left", "twin", "mostly"}
+    implications = {cols for pattern, cols in found if pattern == "presence_implication"}
+    assert implications == {("left", "mostly"), ("twin", "mostly")}
+    assert [f["features"] for f in result["families"]] == [["left", "twin"]]
