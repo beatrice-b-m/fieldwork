@@ -1,7 +1,9 @@
 # Review remediation plan
 
-Status: steps 1–3 in progress on branch `review-remediation` (started 2026-09-23).
-Steps 4 and 5 are scoped for separate, self-contained sessions. Update the status
+Status: steps 1–3 complete on branch `review-remediation` (2026-09-23). Steps 4
+and 5 are scoped for separate, self-contained sessions. Read the status log at the
+end first: it records what steps 1–3 changed and measured, and facts later
+sections depend on. Update the status
 log at the end of this file as each step lands, and retire this document when all
 five steps are complete (move anything durable into `docs/`).
 
@@ -57,8 +59,9 @@ uv run python scripts/generate_assets.py --check   # regenerate without --check 
 ```
 
 Before the review, the baseline was 358 tests passing in about 4.4 s, pyright clean,
-and 2 ruff import-order errors in `benchmarks/discovery.py`. CI does not lint
-`benchmarks/`.
+and 2 ruff import-order errors in `benchmarks/`. After steps 1–3: 356 tests pass in
+about 3.6 s, pyright is clean, and `ruff check` is clean including `benchmarks/`.
+CI (`.github/workflows/ci.yml`) still does not lint `benchmarks/`.
 
 ---
 
@@ -251,8 +254,34 @@ check docstrings and editor behavior.**
 | test_editor_api.py | 0/0/3/0 (22 items) | jedi completions, hover and goto; depends on the jedi version |
 | typing/public_api.py | pyright `assert_type` checks | reasonable, not behavioral |
 
-Line numbers are from the 2026-09-23 baseline. Steps 1–3 change some of these
-files (see the status log), so re-locate before editing.
+Line numbers are from the 2026-09-23 baseline; re-locate before editing. Steps
+1–3 changed the suite as follows:
+
+- **Removed:** the byte-stream fingerprint parity tests
+  (`test_performance_contracts.py`, formerly `original_fingerprint` and three
+  tests) and the four compact-envelope tests in `test_scaling_controls.py`.
+- **Added behavioral tests:**
+  - `test_workflow.py`: groupby-style MultiIndex, unsupported cells
+    skip/reject, vacuous availability omission, similarity with always-present
+    features, lead ranking and trivial-edge exclusion, overview summary
+    structure
+  - `test_render.py`: Unicode default and width with and without `wcwidth`
+  - `test_contracts.py`: timedelta ordering
+  - `test_runtime.py`: progress overrun
+  - `test_performance_contracts.py`: fingerprint change detection
+    (Hypothesis) and order/labels/index/dtype coverage
+  - `test_scaling_controls.py`: bounded grain-view examples and a saved-export
+    round trip
+- **Adjusted fixtures:** in `test_journeys.py`, `test_presentation_ux.py` and
+  `test_dependency_support.py`, where vacuous findings or unique determinants
+  had been doing the work.
+- **Legacy fixture:** `test_legacy_export_loads_without_source` now asserts that
+  a 0.1.x fingerprint is *rejected* on `select`. The fixture
+  (`tests/discovery/fixtures/dependency-schema-1.0.json`) still contains
+  `exact_grain` and the old `population.positions`; loading ignores them. Step
+  5.4 deletes the fixture with the legacy adapter.
+- **Collected items:** 356, of which 125 are still in `test_inline_docs.py` and
+  `test_editor_api.py`.
 
 ### Most brittle examples to replace or delete
 
@@ -386,7 +415,10 @@ Symptoms:
 - **Discovery payloads embed whole foundation results.**
   `grain_views[].grain` comes from `discovery.py` and `paths[].preview` from
   `navigation.py`. The overview copies `paths[0].preview` into
-  `sections["census"]`.
+  `sections["census"]`. (Step 3 removed the `exact_grain` alias and the compact
+  envelope. The overview still copies every section finding into its own
+  ranked `findings` list, and each dependency finding's `measurements` repeats
+  its full dependency record, exception groups included.)
 - **Fragile glue.**
   - `contextual_result` (`evidence.py`) deep-copies a payload, then edits any
     dict that has both `scope_id` and `input_rows`.
@@ -428,6 +460,17 @@ Consequences:
 - **Workaround code.** `MissingCode` and `normalized_encoding` in `evidence.py` (a
   per-column re-encoding with caches) exist to work around this encoding.
 
+Measured after step 3 (500k rows × 14 columns: 10 low-cardinality ints, 3 unique
+floats, 1 string), `explore` takes about 12.8 s. Phase timings:
+- `encoding`: about 6 s, almost entirely `normalize_scalar`, `sort_key` and
+  `ScalarIdentity` hashing, with about 1.5M calls for the three unique float
+  columns
+- `paths`: 7.7 s inclusive
+- `dependencies`: 4.8 s
+
+This encoding is the single largest remaining cost. Fingerprinting no longer
+uses it (step 3).
+
 Target: `pd.factorize` codes for all analytics. Convert to JSON-safe scalars only
 for values that are emitted, using plain JSON numbers with NaN/inf as strings.
 Keep the valuable parts of the contract:
@@ -457,6 +500,8 @@ Target: one function per pattern family or figure, returning typed records (for
 example dataclasses) rather than growing nested dicts.
 
 ### 5.4 Remove compatibility shims and dead parameters
+
+Already gone (step 3): `_serialization.py`/`to_dict(compact=...)`, `exact_grain`.
 
 - The legacy dependency-ranking adapter: `presentation.py` `candidate_priority(...,
   legacy=)`, `_dependency_measurements` backfills, and
@@ -505,6 +550,23 @@ example dataclasses) rather than growing nested dicts.
   produces it, so check before deleting. `docs/performance-results/` and
   `docs/evaluation/*.json` are raw measurement dumps.
 
+### Code added in steps 1–3 that step 5 should keep working
+
+- `src/fieldwork/leads.py`: the lead heuristic and `rank()`, called from
+  `workflow.explore`. `TRIVIAL` reasons also filter edges in
+  `families.feature_network`. The scores are hand-tuned. Keep them in one
+  place, and keep the behavioral test
+  (`test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network`).
+- `evidence.prepare(..., optional=...)`, `analyzable()` and the
+  `skipped_features` payload field: skip-and-report for automatically selected
+  columns with unsupported cells.
+- `evidence._value_hashes`: the vectorized fingerprint. Object columns hash
+  `f"{type(v).__qualname__}:{v!r}"`.
+- `presentation._collapse_equivalent`, `_grain_title` and `_signature_label`:
+  overview grain merging and signature labels, used by text, SVG and HTML.
+- `_explore/render.py:_width_function`: Unicode display width, using `wcwidth`
+  when installed and `unicodedata` otherwise.
+
 ### Risks and guidance for step 5
 
 - The user-facing docs live in a separate repository (`fieldwork-docs`; see
@@ -531,3 +593,37 @@ Acceptance:
 
 - 2026-09-23: Plan written. Retired `temp-docs/implementation-spec.md`; its
   delivered content already lives in `docs/`.
+- 2026-09-23, **step 1 complete.** Commits `9600bdc` (MultiIndex), `938db1d`
+  (Unicode default), `4f23137` (timedelta), `ce48de9` (unsupported cells, new
+  `skipped_features`) and `cf8e08b` (progress clamp).
+  - Explicitly requested columns with unsupported cells now raise
+    `TypeError("Column 'x': …")`.
+  - The skip reason stores only the value type, so topology exports carry no
+    cell values.
+- 2026-09-23, **step 2 complete.** Commits `5f500b3` and `44a558b` (vacuous
+  availability and similarity findings omitted), `eb17862` (lead ranking,
+  `lead.score`/`lead.reason`, trivial edges out of the network) and `bf0c06d`
+  (Leads block, merged equivalent grains, "Missing:" signatures, lead reason
+  badges in HTML, notebook narrative).
+  - Lab table (`examples/wide_table.py`): 573 findings reduced to 129.
+  - The feature network separates into 2 components (14 and 7 features)
+    instead of 1.
+  - A messy variant (lowercased IDs, a stray reagent-lot format, partially
+    populated columns) surfaces each planted issue in the top 10 leads.
+  - One late fix: merging grains requires identical group counts and evaluated
+    rows, because with `dropna` two columns can "determine each other" on
+    different populations.
+- 2026-09-23, **step 3 complete.** Commits `3238871` (fingerprint), `4b76ed2`
+  (bounded grain-view positions, `anchor_candidate_id`) and `5dc3110` (compact
+  envelope and `exact_grain` removed); `310ba67` fixes the benchmark import
+  order.
+  - 500k × 14 frame: fingerprint 4.8 s → 0.04 s; `missingness` 5.2 s →
+    0.24 s; `explore` 18.3 s → 12.8 s; scoped `census` 0.08 s.
+  - Lab-table overview export: 4.8 MB → 2.56 MB, for a 241 KB CSV.
+  - Breaking changes are listed in `docs/release-notes/unreleased.md`:
+    overview finding IDs follow rank, 0.1.x fingerprints no longer match, and
+    the compact format and `exact_grain` are gone.
+- Not yet done: the branch is unmerged and unreleased. The separate
+  `fieldwork-docs` repository has not been synchronized with the changes above
+  (Unicode default, `skipped_features`, leads, compact removal, fingerprint
+  identity).
