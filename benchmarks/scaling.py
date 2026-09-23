@@ -144,7 +144,7 @@ def worker(args):
         ]
     if hasattr(result, "to_dict"):
         started = time.perf_counter()
-        encoded = json.dumps(result.to_dict(compact=args.compact), allow_nan=False).encode()
+        encoded = json.dumps(result.to_dict(), allow_nan=False).encode()
         record.update(
             serialization_seconds=time.perf_counter() - started,
             result_bytes=len(encoded),
@@ -168,9 +168,6 @@ def main():
         "--progress",
         action="store_true",
         help="Collect callback counts and inclusive phase durations",
-    )
-    parser.add_argument(
-        "--compact", action="store_true", help="Measure the optional compact JSON envelope"
     )
     parser.add_argument("--seed", type=int, default=721)
     parser.add_argument("--operations", nargs="+", choices=OPERATIONS, default=["explore"])

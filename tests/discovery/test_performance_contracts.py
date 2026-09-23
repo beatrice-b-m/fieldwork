@@ -1,82 +1,52 @@
 """Semantic invariants for the optimized preparation/counting paths."""
 
-import hashlib
-import json
-from datetime import UTC, date, datetime, timedelta
+from datetime import date
 
 import numpy as np
 import pandas as pd
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from fieldwork._explore.encoding import encode_series, normalize_scalar
 from fieldwork.evidence import fingerprint
 
-
-def original_fingerprint(df):
-    digest = hashlib.sha256()
-    for values in (df.columns, df.index, *[df[c].array for c in df]):
-        digest.update(b"[")
-        for value in values:
-            digest.update(
-                json.dumps(
-                    normalize_scalar(value, label=isinstance(value, tuple)).to_dict(),
-                    sort_keys=True,
-                    allow_nan=False,
-                ).encode()
-            )
-            digest.update(b"\n")
-        digest.update(b"]")
-    return digest.hexdigest()
+CELLS = [None, True, 1, 1.0, "1", np.nan, -0.0, np.inf, date(2020, 1, 1), ("a", 1), ["x"], {"k": 1}]
 
 
 @settings(max_examples=40, deadline=None, derandomize=True)
 @given(
-    st.lists(
-        st.one_of(
-            st.none(),
-            st.booleans(),
-            st.integers(-10, 10),
-            st.floats(allow_nan=True, allow_infinity=True),
-            st.text(max_size=12),
-        ),
-        max_size=50,
-    )
+    st.lists(st.sampled_from(range(len(CELLS))), min_size=1, max_size=30),
+    st.data(),
 )
-def test_fingerprint_preserves_typed_ordered_byte_stream(values):
+def test_fingerprint_detects_any_single_cell_change(indices, data):
+    values = [CELLS[i] for i in indices]
     frame = pd.DataFrame({"v": pd.Series(values, dtype=object)})
-    frame.index = [0] * len(values)
-    assert fingerprint(frame) == original_fingerprint(frame)
-    tokens, codes = encode_series(pd.Series(values, dtype=object))
-    assert [tokens[c] for c in codes] == [normalize_scalar(v) for v in values]
+    identity = fingerprint(frame)
+    assert fingerprint(frame.copy()) == identity
+    position = data.draw(st.integers(0, len(values) - 1))
+    replacement = data.draw(
+        st.sampled_from([c for c in range(len(CELLS)) if c != indices[position]])
+    )
+    changed = frame.copy()
+    changed.iat[position, 0] = CELLS[replacement]
+    same_repr = repr(CELLS[replacement]) == repr(values[position]) and type(
+        CELLS[replacement]
+    ) is type(values[position])
+    assert (fingerprint(changed) == identity) == same_repr
 
 
-@pytest.mark.parametrize(
-    "values",
-    [
-        [None, pd.NA, pd.NaT, np.nan],
-        [0.0, -0.0, np.inf, -np.inf],
-        [date(2020, 1, 1), None],
-        [datetime(2020, 1, 1, tzinfo=UTC).replace(tzinfo=None), None],
-        [datetime(2020, 1, 1, tzinfo=UTC), None],
-        [timedelta(days=1), pd.Timedelta("1ns"), None],
-        [True, 1, 1.0, "1"],
-        [("a", 1), ("b", 2)],
-    ],
-)
-def test_fingerprint_labels_and_scalar_families(values):
-    frame = pd.DataFrame({("typed", 2): pd.Series(values, dtype=object)})
-    frame.index = pd.MultiIndex.from_tuples([("row", i % 2) for i in range(len(frame))])
-    assert fingerprint(frame) == original_fingerprint(frame)
-
-
-def test_fingerprint_chunk_boundary_and_mutation():
-    frame = pd.DataFrame({"v": np.tile([1.0, np.nan, 2.0], 3000)})
-    before = fingerprint(frame)
-    assert before == original_fingerprint(frame)
-    frame.iloc[8192, 0] = 4
-    assert fingerprint(frame) == original_fingerprint(frame) != before
+def test_fingerprint_covers_order_labels_index_and_dtype():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", None]}, index=[0, 0, 1])
+    identity = fingerprint(frame)
+    variants = [
+        frame.iloc[[1, 0, 2]],
+        frame.rename(columns={"a": "c"}),
+        frame.set_axis([0, 1, 1]),
+        frame.astype({"a": "float64"}),
+        frame[["b", "a"]],
+    ]
+    assert all(fingerprint(v) != identity for v in variants)
+    multi = frame.set_axis(pd.MultiIndex.from_tuples([("x", 1.5), ("x", 2.5), ("y", 1.5)]))
+    assert fingerprint(multi) == fingerprint(multi.copy()) != identity
 
 
 def test_presence_only_preparation_avoids_unused_value_codes(monkeypatch):

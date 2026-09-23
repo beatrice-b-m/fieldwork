@@ -10,8 +10,13 @@ string encodings, and native missing scalars share a missing token. Results have
 frozen top-level attributes, but nested payload containers are mutable.
 
 Discovery currently requires unique string column names. Foundation operations
-also support integer and recursively tuple-valued labels. Unsupported cell types
-raise `TypeError`; no arbitrary object stringification is used to merge values.
+also support integer and recursively tuple-valued labels. No arbitrary object
+stringification is used to merge values. When discovery selects columns
+automatically (`features=None`), columns containing unsupported cell types (such
+as lists, dicts or `Decimal`) are skipped and listed in `skipped_features` with
+their value type; the other columns are analyzed normally. A column named
+explicitly (in `features`, `by`, `entity`, or a foundation operation) still raises
+`TypeError`.
 Foundation context (`scope`, `missing`, `table_id`) preserves those labels. When
 columns include typed labels, `analysis_context.missing_convention` stores
 `sentinels_by_column` records with tagged `column` identities and sentinel `values`,
@@ -24,9 +29,12 @@ no path exists, otherwise use `best.census(df)` to preserve recommendation conte
 
 ## Population, source and scope
 
-Each discovery source has a SHA-256 fingerprint over canonical ordered column
-labels, index labels and all cell values. Dataframe dtype metadata is not part of
-the identity. Duplicate indexes are allowed. Inspection compares the fingerprint
+Each discovery source has a SHA-256 fingerprint over ordered column labels and
+vectorized per-value hashes (`pandas.util.hash_pandas_object`) of the index and
+every column; object columns hash a type-qualified `repr` of each cell, so `1`,
+`1.0` and `"1"` differ. Column dtype is part of the identity: casting a column
+changes it. Fingerprints saved by 0.1.x use a different scheme and do not match.
+Duplicate indexes are allowed. Inspection compares the fingerprint
 and selects with `.iloc`, returning a copy. Reordering or changing source values
 invalidates inspection. Identical rows are analytically interchangeable.
 
@@ -151,17 +159,12 @@ absent. Examples and exception totals always count source rows, separately from
 unit support. Comparisons require compatible units and entity aggregation; recipes
 persist these settings. HTML renders named evidence tables and source selections.
 
-## Runtime controls and optional envelopes
+## Runtime controls
 
 [Performance controls](performance.md) specify progress event ordering, phase ETA,
 cooperative cancellation, call-scoped cache lifetimes, independent overview sections,
 and dependency/graph budgets. Defaults preserve the analytical payload. Explicit
 omissions carry coverage or `not_requested` status and remain visible in presentations.
-
-`to_dict(compact=True)` returns a versioned `fieldwork.compact` envelope preserving
-all evidence through shared-container references. Both result classes accept their
-ordinary and compact exports in `from_dict`; ordinary schemas 0.3/1.0 are unchanged.
-Compact exports do not apply topology disclosure filtering.
 
 ## Editor-visible Python API
 
@@ -181,8 +184,8 @@ Counts are nonnegative Python integers; undefined ratios serialize as JSON null.
 Candidate global test counters and supported-exact lists disclose evaluated work,
 not completeness. Graph budgets remain independent. Source identity, selection,
 exception repair rows, finding IDs and analytical candidate enumeration are unchanged.
-`to_frame('dependencies')` includes tests below the finding threshold; compact and
-ordinary exports retain these fields. No new public parameters, exports, foundation
+`to_frame('dependencies')` includes tests below the finding threshold; exports
+retain these fields. No new public parameters, exports, foundation
 schema, or result type hierarchy are introduced.
 
 Full presentations adapt saved schema-1.0 records without a source or mutation.
@@ -191,7 +194,7 @@ recovers repeat rows, and repair rows recover repeat-only accuracy. Global recor
 recover supported-exact lists. Missing determinant eligibility never becomes
 invented target coverage: legacy coverage is displayed as unavailable. If even one
 candidate's supported-exact ranking input cannot be recovered, the entire collection
-retains legacy ranking. The adapter does not change ordinary or compact exports.
+retains legacy ranking. The adapter does not change exports.
 
 Full text/HTML/SVG explanations distinguish observed exactness, observed target
 coverage and repeat-only consistency, and disclose missing-category evaluation.

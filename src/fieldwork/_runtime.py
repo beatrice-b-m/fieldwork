@@ -127,9 +127,10 @@ class Phase:
             session.next_phase += 1
 
     def advance(self, amount=1, *, detail=None):
+        # A miscounted estimate is cosmetic; never let it abort the analysis.
         self.completed += amount
-        if self.total is not None and self.completed > self.total:
-            raise ValueError("Progress exceeds phase total")
+        if self.total is not None:
+            self.completed = min(self.completed, self.total)
         self.detail = detail
         if self.session:
             self.session.check()

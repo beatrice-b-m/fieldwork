@@ -13,7 +13,6 @@ import fieldwork as fw
 from fieldwork._explore._kernels import EncodedColumns, MaskPool, group_ids, modal_groups, same_mask
 from fieldwork._explore.encoding import encode_series
 from fieldwork._explore.grain import _fd_record
-from fieldwork._serialization import compact_result, expand_result
 
 
 @settings(max_examples=60, deadline=None, derandomize=True)
@@ -162,53 +161,24 @@ def test_direct_selection_matches_complete_analysis_without_replay(kind, monkeyp
             ), (kind, record["pattern"], exceptions)
 
 
-def test_compact_export_roundtrip_and_size():
+def test_saved_export_roundtrip_supports_selection():
     frame = pd.concat([fixture()] * 30, ignore_index=True)
     analysis = fw.explore(frame)
-    ordinary = json.loads(json.dumps(analysis.to_dict()))
-    compact = json.loads(json.dumps(analysis.to_dict(compact=True)))
-    restored = fw.InvestigationResult.from_dict(compact)
+    ordinary = json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
+    restored = fw.InvestigationResult.from_dict(ordinary)
     assert restored.to_dict() == ordinary
-    assert len(json.dumps(compact)) < len(json.dumps(ordinary))
     record = next(f for f in analysis["findings"] if f["pattern"] == "availability")
     assert restored.select(frame, record["id"]) == analysis.select(frame, record["id"])
     foundation = fw.grain(frame, ["key"])
-    assert (
-        fw.ExplorerResult.from_dict(
-            json.loads(json.dumps(foundation.to_dict(compact=True)))
-        ).to_dict()
-        == foundation.to_dict()
-    )
-    data = {"literal": {"$ref": 9}, "another": {"$dict": [["x", 3]]}}
-    assert expand_result(json.loads(json.dumps(compact_result(data)))) == data
+    saved = json.loads(json.dumps(foundation.to_dict(), allow_nan=False))
+    assert fw.ExplorerResult.from_dict(saved).to_dict() == foundation.to_dict()
 
 
-@pytest.mark.parametrize("reference", [-1, 99, True, "0"])
-def test_compact_rejects_invalid_references(reference):
-    with pytest.raises(ValueError, match="reference"):
-        expand_result(
-            {
-                "format": "fieldwork.compact",
-                "version": "1.0",
-                "objects": [],
-                "root": {"$ref": reference},
-            }
-        )
-
-
-def test_compact_rejects_cycles_and_unknown_version():
-    cyclic = {}
-    cyclic["cycle"] = cyclic
-    with pytest.raises(ValueError, match="Cyclic"):
-        compact_result(cyclic)
-    with pytest.raises(ValueError, match="Cyclic"):
-        expand_result(
-            {
-                "format": "fieldwork.compact",
-                "version": "1.0",
-                "objects": [{"$ref": 0}],
-                "root": {"$ref": 0},
-            }
-        )
-    with pytest.raises(ValueError, match="Unsupported"):
-        expand_result({"format": "fieldwork.compact", "version": "2.0"})
+def test_grain_view_populations_store_bounded_examples():
+    frame = pd.DataFrame({"key": np.arange(200) % 20, "value": np.arange(200) % 20 * 2})
+    result = fw.discover_dependencies(frame, max_key_size=1, example_limit=3)
+    for view in result["grain_views"]:
+        examples = view["population"]["examples"]
+        assert examples["positions"] == [0, 1, 2]
+        assert examples["total"] == view["population"]["evaluated_rows"] == 200
+        assert "positions" not in view["population"]

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import fieldwork as fw
 
@@ -42,7 +43,10 @@ def test_legacy_export_loads_without_source():
     assert result.to_dict() == data
     for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
         assert "X" in render(result)
-    assert result.select(sparse_frame(), result["findings"][0]["id"]).positions == (0, 2)
+    # 0.1.x source fingerprints are not comparable with current ones: saved
+    # evidence still renders, but source inspection refuses rather than guessing.
+    with pytest.raises(ValueError, match="Source dataset differs"):
+        result.select(sparse_frame(), result["findings"][0]["id"])
 
 
 def test_sparse_support_and_finding_measurements():
@@ -185,8 +189,9 @@ def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
     assert x["determines_with_repeated_support"] == []
     assert z["determines_with_repeated_support"] == ["W"]
     projected = fw.visualization_data(overview_of(result))["overview"]["grains"]
-    order = [c["columns"] for c in projected]
-    assert order.index(["Z"]) < order.index(["X"])
+    order = [c["columns"] + c["equivalent"] for c in projected]
+    position = {c: i for i, columns in enumerate(order) for c in columns}
+    assert position["Z"] < position["X"]
     assert original_order == [c["columns"] for c in result["candidates"]]
     legacy = json.loads(json.dumps(result))
     for c in legacy["candidates"]:
@@ -213,8 +218,9 @@ def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
         "repeated_groups"
     )
     fallback = fw.visualization_data(overview_of(legacy))["overview"]["grains"]
-    fallback_order = [c["columns"] for c in fallback]
-    assert fallback_order.index(["X"]) < fallback_order.index(["Z"])
+    fallback_order = [c["columns"] + c["equivalent"] for c in fallback]
+    position = {c: i for i, columns in enumerate(fallback_order) for c in columns}
+    assert position["X"] < position["Z"]
     assert (
         next(c for c in fallback if c["columns"] == ["X"])["determines_with_repeated_support"]
         is None
@@ -226,7 +232,7 @@ def test_saved_details_below_threshold_and_disclosure():
     for dropna in (True, False):
         result = fw.discover_dependencies(df, dropna=dropna, min_accuracy=1, max_key_size=1)
         saved = fw.InvestigationResult.from_dict(
-            json.loads(json.dumps(result.to_dict(compact=True), allow_nan=False))
+            json.loads(json.dumps(result.to_dict(), allow_nan=False))
         )
         assert saved.to_dict() == result.to_dict()
         projection = fw.visualization_data(saved)

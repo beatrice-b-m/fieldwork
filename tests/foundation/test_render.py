@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 
 import pandas as pd
@@ -81,7 +82,9 @@ def test_typed_display_labels_do_not_collide() -> None:
     ]
     assert len(labels) == len(values)
     assert len(set(labels)) == len(values)
-    assert {"1", "'1'", "True", "'True'", "<NA>", "'<NA>'", "timedelta(1 ns)"} <= set(labels)
+    assert {"1", "'1'", "True", "'True'", "<NA>", "'<NA>'", "0 days 00:00:00.000000001"} <= set(
+        labels
+    )
     custom = render_plaintext(levels(pd.DataFrame({"a": [None, "x"]})), missing_label="'x'")
     assert "string('x')" in custom
 
@@ -193,20 +196,29 @@ def test_line_budget_marks_only_actual_truncation() -> None:
 @pytest.mark.parametrize("max_lines", [1, 2, 5, 100])
 def test_safe_rendering_limits_controls_and_escapes(width: int, max_lines: int) -> None:
     result = levels(pd.DataFrame({"bad\x1b\nlabel": ["\x1b[31mred", "☃", "\u202eevil", "界"]}))
-    text = render_plaintext(result, width=width, max_lines=max_lines)
+    text = render_plaintext(result, width=width, max_lines=max_lines, unicode_mode="safe")
     assert len(text.splitlines()) <= max_lines
     assert all(len(line) <= width for line in text.splitlines())
     assert text.isascii()
     assert "\x1b" not in text and "\u202e" not in text
 
 
-def test_native_unicode_cell_width() -> None:
-    wcwidth = pytest.importorskip("wcwidth")
-    text = render_plaintext(
-        levels(pd.DataFrame({"a": ["界" * 10, "e\u0301"]})), unicode_mode="display", width=12
-    )
-    assert all(wcwidth.wcswidth(line) <= 12 for line in text.splitlines())
-    assert "界" in text
+@pytest.mark.parametrize("wcwidth_installed", [True, False])
+def test_unicode_is_displayed_by_default_within_cell_width(
+    monkeypatch: pytest.MonkeyPatch, wcwidth_installed: bool
+) -> None:
+    from fieldwork._explore import render
+
+    render._width_function.cache_clear()
+    if not wcwidth_installed:
+        monkeypatch.setitem(sys.modules, "wcwidth", None)
+    try:
+        result = levels(pd.DataFrame({"a": ["界" * 10, "e\u0301", "\u202eevil"]}))
+        text = render_plaintext(result, width=12)
+        assert "界" in text and "\u202e" not in text
+        assert all(sum(render._fallback_width(c) for c in line) <= 12 for line in text.splitlines())
+    finally:
+        render._width_function.cache_clear()
 
 
 def test_render_does_not_require_result_serialization() -> None:

@@ -133,11 +133,10 @@ The context is discarded after success, failure, or cancellation. A later call
 revalidates the source, including mutations. There is no persistent dataframe
 cache or public session to invalidate manually.
 
-Fingerprinting preserves the original canonical SHA-256 byte stream, including
-ordered typed labels, duplicate indexes, and all cells. Repeated values are
-serialized once per bounded 8,192-row chunk. High-cardinality values still need
-individual canonical serialization. Selecting features or a scope reduces
-analytical work but does **not** eliminate full-source fingerprinting. Physically
+Fingerprinting hashes the index and every column with vectorized pandas hashing
+(about 0.04 s for 500,000 rows × 14 columns); only object columns need a Python
+pass to hash a typed representation of each cell. Selecting features or a scope
+reduces analytical work but does **not** eliminate full-source fingerprinting. Physically
 projecting the dataframe reduces that scan and creates a different source identity;
 use the same projected source for subsequent inspection.
 
@@ -161,26 +160,15 @@ with rows, selected features, candidate/target tests, distinct context groups,
 and graph views. Unique IDs, continuous values, long strings, and mixed scalar
 object columns remain more expensive than repeated categorical values.
 
-## Smaller saved results
+## Saved result size
 
-Ordinary `to_dict()` exports retain their existing schemas and layout. To avoid
-repeating shared result containers in large exports:
-
-```python
-import json
-
-saved = json.dumps(overview.to_dict(compact=True), allow_nan=False)
-restored = fw.InvestigationResult.from_dict(json.loads(saved))
-```
-
-Compact exports use a separate `fieldwork.compact` version `1.0` envelope with
-`root`, `objects`, and local references. All quantitative evidence remains.
-Use `ExplorerResult.from_dict` for foundation results. Both loaders also accept
-ordinary exports. Reserved reference keys are escaped, and invalid/cyclic
-references are rejected. Compact export saves repeated containers, not arbitrary
-similar values, so savings vary; tiny results can grow. It does not reduce the
-memory needed to compute the analysis. JSON round-trips convert tuples to lists,
-as with ordinary exports.
+`to_dict()` exports are plain JSON. Findings and grain views keep at most
+`example_limit` source positions each, so exports do not grow with row count for
+those records. Export size is driven mostly by the number of findings, completed
+dependency tests and foundation grain structures; narrow `features`, candidate and
+pair budgets on wide frames. (The optional `fieldwork.compact` envelope of 0.1.x
+was removed: it saved 5–30% by deduplicating containers that exports no longer
+repeat.)
 
 See the [implementation measurements](performance-results.md) for measured
 runtime, memory, dataset definitions, and reproduction commands.

@@ -31,8 +31,10 @@ their populations, denominators, units, and missing-value conventions.
 
 ## Explore for leads
 
-Start with `overview = fw.explore(df)`. Its compact summary presents availability
-families and signatures, supported candidate grains, and census recommendations.
+Start with `overview = fw.explore(df)`. Its compact summary opens with ranked
+leads (`f0` first, each with the reason it was ranked), then candidate grains with
+equivalent columns merged, census recommendations, availability families, and
+availability signatures described by the columns they are missing.
 `overview.relationships("image_1")` lists typed connections to other features and
 the finding IDs behind them. Indexed names, shared availability and exact mappings
 remain distinct evidence. Follow one relationship to `overview.inspect(df, id)`.
@@ -80,7 +82,9 @@ against the original source. `path.dimensions` alone is an ordinary tuple and
 carries no context.
 
 Candidate grains distinguish repeated groupings, unique identifiers, constants
-and candidates without evaluated support. `dependencies["grain_views"]` retains
+and candidates without evaluated support. In overview presentations, single-column
+candidates that determine each other (the same partition) are listed once with
+their `equivalent` columns; the saved candidate records are unchanged. `dependencies["grain_views"]` retains
 separate compatible populations for sparse keys. Inspect a view's `population`
 and render its `grain` with the standard foundation renderer. Relationships are
 combined only within a compatible view; excluded candidates retain their evidence.

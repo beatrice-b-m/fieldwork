@@ -11,7 +11,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ._explore.encoding import MISSING, encode_series, normalize_scalar, validate_frame
+from ._explore.encoding import (
+    MISSING,
+    encode_series,
+    normalize_scalar,
+    validate_frame,
+)
 from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, current_session, operation, phase
 from .progress import CancellationToken, Progress
@@ -32,55 +37,28 @@ def fingerprint(df: pd.DataFrame) -> str:
 
 
 def _fingerprint(df, progress):
+    # SHA-256 over column labels, then vectorized per-value hashes of the index
+    # and each column. Dtype is part of the identity: an object column holding
+    # 1 differs from an int64 column holding 1.
     digest = hashlib.sha256()
-    for values in (df.columns, df.index):
-        digest.update(b"[")
-        for i, value in enumerate(values):
-            if i % 8192 == 0:
-                checkpoint()
-            digest.update(
-                json.dumps(
-                    normalize_scalar(value, label=isinstance(value, tuple)).to_dict(),
-                    sort_keys=True,
-                    allow_nan=False,
-                ).encode()
-            )
-            digest.update(b"\n")
-        digest.update(b"]")
-    # Bound allocation even for continuous/unique columns. Serialize canonical
-    # values once per chunk; preserve the original byte stream and saved IDs.
+    labels = [normalize_scalar(c, label=True).to_dict() for c in df.columns]
+    digest.update(json.dumps([len(df), labels], sort_keys=True).encode())
+    digest.update(_value_hashes(df.index))
     for column in df:
-        digest.update(b"[")
-        for start in range(0, len(df), 8192):
-            checkpoint()
-            chunk = df[column].iloc[start : start + 8192]
-            try:
-                values, codes = encode_series(chunk)
-            except TypeError:
-                # Fingerprints historically allow tuple-valued labels/cells even
-                # where the analytical scalar encoder rejects tuple cells.
-                serialized = [
-                    json.dumps(
-                        normalize_scalar(v, label=isinstance(v, tuple)).to_dict(),
-                        sort_keys=True,
-                        allow_nan=False,
-                    ).encode()
-                    + b"\n"
-                    for v in chunk.array
-                ]
-            else:
-                dictionary = np.array(
-                    [
-                        json.dumps(v.to_dict(), sort_keys=True, allow_nan=False).encode() + b"\n"
-                        for v in values
-                    ],
-                    dtype=object,
-                )
-                serialized = dictionary[codes].tolist()
-            digest.update(b"".join(serialized))
-        digest.update(b"]")
+        checkpoint()
+        digest.update(_value_hashes(df[column]))
         progress.advance(detail=str(column))
     return digest.hexdigest()
+
+
+def _value_hashes(values):
+    if isinstance(values, pd.MultiIndex):
+        return pd.util.hash_pandas_object(values).to_numpy().tobytes()
+    if values.dtype == object:
+        # pandas hashes object values by str(), which conflates 1, 1.0 and "1"
+        # and rejects lists; hash a typed representation instead.
+        values = pd.Index([f"{type(v).__qualname__}:{v!r}" for v in values], dtype=object)
+    return pd.util.hash_pandas_object(pd.Index(values)).to_numpy().tobytes()
 
 
 @dataclass(frozen=True)
@@ -118,8 +96,8 @@ class Scope:
 
     Notes
     -----
-    Scopes are frozen and source-bound. Reordering or changing values/labels
-    invalidates reuse; dtype metadata alone is not part of identity. Scopes store
+    Scopes are frozen and source-bound. Reordering or changing values, labels
+    or column dtypes invalidates reuse. Scopes store
     positions, not source cells. Search/display budgets do not modify a scope.
 
     Examples
@@ -331,7 +309,7 @@ class InvestigationResult(ExplorerResult):
     mutable. Findings contain representative positions, not source rows. inspect,
     select, and recompute require the identical ordered source. Use Recipe to
     reapply parameters to a new delivery. Methods inherited from ExplorerResult
-    provide mapping access and ordinary/resolved/compact exports.
+    provide mapping access and ordinary/resolved exports.
 
     Examples
     --------
@@ -712,8 +690,8 @@ class InvestigationResult(ExplorerResult):
         Parameters
         ----------
         data : mapping
-            Ordinary discovery schema 1.0 export or a fieldwork.compact envelope
-            containing one. JSON-decoded data is accepted.
+            Discovery schema 1.0 export from to_dict. JSON-decoded data is
+            accepted.
 
         Returns
         -------
@@ -724,7 +702,7 @@ class InvestigationResult(ExplorerResult):
         Raises
         ------
         ValueError
-            The schema/envelope version or compact reference graph is unsupported.
+            The schema version is unsupported.
         KeyError
             Required saved fields are missing.
 
@@ -734,9 +712,6 @@ class InvestigationResult(ExplorerResult):
         when inspecting, selecting, recomputing, or handing a path to census. This is
         not a full validator of every nested evidence field.
         """
-        from ._serialization import expand_result
-
-        data = expand_result(data)
         if data.get("schema_version") != "1.0":
             raise ValueError("Unsupported investigation schema version")
         result_class = cls
@@ -778,7 +753,16 @@ def limit(name, value, *, minimum=0):
         raise ValueError(f"{name} must be an integer >= {minimum}")
 
 
-def prepare(df, *, scope=None, missing=None, table_id="table", features=None, presence_features=()):
+def prepare(
+    df,
+    *,
+    scope=None,
+    missing=None,
+    table_id="table",
+    features=None,
+    presence_features=(),
+    optional=(),
+):
     columns(df)
     return prepare_context(
         df,
@@ -787,13 +771,26 @@ def prepare(df, *, scope=None, missing=None, table_id="table", features=None, pr
         table_id=table_id,
         features=features,
         presence_features=presence_features,
+        optional=optional,
     )
 
 
 def prepare_context(
-    df, *, scope=None, missing=None, table_id="table", features=None, presence_features=()
+    df,
+    *,
+    scope=None,
+    missing=None,
+    table_id="table",
+    features=None,
+    presence_features=(),
+    optional=(),
 ):
-    """Prepare source context independently of discovery's column-label contract."""
+    """Prepare source context independently of discovery's column-label contract.
+
+    Columns in ``optional`` were selected automatically rather than named by the
+    caller. If their values cannot be encoded they are omitted from the returned
+    encodings and listed in ``base["skipped_features"]`` instead of raising.
+    """
     validate_frame(df)
     if not isinstance(table_id, str) or not table_id:
         raise ValueError("table_id must be a nonempty string")
@@ -844,6 +841,7 @@ def prepare_context(
             return ("number", float.fromhex(v.value))
         return v
 
+    skipped = {}
     with phase("encoding", len(needed), "columns") as tracker:
         for c in needed:
             dtype = frame[c].dtype
@@ -857,7 +855,14 @@ def prepare_context(
                 all_available[c] = frame[c].notna().to_numpy(dtype=bool)
                 tracker.advance(detail=str(c))
                 continue
-            values, codes = encode_series(frame[c])
+            try:
+                values, codes = encode_series(frame[c])
+            except TypeError as error:
+                if c not in optional:
+                    raise TypeError(f"Column {c!r}: {error}") from error
+                skipped[c] = _unsupported_type(frame[c])
+                tracker.advance(detail=str(c))
+                continue
             sentinel_keys = {sentinel_key(v) for v in sentinel_values[c]}
             mask = np.array(
                 [v != MISSING and sentinel_key(v) not in sentinel_keys for v in values], dtype=bool
@@ -868,8 +873,8 @@ def prepare_context(
                 if session:
                     session.remember_encoding((id(frame), c), (frame, values, codes))
             tracker.advance(detail=str(c))
-    encoded = {c: all_encoded[c] for c in selected}
-    available = {c: all_available[c] for c in presence_columns}
+    encoded = {c: all_encoded[c] for c in selected if c not in skipped}
+    available = {c: all_available[c] for c in presence_columns if c not in skipped}
     base = {
         "status": "computed" if len(frame) else "empty",
         "source": {"dataset_id": identity, "table_id": table_id, "input_rows": len(df)},
@@ -887,9 +892,25 @@ def prepare_context(
             "numeric_sentinel_equality": True,
         },
         "features": [{"table": table_id, "column": c} for c in df],
+        "skipped_features": [{"feature": c, "value_type": kind} for c, kind in skipped.items()],
         "findings": [],
     }
     return frame, positions, encoded, available, base
+
+
+def _unsupported_type(series):
+    for value in series.array:
+        try:
+            normalize_scalar(value)
+        except TypeError:
+            return type(value).__name__
+    return "unknown"
+
+
+def analyzable(selected, base):
+    """Drop automatically selected columns that preparation skipped."""
+    skipped = {record["feature"] for record in base["skipped_features"]}
+    return [c for c in selected if c not in skipped]
 
 
 def normalized_encoding(frame, codes, present):

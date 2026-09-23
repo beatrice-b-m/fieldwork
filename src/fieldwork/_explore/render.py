@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import defaultdict
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from functools import cache
 from typing import Any, Literal
 
 from .encoding import ScalarIdentity, display_scalar, validate_limit
@@ -31,28 +33,35 @@ def _safe(text: str, unicode_mode: str) -> str:
         return text.encode("ascii", "backslashreplace").decode("ascii")
     if unicode_mode != "display":
         raise ValueError("unicode_mode must be 'safe' or 'display'")
-    try:
-        import wcwidth  # noqa: F401
-    except ImportError as exc:
-        raise ImportError(
-            "Native Unicode rendering requires the 'unicode' extra: "
-            "pip install 'fieldwork[unicode]'"
-        ) from exc
     return text
+
+
+def _fallback_width(character: str) -> int:
+    if unicodedata.combining(character) or unicodedata.category(character) in {"Mn", "Me"}:
+        return 0
+    return 2 if unicodedata.east_asian_width(character) in {"W", "F"} else 1
+
+
+@cache
+def _width_function() -> Callable[[str], int]:
+    try:
+        from wcwidth import wcwidth
+    except ImportError:
+        return _fallback_width
+    return lambda character: max(0, wcwidth(character))
 
 
 def _clip(text: str, width: int, unicode_mode: str) -> str:
     if unicode_mode == "display":
-        from wcwidth import wcswidth, wcwidth
-
-        if wcswidth(text) <= width:
+        cell_width = _width_function()
+        if sum(cell_width(c) for c in text) <= width:
             return text
         marker = "." * min(3, width)
         target = max(0, width - len(marker))
         output = []
         used = 0
         for character in text:
-            cells = max(0, wcwidth(character))
+            cells = cell_width(character)
             if used + cells > target:
                 break
             output.append(character)
@@ -393,7 +402,7 @@ def render_plaintext(
     max_lines: int = 200,
     max_nodes: int = 1000,
     missing_label: str = "<NA>",
-    unicode_mode: str = "safe",
+    unicode_mode: str = "display",
     detail: Literal["full", "topology"] = "full",
 ) -> str:
     """Render bounded, terminal-safe evidence, with explicit populations and omissions.

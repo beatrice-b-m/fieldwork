@@ -50,13 +50,14 @@ def test_overview_retains_independent_section_coverage(frame):
 def test_samples_are_source_positions_with_full_support_and_executable_handoff(frame):
     result = fw.missingness(frame, example_limit=1)
     row = next(r for r in result["findings"] if r["pattern"] == "availability")
+    assert row["features"][0]["column"] == "value"
     markup = fw.render_html(result)
-    assert "Examples: 1/4 saved source positions [0]" in markup
+    assert "Examples: 1/3 saved source positions [0]" in markup
     assert "not dataframe index labels" in markup
     assert "first matches in source order" in markup
-    assert "Examples: 1/4 saved source positions [0]" in fw.render_plaintext(result)
+    assert "Examples: 1/3 saved source positions [0]" in fw.render_plaintext(result)
     assert len(result.inspect(frame, row["id"])) == 1
-    assert len(result.inspect(frame, row["id"], all_matches=True)) == 4
+    assert len(result.inspect(frame, row["id"], all_matches=True)) == 3
 
 
 def test_comparison_has_no_misleading_inspection_handoff(frame):

@@ -43,7 +43,7 @@ class ScalarIdentity:
                 value = (3, 0)
             else:
                 value = (1, float.fromhex(self.value))
-        elif self.kind == "integer":
+        elif self.kind in {"integer", "timedelta"}:
             value = int(self.value)
         elif self.kind == "tuple":
             value = tuple(item.sort_key() for item in self.value)
@@ -181,7 +181,8 @@ def display_scalar(value: ScalarIdentity, missing_label: str = "<NA>") -> str:
         items = ", ".join(display_scalar(v, missing_label) for v in value.value)
         label = "(" + items + ("," if len(value.value) == 1 else "") + ")"
     elif value.kind == "timedelta":
-        label = f"timedelta({value.value} ns)"
+        nanoseconds = int(value.value)
+        label = ("-" if nanoseconds < 0 else "") + str(pd.Timedelta(abs(nanoseconds), unit="ns"))
     else:
         label = str(value.value)
     return f"{value.kind}({label})" if label == missing_label else label

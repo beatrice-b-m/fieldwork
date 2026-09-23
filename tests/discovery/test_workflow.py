@@ -260,6 +260,18 @@ def test_numeric_sentinel_equality_and_multiindex():
     assert r.inspect(df, 0).equals(df.iloc[[1]])
 
 
+@pytest.mark.parametrize(
+    "level", [[1.5, 2.5, 1.5, 2.5], pd.date_range("2024-01-01", periods=4)], ids=["float", "date"]
+)
+def test_groupby_style_multiindex_supports_discovery(level):
+    index = pd.MultiIndex.from_arrays([["x", "x", "y", "y"], level])
+    df = pd.DataFrame({"a": [1, 2, None, 4], "b": ["p", "q", "p", "q"]}, index=index)
+    overview = fw.explore(df)
+    finding = next(f for f in overview["findings"] if f["pattern"] == "availability")
+    assert overview.inspect(df, finding["id"], all_matches=True).equals(df.iloc[[0, 1, 3]])
+    assert fw.discover_dependencies(df)["candidates"]
+
+
 def test_scope_and_convention_propagate_to_overview(frame):
     scope = fw.Scope.from_positions(frame, [0, 2, 5])
     overview = fw.explore(
@@ -431,3 +443,101 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     assert fw.Recipe("explore").run(df, scope=scope)["scope"]["selection_positions"] == [0, 1]
     with pytest.raises(TypeError, match="discovery dictionary"):
         loaded.run(df, max_candidates=2)
+
+
+def test_unsupported_cells_skip_automatic_columns_but_reject_explicit_ones():
+    from decimal import Decimal
+
+    df = pd.DataFrame(
+        {
+            "site": ["A", "A", "B"],
+            "tags": [["x"], ["y"], None],
+            "meta": [{"k": 1}, None, {"k": 2}],
+            "amount": [Decimal("1.5"), Decimal(2), None],
+        }
+    )
+    overview = fw.explore(df)
+    assert [r["feature"] for r in overview["skipped_features"]] == ["tags", "meta", "amount"]
+    assert {r["value_type"] for r in overview["skipped_features"]} == {"list", "dict", "Decimal"}
+    analyzed = {c["column"] for f in overview["findings"] for c in f["features"]}
+    assert analyzed == {"site"}
+    assert "tags (list)" in fw.render_plaintext(overview)
+    for analysis in (fw.missingness, fw.discover_dependencies, fw.value_patterns):
+        assert analysis(df)["parameters"]["features"] == ["site"]
+        with pytest.raises(TypeError, match="'tags'"):
+            analysis(df, features=["site", "tags"])
+
+
+def test_availability_omits_vacuous_findings_but_keeps_measurements():
+    df = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "complete": ["a", "b", "c", "d"],
+            "left": [1, 2, None, None],
+            "twin": [5, 6, None, None],
+            "mostly": [1, 2, 3, None],
+        }
+    )
+    result = fw.missingness(df)
+    assert [r["feature"] for r in result["availability"]] == list(df.columns)
+    found = {(f["pattern"], tuple(c["column"] for c in f["features"])) for f in result["findings"]}
+    availability = {cols[0] for pattern, cols in found if pattern == "availability"}
+    assert availability == {"left", "twin", "mostly"}
+    implications = {cols for pattern, cols in found if pattern == "presence_implication"}
+    assert implications == {("left", "mostly"), ("twin", "mostly")}
+    assert [f["features"] for f in result["families"]] == [["left", "twin"]]
+
+
+def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
+    rows = 40
+    df = pd.DataFrame(
+        {
+            "row_id": range(rows),
+            "site": ["A", "B"] * (rows // 2),
+            "region": ["north", "south"] * (rows // 2),
+            "constant": ["same"] * rows,
+        }
+    )
+    df.loc[2, "region"] = "south"  # one exception to site -> region
+    overview = fw.explore(df)
+    top = overview["findings"][0]
+    assert top["id"] == "f0" and top["pattern"] == "approximate_dependency"
+    assert top["measurements"]["determinant"] == ["site"]
+    assert top["lead"]["reason"] == "near-rule with exceptions"
+    scores = [f["lead"]["score"] for f in overview["findings"]]
+    assert scores == sorted(scores, reverse=True)
+    trivial = [
+        f
+        for f in overview["findings"]
+        if f["lead"]["reason"] in {"target is constant", "determinant is unique here"}
+    ]
+    assert trivial
+    network = overview["feature_network"]["relationships"]
+    linked = {e["evidence"]["overview_finding_id"] for e in network}
+    assert linked.isdisjoint(f["id"] for f in trivial)
+    assert overview.inspect(df, "f0", exceptions=True, all_matches=True).index.tolist() == [2]
+
+
+def test_similarity_with_an_always_present_feature_is_not_reported():
+    df = pd.DataFrame({"complete": range(10), "nearly": [1] * 9 + [None]})
+    result = fw.missingness(df, min_similarity=0.8)
+    assert not [f for f in result["findings"] if f["pattern"] == "similar_availability"]
+
+
+def test_overview_summary_leads_with_ranked_findings_and_merged_grains():
+    df = pd.DataFrame(
+        {
+            "site": ["A", "A", "B", "B", "C", "C"],
+            "site_name": ["Alpha", "Alpha", "Beta", "Beta", "Gamma", "Gamma"],
+            "note": ["x", None, None, None, None, None],
+        }
+    )
+    overview = fw.explore(df)
+    data = fw.visualization_data(overview)["overview"]
+    first = data["grains"][0]
+    assert {first["columns"][0], *first["equivalent"]} == {"site", "site_name"}
+    assert {s["absent"] == ["note"] for s in data["signatures"]} == {True, False}
+    lines = str(overview).splitlines()
+    leads = lines.index("Leads (inspect with result.inspect(df, id))")
+    assert lines[leads + 1].startswith(f"  [f0] {overview['findings'][0]['statement']}")
+    assert "  Missing: note (5 rows)" in lines

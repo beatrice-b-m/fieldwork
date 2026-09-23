@@ -122,6 +122,51 @@ def _candidate_summaries(data):
     return sorted(candidates, key=lambda c: candidate_priority(c, legacy=legacy))
 
 
+def _collapse_equivalent(candidates):
+    """Merge single-column candidates that partition the same rows identically.
+
+    Mutual determination only implies the same partition on the same evaluated
+    population, so group counts and evaluated rows must also match.
+    """
+    kept = []
+    for candidate in candidates:
+        columns = candidate["columns"]
+        twin = next(
+            (
+                k
+                for k in kept
+                if len(columns) == 1
+                and len(k["columns"]) == 1
+                and k["groups"] == candidate["groups"]
+                and k["evaluated_rows"] == candidate["evaluated_rows"]
+                and columns[0] in k.get("determines", [])
+                and k["columns"][0] in candidate.get("determines", [])
+            ),
+            None,
+        )
+        if twin is None:
+            kept.append({**candidate, "equivalent": []})
+        else:
+            twin["equivalent"].append(columns[0])
+    return kept
+
+
+def _grain_title(candidate):
+    title = ", ".join(candidate["columns"])
+    if candidate.get("equivalent"):
+        title += " (equivalent: " + ", ".join(candidate["equivalent"]) + ")"
+    return title
+
+
+def _signature_label(signature):
+    present, absent = signature["present"], signature["absent"]
+    if not absent:
+        return "All populated"
+    if len(absent) <= len(present):
+        return "Missing: " + ", ".join(absent)
+    return "Only: " + (", ".join(present) or "none")
+
+
 def _available(value):
     return "unavailable" if value is None else str(value)
 
@@ -218,9 +263,8 @@ def visualization_data(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested
@@ -287,6 +331,8 @@ def visualization_data(
                 examples=record["examples"],
                 exceptions=record["exceptions"],
             )
+            if "lead" in record:
+                row["lead"] = record["lead"]
             if record["pattern"] in {"exact_dependency", "approximate_dependency"}:
                 dependency_data = data.get("sections", {}).get("dependencies", data)
                 row["measurements"] = _dependency_measurements(record["measurements"])
@@ -296,6 +342,8 @@ def visualization_data(
         output["findings"].append(row)
     if "analysis_unit" in data:
         output["analysis_unit"] = _qualitative_unit(data["analysis_unit"])
+    if data.get("skipped_features"):
+        output["skipped_features"] = data["skipped_features"]
     for side in ("before", "after"):
         scope = data.get(f"{side}_scope")
         unit = data.get(f"{side}_analysis_unit")
@@ -387,6 +435,7 @@ def visualization_data(
             "grains": [
                 {
                     "columns": c["columns"],
+                    "equivalent": c["equivalent"],
                     "role": candidate_role(c),
                     **(
                         {
@@ -405,7 +454,7 @@ def visualization_data(
                         else {}
                     ),
                 }
-                for c in (
+                for c in _collapse_equivalent(
                     _candidate_summaries(sections["dependencies"])
                     if detail == "full"
                     else sections["dependencies"].get("candidates", [])
@@ -481,6 +530,12 @@ def _coverage_lines(data):
     return lines
 
 
+def _skipped_label(skipped):
+    return "Skipped columns with unsupported values: " + ", ".join(
+        f"{record['feature']} ({record['value_type']})" for record in skipped
+    )
+
+
 def _sample_label(label, sample):
     positions = sample["positions"]
     total = sample.get("total")
@@ -496,16 +551,15 @@ def render_plaintext(
     max_nodes: int = 1000,
     detail: Literal["full", "topology"] = "full",
     missing_label: str = "<NA>",
-    unicode_mode: Literal["safe", "display"] = "safe",
+    unicode_mode: Literal["safe", "display"] = "display",
 ) -> str:
     """Render saved evidence as bounded, escaped plaintext.
 
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     width : int, optional
         Positive maximum plaintext line width; default 100. Long lines are clipped.
     max_lines : int, optional
@@ -522,9 +576,10 @@ def render_plaintext(
         Displayed foundation missing-value label; default "<NA>". Discovery
         findings retain their producer wording.
     unicode_mode : {'safe', 'display'}, optional
-        Default 'safe' escapes non-ASCII text. 'display' preserves Unicode and
-        requires fieldwork[unicode] for width calculation. Control characters are
-        escaped in either mode.
+        Default 'display' preserves Unicode; width uses wcwidth when the optional
+        fieldwork[unicode] extra is installed, otherwise East Asian width rules.
+        'safe' escapes non-ASCII text. Control and bidirectional override
+        characters are escaped in either mode.
 
     Returns
     -------
@@ -535,8 +590,6 @@ def render_plaintext(
     ------
     ValueError
         Detail, Unicode mode, or display limits are invalid.
-    ImportError
-        unicode_mode='display' requires the optional unicode extra.
 
     Notes
     -----
@@ -577,6 +630,8 @@ def render_plaintext(
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
     if data.get("section_selection", {}).get("omitted"):
         lines.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
+    if data.get("skipped_features"):
+        lines.append(_skipped_label(data["skipped_features"]))
     lines.extend(_comparison_labels(data))
     if detail == "full":
         coverage = _coverage_lines(data)
@@ -596,26 +651,38 @@ def render_plaintext(
         lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
     if data["kind"] == "overview":
         overview = data["overview"]
-        lines.append("Availability families")
-        lines.extend("  " + ", ".join(group) for group in overview["families"][: min(5, max_nodes)])
-        lines.append("Major availability signatures")
-        for signature in overview["signatures"][: min(5, max_nodes)]:
-            text = "  Present: " + (", ".join(signature["present"]) or "none")
-            if detail == "full":
-                text += f" ({signature['count']} {data.get('analysis_unit', {}).get('counting_unit', 'rows')})"
-            lines.append(text)
+        unit = data.get("analysis_unit", {}).get("counting_unit", "rows")
+        if detail == "full":
+            leads = [row for row in data["findings"] if row.get("lead", {}).get("score", 0) >= 0.3]
+            lines.append("Leads (inspect with result.inspect(df, id))")
+            lines.extend(
+                f"  [{row['id']}] {row['statement']} ({row['lead']['reason']})"
+                for row in leads[: min(8, max_nodes)]
+            )
+            if not leads:
+                lines.append("  none stood out; browse the sections below")
         lines.append("Candidate grains")
         for candidate in overview["grains"][: min(5, max_nodes)]:
-            text = "  " + ", ".join(candidate["columns"]) + ": " + candidate["role"]
+            text = "  " + _grain_title(candidate) + ": " + candidate["role"]
             if detail == "full":
-                lines.append(text)
-                lines.extend(
-                    "    " + part for part in _candidate_explanation(candidate).split("; ")
+                text += (
+                    f"; {candidate['groups']} groups, {len(candidate['determines'])} exact"
+                    f" targets, {len(candidate['determines_with_repeated_support'] or [])}"
+                    " with repeated support"
                 )
-            else:
-                lines.append(text)
+            lines.append(text)
         lines.append("Suggested census paths")
         lines.extend("  " + " > ".join(path) for path in overview["paths"][:max_nodes])
+        lines.append("Availability families")
+        lines.extend("  " + ", ".join(group) for group in overview["families"][: min(5, max_nodes)])
+        if not overview["families"]:
+            lines.append("  none")
+        lines.append("Major availability signatures")
+        for signature in overview["signatures"][: min(5, max_nodes)]:
+            text = "  " + _signature_label(signature)
+            if detail == "full":
+                text += f" ({signature['count']} {unit})"
+            lines.append(text)
         if "feature_network" in data:
             lines.append("Connected feature evidence")
             for group in data["feature_network"]["components"][: min(5, max_nodes)]:
@@ -681,9 +748,8 @@ def render_svg(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested
@@ -768,6 +834,8 @@ def render_svg(
     context_labels = _comparison_labels(data)
     if data.get("section_selection", {}).get("omitted"):
         context_labels.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
+    if data.get("skipped_features"):
+        context_labels.append(_skipped_label(data["skipped_features"]))
     if "analysis_unit" in data and data["kind"] != "comparison":
         context_labels.append("Analysis: " + _unit_label(data["analysis_unit"]))
     for label in context_labels:
@@ -795,7 +863,7 @@ def render_svg(
             displayed_lists.append(("candidate grains", len(candidates), min(5, max_findings)))
             rows = [
                 {
-                    "statement": ", ".join(c["columns"]) + ": " + c["role"],
+                    "statement": _grain_title(c) + ": " + c["role"],
                     "analysis_unit": {"counting_unit": "rows"},
                     "counting_unit": "rows",
                     "measurements": {},
@@ -879,9 +947,8 @@ def render_html(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested
@@ -977,6 +1044,10 @@ def render_html(
             + _esc(", ".join(projected["section_selection"]["omitted"]))
             + "</p>"
         )
+    if projected.get("skipped_features"):
+        parts.append(
+            '<p class="notice">' + _esc(_skipped_label(projected["skipped_features"])) + "</p>"
+        )
     if full:
         coverage = _coverage_lines(projected)
         parts.append(
@@ -1050,7 +1121,7 @@ def render_html(
         if candidates:
             cards = [
                 "<details data-record><summary>"
-                + _esc(", ".join(c["columns"]))
+                + _esc(_grain_title(c))
                 + ' <span class="badge">'
                 + _esc(c["role"])
                 + "</span></summary>"
@@ -1093,6 +1164,11 @@ def render_html(
             + _esc(row["pattern"].replace("_", " "))
             + "</span>"
             + _esc(row["statement"])
+            + (
+                ' <span class="badge">' + _esc(row["lead"]["reason"]) + "</span>"
+                if "lead" in row
+                else ""
+            )
             + '</summary><div class="content">'
         ]
         card.append("<p>Analysis: " + _esc(_unit_label(row["analysis_unit"])) + "</p>")

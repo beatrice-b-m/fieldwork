@@ -18,6 +18,7 @@ from ._runtime import checkpoint, operation, phase
 from .evidence import (
     InvestigationResult,
     Scope,
+    analyzable,
     bounded_rows,
     columns,
     context_statement,
@@ -26,6 +27,7 @@ from .evidence import (
     limit,
     prepare,
     result,
+    selection,
 )
 from .progress import CancellationToken, Progress
 
@@ -62,7 +64,9 @@ def discover_dependencies(
         integer row positions. Unsupported scalar objects raise TypeError.
     features : iterable of str or None, optional
         Unique column names to analyze, in requested order; default None selects
-        all columns. Restricts analysis, not full-source identity validation.
+        all columns, skipping those with unsupported values (such as lists,
+        dicts or Decimal) and listing them in skipped_features. Restricts
+        analysis, not full-source identity validation.
     max_key_size : int, optional
         Positive maximum determinant size; default 2. Candidate combinations are
         visited in increasing size, then requested column order.
@@ -135,7 +139,8 @@ def discover_dependencies(
     ValueError
         Columns, limits, thresholds, constraints, or source scope are invalid.
     TypeError
-        The frame, column labels, or scalar values are unsupported.
+        The frame or column labels are unsupported, or an explicitly requested
+        column contains unsupported values.
     AnalysisCancelled
         Cancellation or the cooperative timeout stops analysis.
 
@@ -143,7 +148,7 @@ def discover_dependencies(
     -----
     Search and display budgets never sample rows. Evidence records evaluated
     populations and omissions separately. Source identity covers ordered column
-    labels, index labels, and all cell values (not dtype metadata); changing or
+    labels, index labels, column dtypes and all cell values; changing or
     reordering them invalidates inspection against saved findings.
 
     A functional dependency here is observed evidence, not a guarantee about
@@ -192,8 +197,14 @@ def discover_dependencies(
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
-        df, scope=scope, missing=missing, table_id=table_id, features=[*selected, *contexts]
+        df,
+        scope=scope,
+        missing=missing,
+        table_id=table_id,
+        features=[*selected, *contexts],
+        optional=selected if features is None else (),
     )
+    selected = analyzable(selected, base)
     # With dropna=False, native missing and declared sentinels share one category.
     codes = {
         c: values if present[c].all() else np.where(present[c], values, -1)
@@ -380,7 +391,7 @@ def discover_dependencies(
     ordered_anchors = sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0]))
     chosen_anchors = ordered_anchors[:max_grain_views] if include_grain else []
     with phase("grain views", len(chosen_anchors), "views") as tracker:
-        for _, mask in chosen_anchors:
+        for anchor, mask in chosen_anchors:
             members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
             analysis = _grain(
                 graph_frame,
@@ -399,7 +410,10 @@ def discover_dependencies(
                         "evaluated_rows": int(mask.sum()),
                         "restriction_excluded_rows": len(df) - len(frame),
                         "missing_excluded_rows": int((~mask).sum()),
-                        "positions": positions[mask].tolist(),
+                        # The anchor's complete cases define the population, so
+                        # only bounded examples are stored, not every position.
+                        "anchor_candidate_id": f"key{anchor}",
+                        "examples": selection(positions[mask], int(mask.sum()), example_limit),
                         "rule": "complete_cases_of_candidate_components"
                         if dropna
                         else "missing_as_category",
@@ -409,7 +423,6 @@ def discover_dependencies(
             )
             tracker.advance()
     base["grain_views"] = views
-    base["exact_grain"] = views[0]["grain"] if views else None
     base["graph_selection"] = {
         "strategy": "candidate_population_anchors_with_superset_candidates",
         "primary_view": views[0]["id"] if views else None,

@@ -18,6 +18,7 @@ from .evidence import (
     EvidenceRows,
     InvestigationResult,
     Scope,
+    analyzable,
     columns,
     context_statement,
     finding,
@@ -81,7 +82,9 @@ def missingness(
         integer row positions. Unsupported scalar objects raise TypeError.
     features : iterable of str or None, optional
         Unique column names to analyze, in requested order; default None selects
-        all columns. Restricts analysis, not full-source identity validation.
+        all columns, skipping those with unsupported values (such as lists,
+        dicts or Decimal) and listing them in skipped_features. Restricts
+        analysis, not full-source identity validation.
     by : iterable of str or None, optional
         Joint context columns; default None. Missing context values form categories.
         An entity spanning contexts contributes once within each relevant context.
@@ -149,7 +152,8 @@ def missingness(
     ValueError
         Columns, limits, thresholds, constraints, or source scope are invalid.
     TypeError
-        The frame, column labels, or scalar values are unsupported.
+        The frame or column labels are unsupported, or an explicitly requested
+        column contains unsupported values.
     AnalysisCancelled
         Cancellation or the cooperative timeout stops analysis.
 
@@ -200,7 +204,9 @@ def missingness(
         table_id=table_id,
         features=[*contexts, *entities],
         presence_features=selected,
+        optional=selected if features is None else (),
     )
+    selected = analyzable(selected, base)
     codes = {c: np.where(present[c], values, -1) for c, values in codes.items()}
     eligible = np.ones(len(frame), dtype=bool)
     for c in entities:
@@ -293,6 +299,9 @@ def missingness(
             "populated_fraction": float(mask.mean()) if n else None,
         }
         base["availability"].append({"feature": c, **metrics})
+        if mask.all():
+            # Complete columns stay in the table; a finding would say nothing.
+            continue
         emit(
             "availability",
             f"{c}: populated values",
@@ -350,7 +359,7 @@ def missingness(
         groups[np.packbits(masks[c]).tobytes()].append(c)
     base["families"] = []
     for group in groups.values():
-        if len(group) > 1:
+        if len(group) > 1 and not masks[group[0]].all():
             f = emit(
                 "availability_family",
                 "Same availability: " + ", ".join(group),
@@ -381,7 +390,12 @@ def missingness(
                 "presence_jaccard": similarity,
                 "agreement": float((x == y).mean()) if n else None,
             }
-            if similarity is not None and similarity >= min_similarity and not np.array_equal(x, y):
+            if (
+                similarity is not None
+                and similarity >= min_similarity
+                and not np.array_equal(x, y)
+                and not (x.all() or y.all())
+            ):
                 emit(
                     "similar_availability",
                     f"{a} and {b} have similar presence",
@@ -399,6 +413,9 @@ def missingness(
                     x | y,
                 )
             for source, target, first, second in [(a, b, x, y), (b, a, y, x)]:
+                if second.all() or np.array_equal(x, y):
+                    # Vacuous: the target is always present, or a family covers it.
+                    continue
                 denominator = int(first.sum())
                 rate = both / denominator if denominator else None
                 if rate is not None and rate >= min_implication:

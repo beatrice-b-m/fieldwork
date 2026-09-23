@@ -41,6 +41,13 @@ def test_temporal_identity_normalizes_aware_instants() -> None:
     assert value["resolution"] == "nanosecond"
 
 
+def test_timedeltas_order_numerically_and_display_as_durations() -> None:
+    durations = pd.to_timedelta(["100s", "-5s", "9s", "10s"])
+    text = render_plaintext(levels(pd.DataFrame({"d": durations})))
+    shown = [line.strip().rsplit(": ", 1)[0] for line in text.splitlines()[3:]]
+    assert shown == ["-0 days 00:00:05", "0 days 00:00:09", "0 days 00:00:10", "0 days 00:01:40"]
+
+
 def test_exact_pair_fallback() -> None:
     import numpy as np
 

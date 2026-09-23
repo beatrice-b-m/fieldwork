@@ -50,7 +50,8 @@ def test_sparse_candidates_keep_compatible_grain_views():
         }
     )
     analysis = fw.discover_dependencies(df, max_key_size=1)
-    assert analysis["exact_grain"]["graph"]["scope"]["evaluated_rows"] == 4
+    assert "exact_grain" not in analysis
+    assert analysis["grain_views"][0]["grain"]["graph"]["scope"]["evaluated_rows"] == 4
     assert analysis["graph_selection"]["excluded"] == [
         {
             "candidate_id": "key4",
@@ -71,8 +72,9 @@ def test_sparse_candidates_keep_compatible_grain_views():
     )
     assert all(c["graph_views"] for c in analysis["candidates"] if c["columns"] != ["never"])
     scoped = fw.discover_dependencies(df, scope=fw.Scope.from_positions(df, [0, 1]), max_key_size=1)
-    assert scoped["exact_grain"]["graph"]["scope"]["input_rows"] == 4
-    assert scoped["exact_grain"]["graph"]["scope"]["restriction_excluded_rows"] == 2
+    primary = scoped["grain_views"][0]["grain"]
+    assert primary["graph"]["scope"]["input_rows"] == 4
+    assert primary["graph"]["scope"]["restriction_excluded_rows"] == 2
 
 
 def test_typed_contexts_survive_saved_presentations():
@@ -117,7 +119,9 @@ def test_candidate_roles_and_priority():
     assert roles[("id",)] == "unique identifier"
     assert roles[("entity",)] == "repeated grouping"
     assert overview["grains"][0]["role"] == "repeated grouping"
-    assert len(overview["grains"]) == 5
+    # label partitions rows exactly like entity, so it is listed as equivalent.
+    assert len(overview["grains"]) == 4
+    assert overview["grains"][0]["equivalent"] == ["label"]
 
 
 def test_signature_to_complete_scope_and_saved_overview_inspection():
@@ -237,9 +241,9 @@ def test_recommendations_explain_evidence_and_diversify_feature_choices():
 def test_connected_feature_relationships_preserve_evidence_types():
     df = pd.DataFrame(
         {
-            "a_1": [1, 2, 3, 4, 5, None],
-            "a_2": [10, 20, 30, 40, None, None],
-            "mirror": [1, 2, 3, 4, 5, None],
+            "a_1": [1, 1, 2, 2, 3, None],
+            "a_2": [10, 10, 20, 20, None, None],
+            "mirror": [1, 1, 2, 2, 3, None],
         }
     )
     overview = fw.explore(df)
@@ -315,7 +319,9 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
 
 @pytest.mark.parametrize("aggregation", ["any", "all"])
 def test_topology_retains_entity_relationship_meaning(aggregation):
-    df = pd.DataFrame({"e": [1, 1, 2, 2], "a": [1, None, 1, None], "b": [None, 1, None, 1]})
+    df = pd.DataFrame(
+        {"e": [1, 1, 2, 2, 3], "a": [1, None, 1, None, None], "b": [None, 1, None, 1, None]}
+    )
     config = {
         "features": ["a", "b", "e"],
         "entity": "e",
@@ -368,7 +374,7 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
 def test_dependency_support_survives_overview_network_and_graph_handoffs():
     df = pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None], "Z": range(4)})
     overview = fw.InvestigationResult.from_dict(
-        json.loads(json.dumps(fw.explore(df).to_dict(compact=True), allow_nan=False))
+        json.loads(json.dumps(fw.explore(df).to_dict(), allow_nan=False))
     )
     dependencies = fw.InvestigationResult.from_dict(overview["sections"]["dependencies"])
     records = {(tuple(d["determinant"]), d["target"]): d for d in dependencies["dependencies"]}
@@ -385,14 +391,25 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     assert assignment["nodes"] == []
     assert assignment["reason"] == "different_target_population"
     narrow = dependencies["grain_views"][1]
-    assert narrow["population"]["positions"] == [0, 2]
+    assert narrow["population"]["examples"]["positions"] == [0, 2]
+    assert narrow["population"]["examples"]["total"] == 2
+    anchor = narrow["population"]["anchor_candidate_id"]
+    anchor_columns = next(c for c in dependencies["candidates"] if c["id"] == anchor)["columns"]
+    assert df[anchor_columns].notna().all(axis=1).to_numpy().nonzero()[0].tolist() == [0, 2]
     assert len(narrow["grain"]["graph"]["nodes"]) == 1
-    edge = next(
-        e
+    # Within Y's observed rows X is unique, so the rule is trivial: it stays a
+    # finding but does not connect features in the network.
+    assert not any(
+        e.get("determinant") == ["X"] and e.get("target") == "Y"
         for e in overview["feature_network"]["relationships"]
-        if e.get("determinant") == ["X"] and e.get("target") == "Y"
     )
-    finding_id = edge["evidence"]["overview_finding_id"]
+    finding_id = next(
+        f["id"]
+        for f in overview["findings"]
+        if f["pattern"] == "exact_dependency"
+        and f["measurements"]["determinant"] == ["X"]
+        and f["measurements"]["target"] == "Y"
+    )
     assert overview.select(df, finding_id).positions == (0, 2)
     finding = next(f for f in overview["findings"] if f["id"] == finding_id)
     assert finding["measurements"]["target_coverage"] == 0.5

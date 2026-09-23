@@ -7,14 +7,20 @@ columns use missing masks. Row presence or explicit any/all entity
 aggregation provides the analysis masks. Repeated boolean availability signatures
 are ranked by descending analysis-unit count with lexical signature ties. `max_signatures=50`
 limits stored signatures, with omitted row mass reported. Identical masks form
-families even for always-missing or always-present columns.
+families, including always-missing columns. Always-present columns form no family
+and receive no per-feature availability finding; they remain in the `availability`
+table with their counts.
 
 Pairs are enumerated in input-column combination order, bounded by `max_pairs=200`.
 For A and B, presence Jaccard is both-present / either-present. If neither is ever
 present, it is undefined, never perfect similarity. Agreement additionally includes
 co-absence and is reported separately. A implies B has conditional presence
 both-present / A-present, an exception rate, and B's baseline presence. No antecedent
-support means no implication finding. Similarity and implication thresholds default
+support means no implication finding. Implications are omitted when they are
+vacuous: B is present in every analysis unit, or A and B have identical
+availability (their family finding already states it). Similarity findings are
+likewise omitted when either feature is always present, since the similarity then
+only restates the other feature's populated fraction. Similarity and implication thresholds default
 to 0.8 and 0.9. Mutually exclusive pairs require each field to have observed support
 and no co-presence; exact families let users interpret exclusive field groups.
 
@@ -98,8 +104,10 @@ candidate guarantees their common complete-case population is exactly that mask;
 the foundation checks every combined relationship on it, reusing exact metrics
 only for identical eligible populations.
 Views are ordered by descending population, then candidate enumeration order.
-`exact_grain` is the first view; `grain_views` retains every view, candidate IDs,
-source positions and population accounting. No relation is composed across views.
+`grain_views[0]` is the primary view; `grain_views` retains every view, candidate
+IDs and population accounting. A view's population is the complete cases of its
+`anchor_candidate_id` within the scope (or the whole scope with `dropna=False`), so
+it stores bounded `examples` rather than every source position. No relation is composed across views.
 All candidates remain in `candidates`, with view membership; unsupported candidates
 also appear in `graph_selection.excluded` with `no_evaluated_support`. With
 `dropna=False`, all candidates share the scoped population.
@@ -135,6 +143,9 @@ The overview includes value-pattern discovery and a `feature_network` with
 feature nodes, typed relationships, and connected components. Availability
 identity/similarity/implication/exclusion, indexed names, equivalent value
 partitions and exact/approximate dependencies remain separate relationship types.
+Trivially true dependencies (a constant target, or a determinant that is unique
+within the target's evaluated rows) remain findings but are not network edges;
+otherwise they would connect every feature without describing structure.
 A connected component means reachability through this evidence, not equivalence
 or a composed functional dependency. Composite determinants and typed context
 predicates remain explicit. Each relationship links to its section finding,
@@ -145,6 +156,21 @@ returns a dataframe for filtering and following evidence to `inspect`/`select`.
 Saved HTML provides feature disclosures and links to the supporting findings.
 Topology removes evidence pointers and populations while retaining relation types,
 direction and context. Its relationship order is canonical.
+
+### Overview lead ranking
+
+Overview findings are ordered by a heuristic lead score (`src/fieldwork/leads.py`)
+and numbered in that order, so `f0` is the most promising lead. Each carries
+`lead.score` and a short `lead.reason`. The score favors evidence an analyst would
+want to explain: near-rules with repeated support and a few exceptions, mutually
+exclusive or empty columns, presence rules with exceptions, mixed string formats,
+equivalent encodings and partially populated columns. Trivially true or purely
+descriptive findings (constant targets, unique determinants, uniform formats,
+numeric ranges, census paths) rank last. After the first finding of a pattern on a
+given leading column, further ones are halved (all equivalent-encoding findings
+after the first, since they chain across columns), so one near-key determining
+many targets does not crowd out other leads. Scores are for ordering only; they are not
+probabilities or measurements. Section results keep their own order and IDs.
 
 ## Explicit work budgets and exact kernels
 
