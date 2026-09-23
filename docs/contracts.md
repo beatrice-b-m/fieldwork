@@ -2,9 +2,8 @@
 
 ## Results and serialization
 
-Foundation `ExplorerResult` uses schema 0.3, retaining the migration contract.
-Discovery `InvestigationResult` uses schema 1.0. Both are mappings with `to_dict()`
-exports compatible with `json.dumps(..., allow_nan=False)`. Analyses count
+Every analysis returns a `Result`, exported as schema 2.0. A result is a mapping
+over its payload, with `to_dict()` exports compatible with `json.dumps(..., allow_nan=False)`. Analyses count
 `pandas.factorize` codes; emitted values are plain JSON: `null` for every native
 missing spelling, numbers as numbers, infinities as `"inf"`/`"-inf"`, and dates,
 datetimes (aware ones as UTC instants) and timedeltas as text that pandas parses
@@ -23,10 +22,12 @@ their value type; the other columns are analyzed normally. A column named
 explicitly (in `features`, `by`, `entity`, or a foundation operation) still raises
 `TypeError`.
 
-`InvestigationResult.from_dict` restores schema 1.0 saved evidence. `to_frame()`
+`Result.from_dict` restores schema 2.0 saved evidence. `to_frame()`
 normalizes findings; pass a section such as `availability`, `dependencies`,
-`candidates`, or `changes` to project another list. `PathResult.best` is `None` if
-no path exists, otherwise use `best.census(df)` to preserve recommendation context.
+`candidates`, or `changes` to project another list. For a paths result (or an
+overview), `best` is `None` if no path exists, otherwise use `best.census(df)` to
+preserve recommendation context. `section(name)` returns one part of an overview
+as a `Result`.
 
 ## Population, source and scope
 
@@ -177,7 +178,7 @@ exclude replacement source context, and grain cache parameters are private.
 `fieldwork.typing` provides documented dictionary types for reusable configurations.
 See the [inline API standard](inline-api.md) for the public boundary and validation.
 
-### Additive dependency support fields (discovery schema 1.0)
+### Dependency support fields
 
 Dependency tables and finding measurements retain all existing meanings and add
 observed target coverage and consistency within repeated determinant groups.

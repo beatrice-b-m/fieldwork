@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,9 @@ from .._runtime import checkpoint, phase
 from ._kernels import same_mask
 from .census import _scope
 from .encoding import missing_code
-from .result import KeySpec
+
+if TYPE_CHECKING:
+    from .grain import KeySpec
 
 
 def build_grain_graph(

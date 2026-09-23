@@ -14,7 +14,6 @@ import pandas as pd
 from ._explore._kernels import group_ids, modal_groups
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
-    InvestigationResult,
     Scope,
     analyzable,
     bounded_rows,
@@ -24,6 +23,7 @@ from .evidence import (
     prepare,
     result,
 )
+from .result import Result
 from .typing import Runtime
 
 
@@ -40,7 +40,7 @@ def value_patterns(
     max_patterns: int = 10,
     example_limit: int = 5,
     **runtime: Unpack[Runtime],
-) -> InvestigationResult:
+) -> Result:
     """Summarize populated values and evidence for related column families.
 
     Parameters
@@ -82,7 +82,7 @@ def value_patterns(
 
     Returns
     -------
-    InvestigationResult
+    Result
         Kind 'value_patterns', with summaries, indexed families, findings, and
         pair coverage. Numeric findings include finite ranges, observed spacing,
         and supported constant offsets or ratios.

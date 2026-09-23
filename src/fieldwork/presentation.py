@@ -12,10 +12,10 @@ from ._explore.graphics import render_html as foundation_html
 from ._explore.graphics import render_svg as foundation_svg
 from ._explore.render import _clip, _safe
 from ._explore.render import render_plaintext as foundation_text
-from ._explore.result import ExplorerResult
 from ._explore.visual_data import visualization_data as foundation_data
 from ._html import collection, document
 from .evidence import limit, qualitative_analysis_unit
+from .result import Result
 
 
 def structural_evidence(structure):
@@ -181,7 +181,7 @@ def _data(result, section=None):
 
 
 def visualization_data(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",
@@ -190,7 +190,7 @@ def visualization_data(
 
     Parameters
     ----------
-    result : ExplorerResult or mapping
+    result : Result or mapping
         Saved analytical result or its dictionary export. Rendering does not need
         the source dataframe and does not recompute analyses.
     section : str or None, optional
@@ -470,7 +470,7 @@ def _sample_label(label, sample):
 
 
 def render_plaintext(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     width: int = 100,
     max_lines: int = 200,
@@ -483,7 +483,7 @@ def render_plaintext(
 
     Parameters
     ----------
-    result : ExplorerResult or mapping
+    result : Result or mapping
         Saved analytical result or its dictionary export. Rendering does not need
         the source dataframe and does not recompute analyses.
     width : int, optional
@@ -660,7 +660,7 @@ def render_plaintext(
 
 
 def render_svg(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",
@@ -673,7 +673,7 @@ def render_svg(
 
     Parameters
     ----------
-    result : ExplorerResult or mapping
+    result : Result or mapping
         Saved analytical result or its dictionary export. Rendering does not need
         the source dataframe and does not recompute analyses.
     section : str or None, optional
@@ -862,7 +862,7 @@ def render_svg(
 
 
 def render_html(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",
@@ -872,7 +872,7 @@ def render_html(
 
     Parameters
     ----------
-    result : ExplorerResult or mapping
+    result : Result or mapping
         Saved analytical result or its dictionary export. Rendering does not need
         the source dataframe and does not recompute analyses.
     section : str or None, optional

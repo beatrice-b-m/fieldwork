@@ -12,16 +12,17 @@ from typing import Any, Literal, Unpack, overload
 
 import pandas as pd
 
+from ._explore.grain import KeySpec
 from ._explore.orchestration import explore as explicit_explore
-from ._explore.result import ExplorerResult, KeySpec
 from ._runtime import operation, phase
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import InvestigationResult, Scope, finding, foundation_context, prepare, result
+from .evidence import Scope, finding, foundation_context, prepare, result
 from .families import feature_network
 from .leads import rank
 from .navigation import suggest_paths
 from .patterns import value_patterns
+from .result import Result
 from .typing import (
     DiscoveryOptions,
     ExplicitDiscoveryOptions,
@@ -45,7 +46,7 @@ def explore(
     table_id: str = "table",
     features: Iterable[str] | None = None,
     **runtime: Unpack[Runtime],
-) -> InvestigationResult: ...
+) -> Result: ...
 
 
 @overload
@@ -78,7 +79,7 @@ def explore(
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult: ...
+) -> Result: ...
 
 
 @operation("overview")
@@ -90,7 +91,7 @@ def explore(
     sections: Iterable[Section] | None = None,
     section_options: SectionOptions | None = None,
     **options: Any,
-) -> ExplorerResult:
+) -> Result:
     """Explore a table automatically or compose explicit foundational analyses.
 
     Parameters
@@ -99,9 +100,9 @@ def explore(
         Source frame, read without mutation. Automatic mode requires unique string
         columns; explicit mode also supports integer and recursively tuple labels.
     dimensions : iterable of column labels or None, optional
-        Default None runs automatic discovery and returns InvestigationResult.
+        Default None runs automatic discovery and returns Result.
         An explicit nonempty ordered collection composes levels, census, optional
-        grain, and pairs and returns ExplorerResult.
+        grain, and pairs and returns Result.
     discovery : DiscoveryOptions or ExplicitDiscoveryOptions or None, optional
         Default None uses mode defaults. Automatic mode accepts path-search
         settings plus shared features/scope/missing/table_id, by, and entity
@@ -211,7 +212,7 @@ def explore(
 
     Returns
     -------
-    InvestigationResult or ExplorerResult
+    Result or Result
         Automatic mode returns kind 'overview', with linked findings, feature
         relationships, and independent section results. Overview findings are
         ranked as leads (f0 first), each with lead.score and lead.reason; section
@@ -442,12 +443,12 @@ class Recipe:
         json.dumps(self.to_dict(), allow_nan=False)
 
     @staticmethod
-    def operations() -> dict[str, Callable[..., ExplorerResult]]:
+    def operations() -> dict[str, Callable[..., Result]]:
         """Return the supported recipe operation registry.
 
         Returns
         -------
-        dict[str, Callable[..., ExplorerResult]]
+        dict[str, Callable[..., Result]]
             New mapping from persisted operation names to public callables. Editing
             this returned dictionary does not register or replace operations.
         """
@@ -470,7 +471,7 @@ class Recipe:
         self,
         df: pd.DataFrame,
         **overrides: Any,
-    ) -> ExplorerResult:
+    ) -> Result:
         """Apply saved parameters to a delivery, with explicit overrides.
 
         Parameters
@@ -487,9 +488,9 @@ class Recipe:
 
         Returns
         -------
-        ExplorerResult
+        Result
             Result of the named operation. Discovery operations return
-            InvestigationResult; paths returns PathResult. The concrete type depends
+            Result; paths returns Result. The concrete type depends
             on the recipe's runtime operation and, for explore, its dimensions.
 
         Raises
@@ -576,20 +577,20 @@ class Recipe:
         return cls(**json.loads(Path(path).read_text()))
 
 
-def compare(before: InvestigationResult, after: InvestigationResult) -> InvestigationResult:
+def compare(before: Result, after: Result) -> Result:
     """Compare populated fractions by feature across two availability results.
 
     Parameters
     ----------
-    before : InvestigationResult
+    before : Result
         Earlier missingness result. Features align by name, not position.
-    after : InvestigationResult
+    after : Result
         Later missingness result with compatible counting unit, entity keys, and
         aggregation. Source deliveries and scopes may differ.
 
     Returns
     -------
-    InvestigationResult
+    Result
         Kind 'comparison', with changes, findings, and both source identities,
         conventions, scopes, and analysis units. populated_fraction_delta is
         after minus before; absent features or empty denominators yield None.

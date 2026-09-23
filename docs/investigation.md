@@ -118,7 +118,7 @@ uses entity availability alongside row-based path and dependency evidence.
 import json
 
 saved = json.loads(json.dumps(availability.to_dict(), allow_nan=False))
-restored = fw.InvestigationResult.from_dict(saved)
+restored = fw.Result.from_dict(saved)
 html = fw.render_html(restored)  # Works without a source dataframe.
 restored.select(df, signature["finding_id"])
 

@@ -9,8 +9,8 @@ from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any, Literal
 
+from ..result import Result
 from .render import _CONTROL
-from .result import ExplorerResult
 from .visual_data import visualization_data
 
 _COLORS = {
@@ -518,7 +518,7 @@ def _figure(data, view, exceptions):
 
 
 def render_svg(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",
@@ -718,7 +718,7 @@ def _tree_html(data):
 
 
 def render_html(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",

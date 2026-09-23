@@ -14,10 +14,8 @@ import pandas as pd
 
 from ._explore import census
 from ._explore._kernels import group_ids, modal_groups, pair_groups
-from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
-    InvestigationResult,
     Scope,
     analyzable,
     columns,
@@ -27,76 +25,8 @@ from .evidence import (
     prepare,
     saved_context,
 )
+from .result import Result
 from .typing import Runtime, SchemaRole
-
-
-class PathResult(InvestigationResult):
-    """A discovery result containing ranked, source-bound census recommendations.
-
-    Parameters
-    ----------
-    kind : str
-        'paths' for results returned by suggest_paths.
-    payload : dict, optional
-        Path evidence; normally supplied by suggest_paths or from_dict.
-    schema_version : str, optional
-        Producers/loaders use discovery '1.0'; the inherited raw constructor
-        defaults to foundation '0.3'. Prefer the producer/loader.
-
-    Attributes
-    ----------
-    best : Path or None
-        First ranked path, or None if none is available.
-    payload : dict[str, Any]
-        Paths with dimensions, measurements, reasons, and previews, plus aliases,
-        nesting and search coverage. Also includes common investigation evidence.
-
-    Notes
-    -----
-    Inherits the mapping, serialization, inspection, and selection methods of
-    InvestigationResult. Path rankings concern observed prefixes, not guarantees
-    about the data's true schema. JSON restoration retains context-aware handoff.
-
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> import fieldwork as fw
-    >>> paths = fw.suggest_paths(pd.DataFrame({'x': [1, 2]}))
-    >>> paths.best.dimensions
-    ('x',)
-    """
-
-    @property
-    def best(self) -> Path | None:
-        """Return the highest-ranked path, when one is available.
-
-        Returns
-        -------
-        Path or None
-            Source-bound first recommendation, or None for an empty path list.
-        """
-        return self.path(0) if self.payload["paths"] else None
-
-    def path(self, index: int = 0) -> Path:
-        """Return a ranked recommendation with its original analysis context.
-
-        Parameters
-        ----------
-        index : int, optional
-            Zero-based path position; default 0. Negative positions follow Python list
-            indexing. This indexes paths, not the findings list.
-
-        Returns
-        -------
-        Path
-            Recommended dimensions plus saved source, scope, and missing conventions.
-
-        Raises
-        ------
-        IndexError
-            The requested path does not exist.
-        """
-        return Path(self.payload["paths"][index]["dimensions"], self.payload)
 
 
 class Path:
@@ -108,7 +38,7 @@ class Path:
         Recommended ordered columns, normalized to a tuple.
     context : mapping
         Saved path-result payload containing source, scope, and missing
-        conventions. Obtain Path from PathResult.best or PathResult.path instead
+        conventions. Obtain Path from Result.best or Result.path instead
         of assembling this context manually.
 
     Attributes
@@ -147,7 +77,7 @@ class Path:
         dropna: bool = False,
         schema: dict[str, SchemaRole] | None = None,
         **runtime: Unpack[Runtime],
-    ) -> ExplorerResult:
+    ) -> Result:
         """Evaluate this recommendation with its original scope and missing conventions.
 
         Parameters
@@ -189,7 +119,7 @@ class Path:
 
         Returns
         -------
-        ExplorerResult
+        Result
             Census for the recommended ordered dimensions with original-source scope
             accounting. Display/cohort options use ordinary census defaults.
 
@@ -250,7 +180,7 @@ def suggest_paths(
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
     **runtime: Unpack[Runtime],
-) -> PathResult:
+) -> Result:
     """Recommend ordered census dimensions from observed prefix evidence.
 
     Parameters
@@ -314,7 +244,7 @@ def suggest_paths(
 
     Returns
     -------
-    PathResult
+    Result
         Kind 'paths', with ranked paths, measurements, explanations, aliases,
         nesting, and coverage. best is None when no nonempty path is available.
 
@@ -630,7 +560,7 @@ def suggest_paths(
         "n_paths": n_paths,
         "display_budget": display_budget,
     }
-    return PathResult("paths", base, schema_version="1.0")
+    return Result("paths", base)
 
 
 def path_reasons(path, metrics, edges, aliases, target):

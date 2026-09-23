@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 
 from fieldwork import (
-    ExplorerResult,
     KeySpec,
+    Result,
     census,
     explore,
     grain,
@@ -129,7 +129,7 @@ def test_interactive_display_is_bounded_safe_and_does_not_serialize(monkeypatch)
         raise AssertionError("Interactive display must not serialize the entire result")
 
     full = render_plaintext(result, max_lines=10_000)
-    monkeypatch.setattr(ExplorerResult, "to_dict", forbidden)
+    monkeypatch.setattr(Result, "to_dict", forbidden)
     text = repr(result)
     assert str(result) == text
     assert "finding" in text and "feature_id" not in text
@@ -147,7 +147,7 @@ def test_interactive_display_is_bounded_safe_and_does_not_serialize(monkeypatch)
     result._repr_pretty_(printer, False)
     assert printer.value == text
     result._repr_pretty_(printer, True)
-    assert printer.value == "ExplorerResult(...)"
+    assert printer.value == "Result(...)"
 
 
 @pytest.mark.parametrize("detail", ["full", "topology"])

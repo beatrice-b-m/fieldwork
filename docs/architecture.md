@@ -27,13 +27,13 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 
 | Module | Responsibility |
 | --- | --- |
-| `_explore/encoding.py`, `_kernels.py` | Canonical scalar identity and counting |
+| `_explore/encoding.py`, `_kernels.py` | Column labels, native value codes, exported JSON values, counting kernels |
 | `_explore/census.py` | Independent levels, bounded ordered observed prefixes |
 | `_explore/grain.py`, `grain_graph.py` | Exact FDs, scope compatibility, equivalence, DAG |
 | `_explore/relations.py`, `roles.py` | Pair contexts/absence, joint counts, schema suggestions |
-| `_explore/result.py` | Foundation result model |
 | `_explore/visual_data.py`, `render.py`, `graphics.py` | Foundation projections and renderers |
-| `evidence.py`, `_selection.py` | Discovery results, scopes, fingerprints, targeted source selection |
+| `result.py` | The `Result` model shared by every analysis: export, sections, inspection, selection, recomputation |
+| `evidence.py`, `_selection.py` | Scopes, fingerprints, source preparation, findings, targeted source selection |
 | `_runtime.py`, `progress.py` | Call-scoped reuse, progress events/display, cancellation |
 | `availability.py` | Presence signatures, families, implications, entity summaries |
 | `discovery.py` | Supplied search bounds, exact/approximate/conditional FDs |

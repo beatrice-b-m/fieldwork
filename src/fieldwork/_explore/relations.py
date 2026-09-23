@@ -49,7 +49,7 @@ def _predicates(context: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [{"column": c, "value": json_value(context[c])} for c in sorted(context)]
 
 
-from .result import ExplorerResult
+from ..result import Result
 
 
 def _relation(pair_counts: Counter[tuple[Key, Key]]) -> str | None:
@@ -121,7 +121,7 @@ def pairs(
     max_pairs: int | None = 15,
     scope_metadata: dict[str, Any] | None = None,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Measure sparse pair mappings, association, and optional absence.
 
     Parameters
@@ -163,7 +163,7 @@ def pairs(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'pairs', with per-pair/context scopes, mapping and association
         measurements, optional absence summaries, and omission coverage.
 
@@ -367,7 +367,7 @@ def pairs(
                     "examples_omitted": total_absent - len(examples),
                 }
             records.append(record)
-    return ExplorerResult(
+    return Result(
         "pairs",
         {
             "status": "computed" if records else "empty",
@@ -398,7 +398,7 @@ def joint_counts(
     dropna: bool = False,
     max_cells: int = 2500,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Count observed cells for one selected pair and optional context.
 
     Parameters
@@ -425,7 +425,7 @@ def joint_counts(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'joint_counts', with axis dictionaries a and b, observed cells,
         context, and a population scope. Cells index the axis dictionaries.
 
@@ -498,7 +498,7 @@ def joint_counts(
     ]
     cells.sort(key=lambda c: (c["a"], c["b"]))
     evaluated = int(mask.sum())
-    return ExplorerResult(
+    return Result(
         "joint_counts",
         {
             "status": "computed" if evaluated else "empty",

@@ -16,7 +16,6 @@ from ._explore.encoding import MissingCode, cell
 from ._explore.grain import _grain
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
-    InvestigationResult,
     Scope,
     analyzable,
     bounded_rows,
@@ -29,6 +28,7 @@ from .evidence import (
     result,
     selection,
 )
+from .result import Result
 from .typing import Runtime
 
 
@@ -51,7 +51,7 @@ def discover_dependencies(
     max_grain_views: int | None = None,
     max_dependency_tests: int | None = None,
     **runtime: Unpack[Runtime],
-) -> InvestigationResult:
+) -> Result:
     """Find observed exact and approximate dependencies over bounded candidates.
 
     Parameters
@@ -112,7 +112,7 @@ def discover_dependencies(
 
     Returns
     -------
-    InvestigationResult
+    Result
         Kind 'dependencies', with candidates, dependencies, conditional evidence,
         grain views, findings, and coverage recording omitted tests/views. The
         dependencies table retains every completed test, including those below

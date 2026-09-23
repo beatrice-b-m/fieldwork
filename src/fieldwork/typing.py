@@ -3,9 +3,8 @@
 These TypedDict classes describe ordinary dictionaries; they do not validate or
 fill defaults at runtime. All keys are optional. Function defaults apply when a
 key is omitted. Import these types from ``fieldwork.typing`` when annotating a
-configuration assembled separately from its call. Result payloads remain
-versioned JSON-compatible mappings; see ``ExplorerResult`` and
-``InvestigationResult`` for their section and serialization contracts.
+configuration assembled separately from its call. Result payloads are
+versioned JSON-compatible mappings; see ``Result`` for their contract.
 """
 
 from __future__ import annotations

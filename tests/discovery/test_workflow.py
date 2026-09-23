@@ -70,7 +70,7 @@ def test_sentinels_scope_and_signatures(frame):
         scope.refine(frame, [1])
     with pytest.raises(ValueError):
         fw.Scope.from_positions(frame, [-1])
-    loaded = fw.InvestigationResult.from_dict(json.loads(json.dumps(r.to_dict(), allow_nan=False)))
+    loaded = fw.Result.from_dict(json.loads(json.dumps(r.to_dict(), allow_nan=False)))
     assert loaded.inspect(frame, 0).equals(frame.iloc[[0]])
 
 
@@ -163,7 +163,7 @@ def test_nesting_and_constraints(frame):
 def test_saved_results_restore_and_tabulate(frame, operation):
     r = operation(frame)
     saved = json.loads(json.dumps(r.to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(saved)
+    restored = fw.Result.from_dict(saved)
     assert restored.to_dict() == saved
     assert not r.to_frame().empty
     assert restored.to_frame().equals(r.to_frame())
@@ -292,7 +292,7 @@ def test_availability_matches_boolean_oracle():
 def test_saved_recomputation_restores_scope_and_sentinels(frame):
     scope = fw.Scope.from_positions(frame, [0, 2, 5])
     r = fw.missingness(frame, features=["a"], scope=scope, missing={"a": [5]}, example_limit=0)
-    restored = fw.InvestigationResult.from_dict(json.loads(json.dumps(r.to_dict())))
+    restored = fw.Result.from_dict(json.loads(json.dumps(r.to_dict())))
     replay = restored.recompute(frame, example_limit=len(frame))
     assert replay["availability"] == r["availability"]
     assert replay.inspect(frame, 0, exceptions=True).equals(frame.iloc[[2, 5]])
@@ -332,7 +332,7 @@ def test_saved_comparison_preserves_both_scopes_and_units(unit):
     before = fw.missingness(df, scope=before_scope, **config)
     after = fw.missingness(df, scope=after_scope, **config)
     saved = json.loads(json.dumps(fw.compare(before, after).to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(saved)
+    restored = fw.Result.from_dict(saved)
     assert saved["before_source"] == saved["after_source"]
     for side, analysis in (("before", before), ("after", after)):
         assert restored[f"{side}_scope"] == analysis["scope"]
@@ -515,5 +515,5 @@ def test_saved_timestamp_sentinel_reapplies_after_json_round_trip():
     df = pd.DataFrame({"when": pd.to_datetime(["2020-01-01", "1900-01-01", "2020-01-02"])})
     result = fw.missingness(df, missing={"when": [pd.Timestamp("1900-01-01")]})
     assert result["availability"][0]["missing"] == 1
-    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(result.to_dict())))
+    saved = fw.Result.from_dict(json.loads(json.dumps(result.to_dict())))
     assert saved.recompute(df)["availability"] == result["availability"]

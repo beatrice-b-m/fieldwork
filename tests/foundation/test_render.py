@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from fieldwork import (
-    ExplorerResult,
+    Result,
     census,
     explore,
     infer_schema,
@@ -131,7 +131,7 @@ def test_unicode_is_displayed_by_default_within_cell_width(
 
 
 def test_render_does_not_require_result_serialization() -> None:
-    class NoSerialization(ExplorerResult):
+    class NoSerialization(Result):
         def to_dict(self):
             raise AssertionError("renderer must consume payload directly")
 

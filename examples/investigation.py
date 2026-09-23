@@ -116,7 +116,7 @@ def investigate():
     assert image_change["after"]["populated"] == 4
     # Results retain evidence for this source; recipes retain reusable settings.
     saved = json.loads(json.dumps(availability.to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(saved)
+    restored = fw.Result.from_dict(saved)
     assert restored.select(df, edge["id"], exceptions=True).positions == (8,)
     assert "Inspect findings" in fw.render_html(restored)
     return df, availability, exceptions, paths, tree

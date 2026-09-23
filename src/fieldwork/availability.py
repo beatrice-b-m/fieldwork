@@ -16,7 +16,6 @@ from ._explore.encoding import cell
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
     EvidenceRows,
-    InvestigationResult,
     Scope,
     analyzable,
     columns,
@@ -26,6 +25,7 @@ from .evidence import (
     prepare,
     result,
 )
+from .result import Result
 from .typing import Runtime
 
 
@@ -69,7 +69,7 @@ def missingness(
     max_contexts: int = 32,
     example_limit: int = 5,
     **runtime: Unpack[Runtime],
-) -> InvestigationResult:
+) -> Result:
     """Measure availability, co-presence, and patterns of absence.
 
     Parameters
@@ -129,7 +129,7 @@ def missingness(
 
     Returns
     -------
-    InvestigationResult
+    Result
         Kind 'missingness', with availability, signatures, families, contexts,
         entity summaries, findings, analysis_unit, and search coverage. Fractions
         name their denominators; empty denominators have undefined fractions.

@@ -1,7 +1,7 @@
 # Inline API documentation and editor support
 
 The supported Python surface is `fieldwork.__all__`, public members of those
-objects, the `Path` returned by `PathResult`, and the types exported from
+objects, the `Path` returned by `Result.best`/`Result.path`, and the types exported from
 `fieldwork.typing`. Underscore modules and other unexported implementation helpers
 are private. Source docstrings are the reference shown by editors and `help()`;
 web documentation supplements them.
@@ -49,8 +49,8 @@ validation inside the method. `grain` exposes only public options; encodings and
 cache objects are passed through its private implementation.
 
 `explore` has two statically declared overloads. Omitted/None dimensions select
-automatic discovery and an `InvestigationResult`; explicit dimensions select
-foundation composition and an `ExplorerResult`. The runtime implementation keeps
+automatic discovery; explicit dimensions select foundation composition. Both
+return a `Result`. The runtime implementation keeps
 its forwarding dictionary so that existing duplicate-setting and override rules
 remain intact. Both overloads spell out keyword arguments because not every editor
 expands `Unpack[TypedDict]` into completion suggestions. Editors may display both

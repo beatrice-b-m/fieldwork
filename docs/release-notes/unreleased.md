@@ -54,3 +54,14 @@ public API without migration shims.
   statements no longer append the value type.
 - Saved sentinels are stored and reapplied as exported values; a timestamp
   sentinel saved as ISO text still matches the timestamps it named.
+
+## One result model
+
+- Every analysis returns `fieldwork.Result`, exported as schema `2.0`.
+  `ExplorerResult`, `InvestigationResult` and `PathResult` are removed; saved
+  schema 0.3 and 1.0 results no longer load. `inspect`, `select`, `recompute`,
+  `to_frame` and `relationships` are available on every result; `best` and
+  `path(index)` work on paths results and on overviews (through their paths
+  section). The new `section(name)` returns one part of an overview as a
+  `Result`, replacing `Result.from_dict(overview["sections"][name])`.
+- `KeySpec` now lives with `grain`; import it as `fieldwork.KeySpec` as before.

@@ -9,8 +9,8 @@ from collections.abc import Callable, Iterator, Mapping
 from functools import cache
 from typing import Any, Literal
 
+from ..result import Result
 from .encoding import display, json_order, validate_limit
-from .result import ExplorerResult
 
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]")
 
@@ -367,7 +367,7 @@ def _section_lines(
 
 
 def render_plaintext(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     width: int = 100,
     max_lines: int = 200,
@@ -397,7 +397,7 @@ def render_plaintext(
     _safe("", unicode_mode)  # Validate even when the line budget is one.
     if detail not in {"full", "topology"}:
         raise ValueError("detail must be 'full' or 'topology'")
-    if isinstance(result, ExplorerResult):
+    if isinstance(result, Result):
         data, kind, version = result.payload, result.kind, result.schema_version
     else:
         data, kind, version = result, result.get("kind", "?"), result.get("schema_version", "?")

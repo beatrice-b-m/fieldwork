@@ -9,10 +9,11 @@ from typing import Any, Literal, Unpack
 import pandas as pd
 
 from .._runtime import operation, phase
+from ..result import Result
 from ..typing import Runtime, SchemaRole
 from .census import _source
 from .encoding import encode_column, labelled
-from .result import ExplorerResult, KeySpec
+from .grain import KeySpec
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ class SchemaProposal:
     Notes
     -----
     The record is shallowly frozen; nested evidence remains mutable. infer_schema
-    returns an ExplorerResult with serialized proposals, not live instances.
+    returns an Result with serialized proposals, not live instances.
     Suggestions do not modify source values or automatically configure analyses.
     """
 
@@ -77,7 +78,7 @@ def infer_schema(
     df: pd.DataFrame,
     candidate_keys: Iterable[str | KeySpec] | None = None,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Suggest reviewable column roles without changing analysis settings.
 
     Parameters
@@ -95,7 +96,7 @@ def infer_schema(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'schema_proposal', with serialized SchemaProposal records, suggested
         dimensions/keys, source metadata, and warnings. The result is a mapping,
         not a list of SchemaProposal instances.
@@ -180,7 +181,7 @@ def infer_schema(
             )
             for proposal in proposals
         ]
-    return ExplorerResult(
+    return Result(
         "schema_proposal",
         {
             "status": "empty" if rows == 0 else "computed",

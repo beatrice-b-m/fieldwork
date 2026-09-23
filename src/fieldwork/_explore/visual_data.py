@@ -6,9 +6,9 @@ from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any, Literal
 
+from ..result import Result
 from .encoding import display, json_order
 from .render import _CONTROL
-from .result import ExplorerResult
 
 
 def label(value: Any, *, column: bool = False) -> str:
@@ -28,7 +28,7 @@ def _scope(scope: Mapping, full: bool) -> str:
 
 
 def visualization_data(
-    result: ExplorerResult | Mapping[str, Any],
+    result: Result | Mapping[str, Any],
     *,
     section: str | None = None,
     detail: Literal["full", "topology"] = "full",
@@ -40,7 +40,7 @@ def visualization_data(
     """
     if detail not in {"full", "topology"}:
         raise ValueError("detail must be 'full' or 'topology'")
-    data = result.to_dict() if isinstance(result, ExplorerResult) else result
+    data = result.to_dict() if isinstance(result, Result) else result
     if data.get("kind") == "explore":
         section = section or "grain"
         if section not in data["sections"]:

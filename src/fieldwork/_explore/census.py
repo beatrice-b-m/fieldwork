@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
+from ..result import Result
 from ..typing import Runtime, SchemaRole
 from .encoding import (
     encode_column,
@@ -26,7 +27,6 @@ from .encoding import (
     validate_schema,
     value_key,
 )
-from .result import ExplorerResult
 
 
 def _source(df: pd.DataFrame) -> dict[str, Any]:
@@ -124,7 +124,7 @@ def levels(
     schema: dict[str, SchemaRole] | None = None,
     scope_metadata: dict[str, Any] | None = None,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Count observed values independently for each requested column.
 
     Parameters
@@ -158,7 +158,7 @@ def levels(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'levels', with features, feature/level dictionaries, per-feature
         scopes, omitted mass, and warnings. Ranking uses count then typed value
         order for deterministic ties.
@@ -259,7 +259,7 @@ def levels(
     }
     if scope_metadata:
         payload["scope_metadata"] = scope_metadata
-    return ExplorerResult("levels", payload)
+    return Result("levels", payload)
 
 
 def _preselect(
@@ -330,7 +330,7 @@ def _census(
     dropna: bool = False,
     schema: dict[str, SchemaRole] | None = None,
     _encoded=None,
-) -> ExplorerResult:
+) -> Result:
     """Build a deterministic, ancestor-closed observed-prefix census."""
 
     df = labelled(df)
@@ -544,7 +544,7 @@ def _census(
         },
         "warnings": warnings,
     }
-    return ExplorerResult("census", payload)
+    return Result("census", payload)
 
 
 @operation("census")
@@ -566,7 +566,7 @@ def census(
     dropna: bool = False,
     schema: dict[str, SchemaRole] | None = None,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Build a bounded tree of observed dimension prefixes.
 
     Parameters
@@ -622,7 +622,7 @@ def census(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'census', with tree nodes, feature and level dictionaries, scopes,
         and warnings. Nodes record parent/total shares, omitted child mass, and
         stop reasons. No unobserved Cartesian branches are invented.

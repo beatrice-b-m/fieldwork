@@ -142,12 +142,12 @@ def test_direct_selection_matches_complete_analysis_without_replay(kind, monkeyp
     else:
         analysis = fw.value_patterns(frame, by=["context"], example_limit=len(frame), **context)
     expected = analysis["findings"]
-    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(analysis.to_dict())))
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict())))
 
     def no_replay(*args, **kwargs):
         pytest.fail("selection replayed the entire analysis")
 
-    monkeypatch.setattr(fw.InvestigationResult, "recompute", no_replay)
+    monkeypatch.setattr(fw.Result, "recompute", no_replay)
     for record in expected:
         for exceptions in (False, True):
             positions = record["exceptions" if exceptions else "examples"]["positions"]
@@ -160,13 +160,13 @@ def test_saved_export_roundtrip_supports_selection():
     frame = pd.concat([fixture()] * 30, ignore_index=True)
     analysis = fw.explore(frame)
     ordinary = json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(ordinary)
+    restored = fw.Result.from_dict(ordinary)
     assert restored.to_dict() == ordinary
     record = next(f for f in analysis["findings"] if f["pattern"] == "availability")
     assert restored.select(frame, record["id"]) == analysis.select(frame, record["id"])
     foundation = fw.grain(frame, ["key"])
     saved = json.loads(json.dumps(foundation.to_dict(), allow_nan=False))
-    assert fw.ExplorerResult.from_dict(saved).to_dict() == foundation.to_dict()
+    assert fw.Result.from_dict(saved).to_dict() == foundation.to_dict()
 
 
 def test_grain_view_populations_store_bounded_examples():

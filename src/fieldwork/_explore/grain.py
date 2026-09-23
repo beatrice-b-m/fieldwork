@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
+from ..result import Result
 from ..typing import Runtime
 from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
@@ -21,7 +23,57 @@ from .encoding import (
     resolve_columns,
 )
 from .grain_graph import build_grain_graph
-from .result import ExplorerResult, KeySpec
+
+
+@dataclass(frozen=True)
+class KeySpec:
+    """Declare an explicitly named single-column or composite determinant.
+
+    Parameters
+    ----------
+    name : str
+        Nonempty unique name within one candidate collection.
+    columns : tuple of column labels
+        Nonempty determinant columns, normalized to a tuple. Supported labels
+        are strings, non-boolean integers, or recursively nested tuples.
+
+    Attributes
+    ----------
+    name : str
+        Candidate identifier used in evidence.
+    columns : tuple of column labels
+        Ordered determinant components; the record is frozen.
+
+    Raises
+    ------
+    ValueError
+        The name or columns are empty. Analysis also rejects repeated or unknown
+        components and duplicate candidate names.
+
+    Notes
+    -----
+    A bare tuple passed as a grain candidate names one tuple-labeled column.
+    Use KeySpec to make composite intent explicit. This Python object cannot be
+    persisted directly in a Recipe's strict JSON parameters.
+
+    Examples
+    --------
+    >>> import fieldwork as fw
+    >>> key = fw.KeySpec('visit', ('site', 'participant', 'visit_number'))
+    >>> key.name
+    'visit'
+    """
+
+    name: str
+    columns: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name:
+            raise ValueError("KeySpec.name must be a non-empty string")
+        columns = tuple(self.columns)
+        if not columns:
+            raise ValueError("KeySpec.columns must not be empty")
+        object.__setattr__(self, "columns", columns)
 
 
 def _key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec, ...]:
@@ -125,7 +177,7 @@ def _grain(
     scope_metadata: Mapping[str, Any] | None = None,
     _encoded=None,
     _cache=None,
-) -> ExplorerResult:
+) -> Result:
     """Evaluate exact observed FDs for explicit determinant candidates."""
 
     df = labelled(df)
@@ -260,7 +312,7 @@ def _grain(
         "warnings": [],
         "scope_metadata": scope_metadata,
     }
-    return ExplorerResult("grain", payload)
+    return Result("grain", payload)
 
 
 def _record_on(
@@ -303,7 +355,7 @@ def grain(
     dropna: bool = False,
     scope_metadata: Mapping[str, Any] | None = None,
     **runtime: Unpack[Runtime],
-) -> ExplorerResult:
+) -> Result:
     """Evaluate exact observed dependencies for explicitly supplied keys.
 
     Parameters
@@ -328,7 +380,7 @@ def grain(
 
     Returns
     -------
-    ExplorerResult
+    Result
         Kind 'grain', with explicit keys, dependency evidence, target placements,
         scopes, and a graph over compatible candidate populations. Graph aliases
         indicate equivalent observed partitions.

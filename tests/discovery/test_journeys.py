@@ -13,7 +13,7 @@ def test_recommendation_census_preserves_context_and_original_population():
     df = pd.DataFrame({"site": ["A", "A", "B", "B"], "value": [1, -999, 2, 3]}, index=[0] * 4)
     scope = fw.Scope.from_positions(df, [0, 1, 2], name="selected")
     paths = fw.suggest_paths(df, scope=scope, missing={"value": [-999]}, start_with=["value"])
-    paths = fw.InvestigationResult.from_dict(json.loads(json.dumps(paths.to_dict())))
+    paths = fw.Result.from_dict(json.loads(json.dumps(paths.to_dict())))
     tree = paths.best.census(df, dropna=True)
     assert tree["source"]["rows"] == 4
     assert tree["scopes"][0]["input_rows"] == 4
@@ -132,7 +132,7 @@ def test_signature_to_complete_scope_and_saved_overview_inspection():
     analysis = fw.missingness(df, example_limit=1)
     signature = next(s for s in analysis["signatures"] if s["present"] == ["a"])
     assert len(analysis.inspect(df, signature["finding_id"])) == 1
-    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(analysis.to_dict())))
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict())))
     scope = saved.select(df, signature["finding_id"], name="a only")
     assert scope.positions == (0, 1, 2)
     assert scope.parent == "input"
@@ -305,9 +305,7 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
         {"site": ["A", "A", "B"], "e": [1, 1, None], "x": [1, None, 2]}, index=[0] * 3
     )
     analysis = fw.missingness(df, by=["site"], entity="e", features=["x"], example_limit=0)
-    saved = fw.InvestigationResult.from_dict(
-        json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
-    )
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict(), allow_nan=False)))
     context_id = saved["contexts"][0]["finding_id"]
     assert saved.select(df, context_id).positions == (0, 1)
     entity = next(f for f in saved["findings"] if f["pattern"] == "entity_summary")
@@ -357,10 +355,10 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
 
 def test_dependency_support_survives_overview_network_and_graph_handoffs():
     df = pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None], "Z": range(4)})
-    overview = fw.InvestigationResult.from_dict(
+    overview = fw.Result.from_dict(
         json.loads(json.dumps(fw.explore(df).to_dict(), allow_nan=False))
     )
-    dependencies = fw.InvestigationResult.from_dict(overview["sections"]["dependencies"])
+    dependencies = fw.Result.from_dict(overview["sections"]["dependencies"])
     records = {(tuple(d["determinant"]), d["target"]): d for d in dependencies["dependencies"]}
     assert records[(("X",), "Y")]["exact"]
     assert records[(("Y",), "Z")]["exact"]

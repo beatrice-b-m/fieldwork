@@ -18,7 +18,6 @@ unexported implementation helpers are private.
 """
 
 from ._explore import (
-    ExplorerResult,
     KeySpec,
     SchemaProposal,
     census,
@@ -26,28 +25,27 @@ from ._explore import (
     infer_schema,
     joint_counts,
     levels,
+    pairs,
 )
-from ._explore.relations import pairs
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import InvestigationResult, Scope
-from .navigation import PathResult, suggest_paths
+from .evidence import Scope
+from .navigation import suggest_paths
 from .patterns import value_patterns
 from .presentation import render_html, render_plaintext, render_svg, visualization_data
 from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
+from .result import Result
 from .workflow import Recipe, compare, explore
 
 __version__ = "0.2.1"
 __all__ = [
     "AnalysisCancelled",
     "CancellationToken",
-    "ExplorerResult",
-    "InvestigationResult",
     "KeySpec",
-    "PathResult",
     "ProgressDisplay",
     "ProgressEvent",
     "Recipe",
+    "Result",
     "SchemaProposal",
     "Scope",
     "census",
