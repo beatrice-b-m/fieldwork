@@ -46,6 +46,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["tests"]
+markers = ["slow: realistic-scale smoke tests; deselect locally with -m 'not slow'"]
 
 [tool.ruff]
 target-version = "py311"
