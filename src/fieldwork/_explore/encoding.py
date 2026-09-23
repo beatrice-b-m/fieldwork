@@ -226,6 +226,21 @@ def resolve_columns(
     return tuple(available[token] for token in tokens)
 
 
+def encode_column(df: pd.DataFrame, column: Any) -> tuple[list[ScalarIdentity], np.ndarray]:
+    """Encode one column once per analysis call, however many components need it."""
+    from .._runtime import current_session
+
+    session = current_session()
+    key = (id(df), column)
+    cached = session.encodings.get(key) if session else None
+    if cached is not None and cached[0] is df:
+        return cached[1], cached[2]
+    values, codes = encode_series(df[column])
+    if session:
+        session.remember_encoding(key, (df, values, codes))
+    return values, codes
+
+
 def encode_series(series: pd.Series) -> tuple[list[ScalarIdentity], np.ndarray]:
     """Encode a series with deterministic dictionary ordering."""
 

@@ -17,7 +17,7 @@ from ._kernels import exact_pair_ids
 from .census import _scope, _source
 from .encoding import (
     ScalarIdentity,
-    encode_series,
+    encode_column,
     missing_code,
     normalize_scalar,
     resolve_columns,
@@ -193,7 +193,7 @@ def pairs(
     if context_columns:
         context_columns = resolve_columns(df, context_columns, argument="pair_contexts")
     encoded = {
-        column: encode_series(df[column]) for column in dict.fromkeys((*selected, *context_columns))
+        column: encode_column(df, column) for column in dict.fromkeys((*selected, *context_columns))
     }
     records: list[dict[str, Any]] = []
     examples_remaining = max_absence_cells
@@ -477,7 +477,7 @@ def joint_counts(
     context_columns = resolve_columns(df, context, argument="context") if context else ()
     if set(context_columns) & set(selected):
         raise ValueError("context columns must be disjoint from the analyzed pair")
-    encoded = {c: encode_series(df[c]) for c in (*selected, *context_columns)}
+    encoded = {c: encode_column(df, c) for c in (*selected, *context_columns)}
     mask = np.ones(len(df), dtype=bool)
     if dropna:
         for values, codes in encoded.values():

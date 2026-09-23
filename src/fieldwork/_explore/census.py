@@ -20,7 +20,7 @@ from ._kernels import dense_counts
 from .encoding import (
     MISSING,
     ScalarIdentity,
-    encode_series,
+    encode_column,
     missing_code,
     normalize_scalar,
     resolve_columns,
@@ -78,18 +78,32 @@ def _rank_counts(counts: dict[int, int], values: list[ScalarIdentity]) -> list[t
     return sorted(counts.items(), key=lambda item: (-item[1], values[item[0]].sort_key()))
 
 
-def _mixed_warning(
-    feature_id: str, column: Any, values: Iterable[ScalarIdentity]
-) -> dict[str, Any] | None:
+def _feature_warnings(
+    feature_id: str, column: Any, values: Iterable[ScalarIdentity], role: str | None
+) -> list[dict[str, Any]]:
+    """Mixed value types, and advisory roles unsuited to categorical counting."""
+    warnings = []
+    label = normalize_scalar(column, label=True).to_dict()
     families = sorted({value.kind for value in values if value is not MISSING})
     if len(families) > 1:
-        return {
-            "code": "MIXED_LEVEL_TYPES",
-            "feature_id": feature_id,
-            "column": normalize_scalar(column, label=True).to_dict(),
-            "families": families,
-        }
-    return None
+        warnings.append(
+            {
+                "code": "MIXED_LEVEL_TYPES",
+                "feature_id": feature_id,
+                "column": label,
+                "families": families,
+            }
+        )
+    if role in {"id", "continuous"}:
+        warnings.append(
+            {
+                "code": "EXPLICIT_ROLE_SELECTION",
+                "feature_id": feature_id,
+                "column": label,
+                "role": role,
+            }
+        )
+    return warnings
 
 
 @operation("levels")
@@ -180,7 +194,7 @@ def levels(
     with phase("level counts", len(selected), "columns") as tracker:
         for position, column in enumerate(selected):
             feature_id = f"f{position}"
-            values, codes = encode_series(df[column])
+            values, codes = encode_column(df, column)
             absent_code = missing_code(values)
             eligible = np.arange(len(df), dtype=np.int64)
             missing_excluded = 0
@@ -223,19 +237,7 @@ def levels(
                     "levels": output_levels,
                 }
             )
-            warning = _mixed_warning(feature_id, column, values)
-            if warning:
-                warnings.append(warning)
-            role = (schema or {}).get(column)
-            if role in {"id", "continuous"}:
-                warnings.append(
-                    {
-                        "code": "EXPLICIT_ROLE_SELECTION",
-                        "feature_id": feature_id,
-                        "column": normalize_scalar(column, label=True).to_dict(),
-                        "role": role,
-                    }
-                )
+            warnings += _feature_warnings(feature_id, column, values, (schema or {}).get(column))
             tracker.advance(detail=str(column))
     payload: dict[str, Any] = {
         "status": "empty" if len(df) == 0 else "computed",
@@ -255,7 +257,33 @@ def levels(
     return ExplorerResult("levels", payload)
 
 
-def _pre_mask_per_parent(
+def _preselect(
+    codes: list[np.ndarray],
+    values: list[list[ScalarIdentity]],
+    eligible: np.ndarray,
+    top_n: int,
+    per_parent: bool,
+) -> tuple[np.ndarray, list[dict[str, Any]]]:
+    """Rows keeping only the top_n levels of every dimension, and the kept levels.
+
+    Globally, each dimension keeps its top_n levels over the eligible rows. Per
+    parent, each prefix keeps the top_n levels among its own rows.
+    """
+    if per_parent:
+        return _preselect_per_parent(codes, values, eligible, top_n)
+    mask = np.zeros(codes[0].shape[0] if codes else 0, dtype=bool)
+    mask[eligible] = True
+    retained = []
+    for depth, (dimension, dictionary) in enumerate(zip(codes, values)):
+        chosen = sorted(
+            code for code, _ in _rank_counts(dense_counts(dimension, eligible), dictionary)[:top_n]
+        )
+        retained.append({"depth": depth + 1, "level_codes": chosen})
+        mask &= np.isin(dimension, chosen)
+    return mask, retained
+
+
+def _preselect_per_parent(
     codes: list[np.ndarray],
     values: list[list[ScalarIdentity]],
     eligible: np.ndarray,
@@ -324,7 +352,7 @@ def _census(
     missing_codes: list[int | None] = []
     for column in active:
         checkpoint()
-        values, codes = _encoded[column] if _encoded is not None else encode_series(df[column])
+        values, codes = _encoded[column] if _encoded is not None else encode_column(df, column)
         dictionaries.append(values)
         code_arrays.append(codes)
         missing_codes.append(missing_code(values))
@@ -339,17 +367,9 @@ def _census(
     evaluated = eligible
     warnings: list[dict[str, Any]] = []
     if top_n_mode == "pre" and top_n is not None and len(eligible):
-        if top_n_per_parent:
-            final_mask, retained_metadata = _pre_mask_per_parent(
-                code_arrays, dictionaries, eligible, top_n
-            )
-        else:
-            final_mask = eligible_mask.copy()
-            for depth, (codes, values) in enumerate(zip(code_arrays, dictionaries)):
-                ranked = _rank_counts(dense_counts(codes, eligible), values)
-                chosen = {code for code, _ in ranked[:top_n]}
-                retained_metadata.append({"depth": depth + 1, "level_codes": sorted(chosen)})
-                final_mask &= np.isin(codes, list(chosen))
+        final_mask, retained_metadata = _preselect(
+            code_arrays, dictionaries, eligible, top_n, top_n_per_parent
+        )
         evaluated = np.flatnonzero(final_mask)
         if not len(evaluated):
             raise ValueError(
@@ -385,19 +405,9 @@ def _census(
         for index, column in enumerate(active)
     ]
     for index, values in enumerate(dictionaries):
-        warning = _mixed_warning(f"f{index}", active[index], values)
-        if warning:
-            warnings.append(warning)
-        role = (schema or {}).get(active[index])
-        if role in {"id", "continuous"}:
-            warnings.append(
-                {
-                    "code": "EXPLICIT_ROLE_SELECTION",
-                    "feature_id": f"f{index}",
-                    "column": normalize_scalar(active[index], label=True).to_dict(),
-                    "role": role,
-                }
-            )
+        warnings += _feature_warnings(
+            f"f{index}", active[index], values, (schema or {}).get(active[index])
+        )
     global_chosen: list[set[int] | None] = []
     for codes, values in zip(code_arrays, dictionaries):
         if top_n is not None and not top_n_per_parent and top_n_mode == "post":

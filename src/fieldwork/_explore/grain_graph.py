@@ -18,14 +18,12 @@ def build_grain_graph(
     df: pd.DataFrame,
     specs: tuple[KeySpec, ...],
     encoded: dict,
-    records: list[dict],
-    evaluated_sets: dict,
+    known: dict,
     *,
     dropna: bool,
     scope_metadata: dict | None,
 ) -> dict[str, Any]:
-    # Imported here to keep the public grain entry point independent of rendering.
-    from .grain import _fd_record
+    from .grain import _record_on
 
     components = {column for spec in specs for column in spec.columns}
     mask = np.ones(len(df), dtype=bool)
@@ -45,7 +43,6 @@ def build_grain_graph(
         bool(metadata.get("conditional")),
         parent_scope=metadata.get("scope"),
     )
-    lookup = {(r["key_name"], str(r["target"])): r for r in records}
     evidence = []
     truth = {}
     support = {}
@@ -74,20 +71,17 @@ def build_grain_graph(
                         "row_rate": 0.0 if mask.any() else None,
                     }
                     evaluated = mask
-                elif same_mask(evaluated_sets[(spec.name, target)], mask):
-                    record = dict(lookup[(spec.name, str(token))])
-                    evaluated = mask
                 else:
-                    record, evaluated = _fd_record(
+                    record, evaluated = _record_on(
                         df,
                         spec,
                         target,
+                        mask,
+                        known=known,
                         dropna=dropna,
-                        scope_prefix=scope_id,
                         encoded=encoded,
-                        row_mask=mask,
+                        scope_prefix=scope_id,
                     )
-                    record.pop("scope")
                 compatible = same_mask(evaluated, mask)
                 record["scope_id"] = (
                     scope_id if compatible else f"{scope_id}:target:{len(evidence)}"

@@ -15,7 +15,7 @@ from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
 from .encoding import (
     MissingCode,
-    encode_series,
+    encode_column,
     missing_code,
     normalize_scalar,
     resolve_columns,
@@ -142,12 +142,12 @@ def _grain(
         encoded = {}
         with phase("grain encoding", len(df.columns), "columns") as tracker:
             for column in df.columns:
-                values, codes = encode_series(df[column])
+                values, codes = encode_column(df, column)
                 encoded[column] = (MissingCode(missing_code(values)), codes)
                 tracker.advance(detail=str(column))
     encoded = EncodedColumns(encoded, _cache)
     pool = MaskPool()
-    evaluated_sets = {}
+    known = {}
     with phase(
         "exact dependencies", sum(len(df.columns) - len(s.columns) for s in specs), "tests"
     ) as tracker:
@@ -177,40 +177,31 @@ def _grain(
                         parent_scope=(scope_metadata or {}).get("scope"),
                     )
                 )
-                evaluated_sets[(spec.name, target)] = pool.intern(evaluated)
+                known[(spec.name, target)] = (record, pool.intern(evaluated))
                 if record["holds"] is True:
                     holds_by_target[target].append(spec.name)
                 tracker.advance(detail=f"{spec.name} → {target}")
     target_summaries: list[dict[str, Any]] = []
     specs_by_name = {spec.name: spec for spec in specs}
-    holds_lookup = {
-        (record["key_name"], str(record["target"])): record["holds"] is True for record in records
-    }
 
-    def determines_key(left: str, right: str, mask: np.ndarray) -> bool:
-        left_columns = {
-            normalize_scalar(column, label=True) for column in specs_by_name[left].columns
-        }
-        for component in specs_by_name[right].columns:
-            if normalize_scalar(component, label=True) in left_columns:
-                continue
-            if same_mask(evaluated_sets[(left, component)], mask):
-                holds = holds_lookup[(left, str(normalize_scalar(component, label=True).to_dict()))]
-            else:
-                # Key-to-key evidence must use the same rows as the target FDs.
-                evidence, _ = _fd_record(
-                    df,
-                    specs_by_name[left],
-                    component,
-                    dropna=dropna,
-                    scope_prefix="comparison",
-                    encoded=encoded,
-                    row_mask=mask,
-                )
-                holds = evidence["holds"] is True
-            if not holds:
-                return False
-        return True
+    def determines_key(left: str, right: str, mask: Any) -> bool:
+        # Key-to-key evidence must use the same rows as the target FDs.
+        spec = specs_by_name[left]
+        return all(
+            component in spec.columns
+            or _record_on(
+                df,
+                spec,
+                component,
+                mask,
+                known=known,
+                dropna=dropna,
+                encoded=encoded,
+                scope_prefix="comparison",
+            )[0]["holds"]
+            is True
+            for component in specs_by_name[right].columns
+        )
 
     for target in df.columns:
         relevant = [
@@ -223,11 +214,7 @@ def _grain(
         determining = holds_by_target.get(target, [])
         comparable = True
         if dropna and len(specs) > 1:
-            sets = [
-                evaluated_sets[(spec.name, target)]
-                for spec in specs
-                if (spec.name, target) in evaluated_sets
-            ]
+            sets = [known[(spec.name, target)][1] for spec in specs if (spec.name, target) in known]
             comparable = all(same_mask(item, sets[0]) for item in sets[1:]) if sets else True
         equivalent: list[list[str]] = []
         incomparable: list[list[str]] = []
@@ -236,7 +223,7 @@ def _grain(
             if not comparable:
                 break
             for right in determining[index + 1 :]:
-                mask = evaluated_sets[(left, target)]
+                mask = known[(left, target)][1]
                 left_right = determines_key(left, right, mask)
                 right_left = determines_key(right, left, mask)
                 if left_right and right_left:
@@ -274,8 +261,7 @@ def _grain(
             df,
             specs,
             encoded,
-            records,
-            evaluated_sets,
+            known,
             dropna=dropna,
             scope_metadata=scope_metadata,
         ),
@@ -284,6 +270,38 @@ def _grain(
         "scope_metadata": scope_metadata,
     }
     return ExplorerResult("grain", payload)
+
+
+def _record_on(
+    df: pd.DataFrame,
+    spec: KeySpec,
+    target: Any,
+    mask: Any,
+    *,
+    known: dict,
+    dropna: bool,
+    encoded: dict,
+    scope_prefix: str,
+) -> tuple[dict[str, Any], Any]:
+    """Test spec -> target on the rows of ``mask``, reusing a test on that population.
+
+    Returns the record and its evaluated rows, which can be fewer than ``mask``
+    when dropna excludes further incomplete cases.
+    """
+    saved = known.get((spec.name, target))
+    if saved is not None and same_mask(saved[1], mask):
+        return dict(saved[0]), mask
+    record, evaluated = _fd_record(
+        df,
+        spec,
+        target,
+        dropna=dropna,
+        scope_prefix=scope_prefix,
+        encoded=encoded,
+        row_mask=np.asarray(mask),
+    )
+    record.pop("scope")
+    return record, evaluated
 
 
 @operation("grain")

@@ -11,7 +11,7 @@ import pandas as pd
 from .._runtime import operation, phase
 from ..typing import ColumnLabel, Runtime, SchemaRole
 from .census import _source
-from .encoding import encode_series, normalize_scalar, validate_frame
+from .encoding import encode_column, normalize_scalar, validate_frame
 from .result import ExplorerResult, KeySpec
 
 
@@ -133,7 +133,7 @@ def infer_schema(
     with phase("schema columns", len(df.columns), "columns") as tracker:
         for column in df.columns:
             series = df[column]
-            cardinality = len(encode_series(series)[0])
+            cardinality = len(encode_column(df, column)[0])
             ratio = cardinality / rows if rows else 0.0
             name = str(column).lower()
             reasons = (

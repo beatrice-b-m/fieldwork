@@ -8,8 +8,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .census import _pre_mask_per_parent, _rank_counts, _source, census, levels
-from .encoding import encode_series, missing_code, resolve_columns
+from .census import _preselect, _source, census, levels
+from .encoding import encode_column, missing_code, resolve_columns
 from .grain import grain
 from .relations import pairs
 from .result import ExplorerResult
@@ -23,28 +23,20 @@ def _pre_cohort(
     top_n_per_parent: bool,
     dropna: bool,
 ) -> pd.DataFrame:
-    dictionaries = []
-    codes = []
-    eligible_mask = np.ones(len(df), dtype=bool)
-    for column in dimensions:
-        values, encoded = encode_series(df[column])
-        dictionaries.append(values)
-        codes.append(encoded)
+    """The census pre-selection cohort, shared by pairs and grain."""
+    encoded = [encode_column(df, column) for column in dimensions]
+    eligible = np.ones(len(df), dtype=bool)
+    for values, codes in encoded:
         absent = missing_code(values)
         if dropna and absent is not None:
-            eligible_mask &= encoded != absent
-    eligible = np.flatnonzero(eligible_mask)
-    if top_n_per_parent:
-        mask, _ = _pre_mask_per_parent(codes, dictionaries, eligible, top_n)
-    else:
-        mask = eligible_mask.copy()
-        for encoded, values in zip(codes, dictionaries):
-            counts = {
-                int(code): int((encoded[eligible] == code).sum())
-                for code in np.unique(encoded[eligible])
-            }
-            chosen = {code for code, _ in _rank_counts(counts, values)[:top_n]}
-            mask &= np.isin(encoded, list(chosen))
+            eligible &= codes != absent
+    mask, _ = _preselect(
+        [codes for _, codes in encoded],
+        [values for values, _ in encoded],
+        np.flatnonzero(eligible),
+        top_n,
+        top_n_per_parent,
+    )
     return df.iloc[np.flatnonzero(mask)]
 
 
