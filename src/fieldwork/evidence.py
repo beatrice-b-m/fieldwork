@@ -11,7 +11,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ._explore.encoding import MISSING, encode_series, normalize_scalar, validate_frame
+from ._explore.encoding import (
+    MISSING,
+    ScalarIdentity,
+    encode_series,
+    normalize_scalar,
+    validate_frame,
+)
 from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, current_session, operation, phase
 from .progress import CancellationToken, Progress
@@ -33,17 +39,13 @@ def fingerprint(df: pd.DataFrame) -> str:
 
 def _fingerprint(df, progress):
     digest = hashlib.sha256()
-    for values in (df.columns, df.index):
+    for values, identify in ((df.columns, _label_identity), (df.index, _value_identity)):
         digest.update(b"[")
         for i, value in enumerate(values):
             if i % 8192 == 0:
                 checkpoint()
             digest.update(
-                json.dumps(
-                    normalize_scalar(value, label=isinstance(value, tuple)).to_dict(),
-                    sort_keys=True,
-                    allow_nan=False,
-                ).encode()
+                json.dumps(identify(value).to_dict(), sort_keys=True, allow_nan=False).encode()
             )
             digest.update(b"\n")
         digest.update(b"]")
@@ -61,9 +63,7 @@ def _fingerprint(df, progress):
                 # where the analytical scalar encoder rejects tuple cells.
                 serialized = [
                     json.dumps(
-                        normalize_scalar(v, label=isinstance(v, tuple)).to_dict(),
-                        sort_keys=True,
-                        allow_nan=False,
+                        _value_identity(v).to_dict(), sort_keys=True, allow_nan=False
                     ).encode()
                     + b"\n"
                     for v in chunk.array
@@ -81,6 +81,18 @@ def _fingerprint(df, progress):
         digest.update(b"]")
         progress.advance(detail=str(column))
     return digest.hexdigest()
+
+
+def _label_identity(value):
+    return normalize_scalar(value, label=True)
+
+
+def _value_identity(value):
+    # Index entries and tuple cells are values: MultiIndex levels may hold floats
+    # or timestamps, which column-label normalization rejects.
+    if isinstance(value, tuple):
+        return ScalarIdentity("tuple", tuple(_value_identity(item) for item in value))
+    return normalize_scalar(value)
 
 
 @dataclass(frozen=True)

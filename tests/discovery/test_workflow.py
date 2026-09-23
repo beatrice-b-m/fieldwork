@@ -260,6 +260,18 @@ def test_numeric_sentinel_equality_and_multiindex():
     assert r.inspect(df, 0).equals(df.iloc[[1]])
 
 
+@pytest.mark.parametrize(
+    "level", [[1.5, 2.5, 1.5, 2.5], pd.date_range("2024-01-01", periods=4)], ids=["float", "date"]
+)
+def test_groupby_style_multiindex_supports_discovery(level):
+    index = pd.MultiIndex.from_arrays([["x", "x", "y", "y"], level])
+    df = pd.DataFrame({"a": [1, 2, None, 4], "b": ["p", "q", "p", "q"]}, index=index)
+    overview = fw.explore(df)
+    finding = next(f for f in overview["findings"] if f["pattern"] == "availability")
+    assert overview.inspect(df, finding["id"], all_matches=True).equals(df.iloc[[0, 1, 3]])
+    assert fw.discover_dependencies(df)["candidates"]
+
+
 def test_scope_and_convention_propagate_to_overview(frame):
     scope = fw.Scope.from_positions(frame, [0, 2, 5])
     overview = fw.explore(
