@@ -82,9 +82,12 @@ def _census(projection, full, max_nodes) -> Lines:
     rows = projection["rows"]
     if full:
         yield f"  total: {quantity(rows[0]['count'], 'row')}"
-    # Rows are in preorder, so any prefix keeps every shown node's ancestors.
+    # The budget keeps nodes breadth first, like the census's own node budget, so
+    # every top-level group shows before any subdivision; each kept node's
+    # ancestors are shallower and therefore kept too. Rows print in tree order.
     nodes = [row for row in rows[1:] if not row.get("omitted")]
-    shown = {row["id"] for row in nodes[:max_nodes]} | {rows[0]["id"]}
+    breadth_first = sorted(range(len(nodes)), key=lambda i: (nodes[i]["depth"], i))
+    shown = {nodes[i]["id"] for i in breadth_first[:max_nodes]} | {rows[0]["id"]}
     for row in rows[1:]:
         indent = "  " * (row["depth"] + 1)
         if row.get("omitted"):

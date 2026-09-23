@@ -70,6 +70,18 @@ def test_renderer_node_budget_hides_nodes_without_changing_the_analysis():
     assert (limited["omitted_child_rows"], limited["omitted_child_levels"]) == (10, 2)
 
 
+def test_renderer_node_budget_shows_every_top_level_group_first():
+    frame = pd.DataFrame(
+        {"venue": ["R", "R", "R", "C", "C", "A"], "lang": ["en", "en", "fr", "en", "de", "en"]}
+    )
+    result = census(frame, ["venue", "lang"])
+    text = render_plaintext(result, max_nodes=3)
+    assert len(node_lines(text, ["venue="])) == 3
+    assert not node_lines(text, ["lang="])
+    # One more node subdivides the first group only, keeping its parent.
+    assert len(node_lines(render_plaintext(result, max_nodes=4), ["lang="])) == 1
+
+
 def test_typed_display_labels_do_not_collide():
     values = [1, "1", True, "True", 1.0, "1.0", None, "<NA>", "'<NA>'", "", "\n", r"\n"]
     values.append(pd.Timedelta(1, "ns"))
