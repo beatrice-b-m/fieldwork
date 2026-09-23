@@ -56,7 +56,7 @@ def generate(output: Path) -> None:
         "long-joint": fw.render_html(fw.joint_counts(awkward, [long, "group"])),
         "deep-census": fw.render_html(fw.census(wide, list(wide.columns)[:6], max_nodes=160)),
         "pairs": fw.render_html(
-            fw.explore(wide, list(wide.columns)[2:18], max_pairs=24, pair_contexts=[{"site": 1}]),
+            fw.profile(wide, list(wide.columns)[2:18], max_pairs=24, pair_contexts=[{"site": 1}]),
             section="pairs",
         ),
         "overview": fw.render_html(fw.explore(small)),

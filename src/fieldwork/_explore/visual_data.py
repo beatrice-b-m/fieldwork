@@ -43,10 +43,10 @@ def visualization_data(
     if detail not in {"full", "topology"}:
         raise ValueError("detail must be 'full' or 'topology'")
     data = result.to_dict() if isinstance(result, Result) else result
-    if data.get("kind") == "explore":
+    if data.get("kind") == "profile":
         section = section or "grain"
         if section not in data["sections"]:
-            raise ValueError(f"Unknown explore section: {section!r}")
+            raise ValueError(f"Unknown profile section: {section!r}")
         data = data["sections"][section]
     elif section is not None and section != data.get("kind"):
         raise ValueError("section does not match result kind")

@@ -21,7 +21,7 @@ summaries. Completion of one phase does not imply completion of the overview.
 The default remains silent.
 
 All public dataframe analyses accept keyword-only `progress`, `cancel`, and
-`timeout` (typed once as `fieldwork.typing.Runtime`), including explicit-dimension `explore`, foundation tools (`levels`,
+`timeout` (typed once as `fieldwork.typing.Runtime`), including `profile`, foundation tools (`levels`,
 `census`, `grain`, `pairs`, `joint_counts`, `infer_schema`), `Recipe.run`,
 `Path.census`, source inspection/selection/recomputation, and scope creation and
 refinement. Rendering uses saved results and does not run dataframe analysis.
@@ -81,7 +81,7 @@ controls when calling `Recipe.run`.
 overview = fw.explore(
     df,
     sections=["missingness", "dependencies"],
-    section_options={
+    options={
         "missingness": {"features": ["site", "visit", "value"]},
         "dependencies": {
             "max_key_size": 1,
@@ -96,19 +96,18 @@ overview = fw.explore(
 
 The four overview sections are `missingness`, `dependencies`, `paths`, and
 `value_patterns`. Omitted sections are explicitly `not_requested`; text, HTML,
-and SVG presentations identify them. `section_options` accepts each requested
+and SVG presentations identify them. `options` accepts each requested
 operation's analytical options, such as `features`, `max_pairs`, or
 `max_candidates`. Shared source settings (`scope`, `missing`, `table_id`) and
-runtime controls stay on the overview. Section selection applies only when
-explicit dimensions are omitted.
+runtime controls stay on the overview.
 
-Existing `discovery` configuration retains its meaning: search settings such as
-`max_candidates` affect paths, while shared features/context/entity settings flow
-to their relevant sections. Use `section_options["dependencies"]` to override
-the overview's default 20 single-column dependency candidates. Separate calls to
+Shared parameters (`features`, `by`, entity settings) flow to their relevant
+sections; path search settings belong in `options["paths"]`. Use
+`options["dependencies"]` to override the overview's default 20 single-column
+dependency candidates. Separate calls to
 `discover_dependencies` still default to 100 candidates and maximum key size two.
 
-Dependency options available both directly and in `section_options`:
+Dependency options available both directly and in `options["dependencies"]`:
 
 | Option | Effect |
 | --- | --- |

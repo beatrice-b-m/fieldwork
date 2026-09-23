@@ -108,7 +108,11 @@ def main():
                     {"objective": "availability", "max_candidates": 50},
                 ),
                 ("patterns", fw.value_patterns, {"by": ["c0"]}),
-                ("overview", fw.explore, {"discovery": {"max_candidates": 30, "by": ["c0"]}}),
+                (
+                    "overview",
+                    fw.explore,
+                    {"by": ["c0"], "options": {"paths": {"max_candidates": 30}}},
+                ),
             ]:
                 results.append(
                     {

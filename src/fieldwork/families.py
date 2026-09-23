@@ -17,7 +17,7 @@ RELATIONS = {
 }
 
 
-def feature_network(base):
+def feature_network(findings, base):
     """Connect features without treating connectedness as equivalence or composing FDs.
 
     Trivially true dependencies (constant targets, unique determinants) are left
@@ -26,7 +26,7 @@ def feature_network(base):
     relationships = []
     nodes = {}
     adjacency = {}
-    for record in base["findings"]:
+    for record in findings:
         kind = RELATIONS.get(record["pattern"])
         if kind is None or record.get("lead", {}).get("reason") in TRIVIAL:
             continue

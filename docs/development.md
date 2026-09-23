@@ -119,9 +119,9 @@ durations (nested phases overlap; do not sum them).
 
 For comparable overview components, its `dependencies` workload uses 20
 single-column candidates and `patterns` uses 20 pairs. `--candidates` changes
-standalone dependency/path budgets; for `explore` it changes path search only,
-matching the backward-compatible `discovery` configuration. New `section_options`
-can configure dependency work independently in application code. `--features` restricts analytical features but
+standalone dependency/path budgets; for `explore` it changes path search only
+(`options={"paths": {...}}`). Per-section `options` can configure dependency work
+independently in application code. `--features` restricts analytical features but
 does not project the source frame. `--profile /tmp/overview.prof` supports one
 operation/repeat with cProfile; keep these diagnostic timings separate from
 unprofiled measurements. The harness uses Unix `resource` RSS reporting (macOS

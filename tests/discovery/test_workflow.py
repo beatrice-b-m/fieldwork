@@ -251,16 +251,14 @@ def test_groupby_style_multiindex_supports_discovery(level):
     index = pd.MultiIndex.from_arrays([["x", "x", "y", "y"], level])
     df = pd.DataFrame({"a": [1, 2, None, 4], "b": ["p", "q", "p", "q"]}, index=index)
     overview = fw.explore(df)
-    finding = next(f for f in overview["findings"] if f["pattern"] == "availability")
+    finding = next(f for f in overview.findings if f["pattern"] == "availability")
     assert overview.inspect(df, finding["id"], all_matches=True).equals(df.iloc[[0, 1, 3]])
     assert fw.discover_dependencies(df)["candidates"]
 
 
 def test_scope_and_convention_propagate_to_overview(frame):
     scope = fw.Scope.from_positions(frame, [0, 2, 5])
-    overview = fw.explore(
-        frame, discovery={"scope": scope, "missing": {"a": [5]}, "features": ["a", "b"]}
-    )
+    overview = fw.explore(frame, scope=scope, missing={"a": [5]}, features=["a", "b"])
     for name in ("missingness", "dependencies", "paths"):
         assert overview["sections"][name]["scope"]["evaluated_rows"] == 3
     assert overview["sections"]["missingness"]["availability"][0]["populated"] == 1
@@ -361,18 +359,16 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     recipe = fw.Recipe(
         "explore",
         {
-            "discovery": {
-                "features": ["site", "a"],
-                "missing": {"a": [-999]},
-                "table_id": "configured",
-                "entity": "e",
-                "unit": "entities",
-                "entity_presence": "all",
-                "by": ["site"],
-                "max_candidates": 1,
-                "max_dimensions": 2,
-                "start_with": ["site"],
-            }
+            "features": ["site", "a"],
+            "missing": {"a": [-999]},
+            "table_id": "configured",
+            "entity": "e",
+            "unit": "entities",
+            "entity_presence": "all",
+            "by": ["site"],
+            "options": {
+                "paths": {"max_candidates": 1, "max_dimensions": 2, "start_with": ["site"]}
+            },
         },
     )
     path = tmp_path / "overview.json"
@@ -382,8 +378,8 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     baseline = loaded.run(df)
     overview = loaded.run(df, scope=scope, table_id="selected delivery")
     assert loaded.to_dict() == configured
-    assert overview["analysis_unit"]["denominator"] == 1
-    assert overview["analysis_unit"]["presence_aggregation"] == "all"
+    unit = overview["sections"]["missingness"]["analysis_unit"]
+    assert (unit["denominator"], unit["presence_aggregation"]) == (1, "all")
     assert baseline["scope"]["evaluated_rows"] == 4
     for name in ("missingness", "dependencies", "paths", "value_patterns"):
         section = overview["sections"][name]
@@ -399,13 +395,13 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     assert paths["parameters"]["max_candidates"] == 1
     assert paths["parameters"]["start_with"] == ["site"]
     assert paths["coverage"]["paths_evaluated"] == 1
-    assert overview["sections"]["census"]["scope"]["selection_positions"] == [0, 1]
+    assert paths["paths"][0]["preview"]["scope"]["selection_positions"] == [0, 1]
     overridden = loaded.run(df, scope=scope, missing={}, features=["site"])
     assert overridden["sections"]["missingness"]["parameters"]["features"] == ["site"]
     assert overridden["missing_convention"]["sentinels"].get("a", []) == []
     assert loaded.to_dict() == configured
     assert fw.Recipe("explore").run(df, scope=scope)["scope"]["selection_positions"] == [0, 1]
-    with pytest.raises(TypeError, match="discovery dictionary"):
+    with pytest.raises(TypeError, match="unexpected keyword"):
         loaded.run(df, max_candidates=2)
 
 
@@ -423,7 +419,7 @@ def test_unsupported_cells_skip_automatic_columns_but_reject_explicit_ones():
     overview = fw.explore(df)
     assert [r["feature"] for r in overview["skipped_features"]] == ["tags", "meta", "amount"]
     assert {r["value_type"] for r in overview["skipped_features"]} == {"list", "dict", "Decimal"}
-    analyzed = {c["column"] for f in overview["findings"] for c in f["features"]}
+    analyzed = {c["column"] for f in overview.findings for c in f["features"]}
     assert analyzed == {"site"}
     assert any(
         "tags" in line and "list" in line for line in fw.render_plaintext(overview).splitlines()
@@ -466,15 +462,15 @@ def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
     )
     df.loc[2, "region"] = "south"  # one exception to site -> region
     overview = fw.explore(df)
-    top = overview["findings"][0]
+    top = overview.findings[0]
     assert top["id"] == "f0" and top["pattern"] == "approximate_dependency"
     assert top["measurements"]["determinant"] == ["site"]
     assert top["lead"]["reason"] == "near-rule with exceptions"
-    scores = [f["lead"]["score"] for f in overview["findings"]]
+    scores = [f["lead"]["score"] for f in overview.findings]
     assert scores == sorted(scores, reverse=True)
     trivial = [
         f
-        for f in overview["findings"]
+        for f in overview.findings
         if f["lead"]["reason"] in {"target is constant", "determinant is unique here"}
     ]
     assert trivial
@@ -505,7 +501,7 @@ def test_overview_summary_leads_with_ranked_findings_and_merged_grains():
     assert {s["absent"] == ["note"] for s in data["signatures"]} == {True, False}
     # The text summary leads with the top-ranked finding, by ID and statement.
     first = next(line for line in str(overview).splitlines() if "[f" in line)
-    assert "[f0]" in first and overview["findings"][0]["statement"] in first
+    assert "[f0]" in first and overview.findings[0]["statement"] in first
 
 
 def test_saved_timestamp_sentinel_reapplies_after_json_round_trip():

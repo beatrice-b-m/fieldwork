@@ -109,7 +109,7 @@ entity's selection includes all its scoped source rows.
 For 100 matching rows from one entity and one exception from another, conditional
 presence is 100/101 with row units and 1/2 with entity units. A context analysis
 aggregates each entity within that context. Comparisons require compatible units
-and aggregation. `explore(df, discovery={"entity": "exam_id", "unit": "entities"})`
+and aggregation. `explore(df, entity="exam_id", unit="entities")`
 uses entity availability alongside row-based path and dependency evidence.
 
 ## Save and reapply

@@ -89,7 +89,7 @@ def test_overview_sections_options_and_rendered_omissions():
     overview = fw.explore(
         frame,
         sections=["missingness", "dependencies"],
-        section_options={
+        options={
             "missingness": {"features": ["a"]},
             "dependencies": {"max_candidates": 1, "include_grain": False},
         },
@@ -99,11 +99,12 @@ def test_overview_sections_options_and_rendered_omissions():
     assert len(overview["sections"]["missingness"]["availability"]) == 1
     for render in (fw.render_plaintext, fw.render_html, fw.render_svg):
         assert "Not requested" in render(overview)
-    assert overview["section_selection"]["omitted"] == ["paths", "value_patterns"]
-    with pytest.raises(ValueError, match="section_options"):
-        fw.explore(frame, sections=["paths"], section_options={"dependencies": {}})
+    omitted = [n for n, s in overview["sections"].items() if s["status"] == "not_requested"]
+    assert omitted == ["paths", "value_patterns"]
+    with pytest.raises(ValueError, match="requested sections"):
+        fw.explore(frame, sections=["paths"], options={"dependencies": {}})
     with pytest.raises(ValueError, match="source context"):
-        fw.explore(frame, section_options={"dependencies": {"scope": None}})
+        fw.explore(frame, options={"dependencies": {"scope": None}})
 
 
 @pytest.mark.parametrize(
@@ -162,7 +163,7 @@ def test_saved_export_roundtrip_supports_selection():
     ordinary = json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
     restored = fw.Result.from_dict(ordinary)
     assert restored.to_dict() == ordinary
-    record = next(f for f in analysis["findings"] if f["pattern"] == "availability")
+    record = next(f for f in analysis.findings if f["pattern"] == "availability")
     assert restored.select(frame, record["id"]) == analysis.select(frame, record["id"])
     foundation = fw.grain(frame, ["key"])
     saved = json.loads(json.dumps(foundation.to_dict(), allow_nan=False))

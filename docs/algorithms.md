@@ -159,9 +159,10 @@ direction and context. Its relationship order is canonical.
 
 ### Overview lead ranking
 
-Overview findings are ordered by a heuristic lead score (`src/fieldwork/leads.py`)
-and numbered in that order, so `f0` is the most promising lead. Each carries
-`lead.score` and a short `lead.reason`. The score favors evidence an analyst would
+Overview leads rank the sections' findings by a heuristic score
+(`src/fieldwork/leads.py`) and are numbered in that order, so `f0` is the most
+promising lead. Each carries `lead.score` and a short `lead.reason`, and refers to
+its section finding instead of copying it (`Result.findings` resolves them). The score favors evidence an analyst would
 want to explain: near-rules with repeated support and a few exceptions, mutually
 exclusive or empty columns, presence rules with exceptions, mixed string formats,
 equivalent encodings and partially populated columns. Trivially true or purely
@@ -174,7 +175,7 @@ probabilities or measurements. Section results keep their own order and IDs.
 
 ## Explicit work budgets and exact kernels
 
-Overview `sections` and `section_options` select and configure operations
+Overview `sections` and per-section `options` select and configure operations
 independently. Dependency discovery adds `include_grain`, `max_grain_views`, and
 `max_dependency_tests`; omitted graph views and candidate/target/context tests have
 explicit coverage metadata. Defaults preserve previous work and result ordering.

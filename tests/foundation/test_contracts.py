@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from fieldwork import KeySpec, census, explore, grain, levels, visualization_data
+from fieldwork import KeySpec, census, grain, levels, profile, visualization_data
 from fieldwork._explore._kernels import exact_pair_ids
 
 
@@ -83,7 +83,7 @@ def test_invalid_inputs_are_actionable() -> None:
 def test_dataframe_is_not_mutated() -> None:
     frame = pd.DataFrame({"a": [2, 1, None], "b": ["x", "y", "x"]})
     before = frame.copy(deep=True)
-    explore(frame, ["a", "b"], candidate_keys=["a"])
+    profile(frame, ["a", "b"], candidate_keys=["a"])
     pd.testing.assert_frame_equal(frame, before)
 
 

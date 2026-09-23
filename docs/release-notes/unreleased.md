@@ -106,4 +106,31 @@ public API without migration shims.
   (still in `dependencies`); each finding samples its own exceptions.
 - Saved candidate keys (`{"name": ..., "columns": [...]}`) are accepted
   wherever `KeySpec` is, so grain parameters can be saved in recipes.
-- Lab-table overview export: 2.56 MB → 1.78 MB.
+- Lab-table overview export: 2.56 MB → 1.78 MB (1.61 MB once the overview references its sections' findings; see below).
+
+## `explore` and `profile`
+
+- `explore(df)` is the overview only. Its configuration is explicit:
+  `features`, `by`, `entity`, `unit`, `entity_presence`, `sections`,
+  `options` (per-section overrides, `fieldwork.typing.SectionOptions`), and
+  the shared `scope`, `missing`, `table_id`. The `discovery=` dictionary,
+  `section_options=` (now `options=`), and the merging and duplicate-key rules
+  between them are removed; path search settings go in `options["paths"]`.
+  `fieldwork.typing.DiscoveryOptions`, `OverviewOptions`,
+  `ExplicitDiscoveryOptions` and `FoundationOptions` are removed.
+- The explicit composition `explore(df, dimensions, ...)` is now
+  `profile(df, dimensions, ...)`, with the same options and kind `"profile"`
+  (was `"explore"`). `Recipe("profile")` runs it; `Recipe("explore")` runs the
+  overview with the new parameter names.
+- The overview no longer copies its sections' findings. It stores ranked
+  `leads` (`id`, `section`, `finding_id`, `lead`), and the new
+  `Result.findings` resolves them to full records with overview IDs (`f0`
+  first); `to_frame()`, `inspect` and `select` use them as before. Code reading
+  `overview["findings"]` should use `overview.findings`.
+- The overview no longer copies the missingness payload (availability,
+  signatures, `analysis_unit`, ...) to its top level, nor the first path's
+  census preview to `sections["census"]`; read them from
+  `sections["missingness"]` and `sections["paths"]["paths"][0]["preview"]`
+  (or `overview.best.census(df)`). `section_selection` is replaced by the
+  `parameters["sections"]` list and each section's `status`.
+- `feature_network` relationships still reference overview finding IDs.

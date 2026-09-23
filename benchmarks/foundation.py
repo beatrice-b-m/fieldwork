@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from fieldwork import explore, grain, levels, render_plaintext
+from fieldwork import grain, levels, profile, render_plaintext
 
 
 def fixture(name: str, rows: int, seed: int) -> pd.DataFrame:
@@ -40,7 +40,7 @@ def workload(frame: pd.DataFrame, name: str):
         return levels(frame, columns, top_n=5)
     if name == "s3":
         return grain(frame, columns[:2])
-    result = explore(
+    result = profile(
         frame,
         columns[:6],
         candidate_keys=columns[:2],

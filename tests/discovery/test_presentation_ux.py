@@ -43,7 +43,7 @@ def test_display_limit_is_distinct_from_search_coverage(frame):
 
 
 def test_overview_retains_independent_section_coverage(frame):
-    result = fw.explore(frame, section_options={"dependencies": {"max_dependency_tests": 0}})
+    result = fw.explore(frame, options={"dependencies": {"max_dependency_tests": 0}})
     data = fw.visualization_data(result)
     assert data["section_coverage"]["missingness"]["pairs_evaluated"] == 1
     assert data["section_coverage"]["dependencies"]["dependency_tests"] == 0
@@ -77,7 +77,7 @@ def test_page_is_offline_and_finding_links_point_to_included_records(frame):
     markup = fw.render_html(result, max_findings=2)
     report = Report(markup)
     findings = [attrs for attrs in report.with_attribute("data-record") if "data-pattern" in attrs]
-    assert [attrs["id"] for attrs in findings] == [f["id"] for f in result["findings"][:2]]
+    assert [attrs["id"] for attrs in findings] == [f["id"] for f in result.findings[:2]]
     shown = {attrs["id"] for attrs in findings}
     links = [a["href"][1:] for a in report.with_attribute("href") if a["href"].startswith("#f")]
     assert links and set(links) <= shown

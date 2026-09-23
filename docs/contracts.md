@@ -108,13 +108,10 @@ network resources, or dataframe are needed to view an export.
 new deliveries, while source-bound positions remain in results/scopes. Supply a
 scope as a run override, not as a persisted recipe parameter. Composite grain
 `KeySpec` objects and non-JSON sentinels cannot be stored directly in recipes.
-Automatic overview recipes accept top-level `scope`, `missing`, `table_id`, and
-`features` run overrides. These replace the corresponding `discovery` settings
-while preserving other discovery configuration, including search budgets,
-constraints, entity aggregation and context grouping. The recipe is not modified.
-Search-only path options still belong in `discovery`; `sections` and
-`section_options` configure independent overview components. Runtime controls are
-run overrides, never saved recipe parameters.
+Overview recipes save `explore`'s parameters (`features`, `by`, entity settings,
+`sections` and per-section `options`); run overrides such as `scope`, `missing`,
+`table_id` or `features` replace saved values without modifying the recipe.
+Runtime controls are run overrides, never saved recipe parameters.
 `compare` compares two missingness results by feature name, preserving both source
 identities and conventions. Its delta is after minus before populated fraction;
 empty populations and added/removed features have an undefined delta.
@@ -137,9 +134,15 @@ caller's scope), which pairs, and with `top_n_applies_to="both"` grain, analyze;
 the census `tree` records how many rows the pre-selection and missing values
 removed.
 
-With explicit dimensions, `explore` accepts common `scope`, `missing`, `table_id`
-and `features` settings in `discovery`; search-only settings raise `ValueError`.
-Duplicate settings in `discovery` and explicit options are rejected.
+`explore(df)` surveys a table; `profile(df, dimensions)` combines levels, census,
+grain and pairs for chosen dimensions. Both accept the shared `scope`, `missing`
+and `table_id` context directly.
+
+An overview stores its sections' results under `sections` and ranks their
+findings as `leads`, each referencing a section finding (`section`,
+`finding_id`) with its `lead` score and reason. `Result.findings` resolves the
+leads, in rank order, to the section findings with overview IDs (`f0` first), and
+`inspect`/`select` accept those IDs.
 
 ## Availability units and selectable patterns
 
@@ -180,7 +183,6 @@ omissions carry coverage or `not_requested` status and remain visible in present
 Public functions and members carry NumPy-style docstrings and explicit type
 annotations. Runtime controls are declared in source; census handoff signatures
 exclude replacement source context, and grain cache parameters are private.
-`explore` overloads distinguish automatic discovery from explicit dimensions.
 `fieldwork.typing` provides documented dictionary types for reusable configurations.
 See the [inline API standard](inline-api.md) for the public boundary and validation.
 

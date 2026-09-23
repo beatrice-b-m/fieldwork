@@ -7,13 +7,14 @@ requirements only. Python 3.11–3.14 are supported, with a committed universal 
 ## Follow one investigation
 
 `explore(df)` calls path search, availability analysis, and a bounded single-key
-dependency search, plus bounded value-pattern analysis. It returns an overview containing individual saved results and
-a census preview. Its compact text view presents families, signatures, candidate
-grains and recommended paths together. `explore(df, dimensions)` delegates to the original composition
-API; explicit dimension order remains authoritative. Every component receives the
-same scope, sentinels and table ID; incompatible search options are rejected. `discovery={...}` steers the
-implicit path search; common `features`, `scope`, `missing`, and `table_id` parameters
-also flow into overview evidence.
+dependency search, plus bounded value-pattern analysis. It returns an overview containing the individual saved results
+(the paths section includes census previews of its recommendations). Its compact text view presents families, signatures, candidate
+grains and recommended paths together. Shared parameters (`features`, `by`,
+entity settings, `scope`, `missing`, `table_id`) flow to every section, and
+`options={"paths": {...}, ...}` configures sections independently. The overview
+ranks the sections' findings as leads that reference them rather than copying them.
+`profile(df, dimensions)` composes levels, census, grain and pairs for chosen
+dimensions, each receiving the same scope, sentinels and table ID.
 
 Every analysis calls `evidence.prepare` to identify the ordered dataset, apply a
 scope, encode needed values, and compute native/sentinel availability without modifying

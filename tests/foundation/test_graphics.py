@@ -8,10 +8,10 @@ import pytest
 from fieldwork import (
     KeySpec,
     census,
-    explore,
     grain,
     joint_counts,
     levels,
+    profile,
     render_html,
     render_svg,
     visualization_data,
@@ -80,7 +80,7 @@ def test_omitted_mass_keeps_original_denominator_and_missingness():
 
 
 def test_pairs_directions_contexts_and_separate_association(frame):
-    result = explore(frame, ["exam_id", "finding"], pair_contexts=[{"site": "north"}])
+    result = profile(frame, ["exam_id", "finding"], pair_contexts=[{"site": "north"}])
     data = visualization_data(result, section="pairs")
     assert len(data["contexts"]) == 2
     assert data["contexts"][1]["label"] == "site=north"
@@ -106,7 +106,7 @@ def test_empty_inputs_and_actionable_errors():
         ET.fromstring(render_svg(result))
         assert render_html(result)
     with pytest.raises(ValueError, match="was not computed"):
-        render_svg(explore(frame, ["a"]))
+        render_svg(profile(frame, ["a"]))
     with pytest.raises(ValueError, match="recompute"):
         render_svg({"kind": "grain"})
     with pytest.raises(ValueError, match="detail"):
@@ -116,7 +116,7 @@ def test_empty_inputs_and_actionable_errors():
 
 
 def test_pair_budget_preserves_untested_matrix_features_and_contexts(frame):
-    result = explore(
+    result = profile(
         frame, ["exam_id", "side", "finding"], max_pairs=0, pair_contexts=[{"site": "north"}]
     )
     data = visualization_data(result, section="pairs")

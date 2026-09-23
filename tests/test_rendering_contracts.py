@@ -44,11 +44,11 @@ KINDS = {
     "levels": lambda df: fw.levels(df, ["side", "finding"]),
     "census": lambda df: fw.census(df, ["site", "patient", "exam"]),
     "grain": lambda df: fw.grain(df, ["patient", "exam", KeySpec("exam_side", ("exam", "side"))]),
-    "pairs": lambda df: fw.explore(
+    "pairs": lambda df: fw.profile(
         df, ["side", "finding"], pair_contexts=[{"site": "A"}], include_absence=True
     )["sections"]["pairs"],
     "joint_counts": lambda df: fw.joint_counts(df, ["side", "finding"]),
-    "explicit_explore": lambda df: fw.explore(df, ["site", "exam"], candidate_keys=["patient"]),
+    "profile": lambda df: fw.profile(df, ["site", "exam"], candidate_keys=["patient"]),
     "missingness": lambda df: fw.missingness(df, by=["site"], entity="patient"),
     "entity_missingness": lambda df: fw.missingness(df, entity="patient", unit="entities"),
     "dependencies": lambda df: fw.discover_dependencies(df, by=["site"]),
@@ -220,7 +220,7 @@ def test_hostile_labels_and_values_are_escaped_everywhere(make):
     [
         (lambda df: fw.grain(df, ["patient", "exam"]), None),
         (
-            lambda df: fw.explore(
+            lambda df: fw.profile(
                 df, ["side", "finding"], pair_contexts=[{"site": "A"}, {"site": "B"}]
             ),
             "pairs",

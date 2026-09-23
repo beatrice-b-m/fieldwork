@@ -18,6 +18,39 @@ if TYPE_CHECKING:
 SCHEMA_VERSION = "2.0"
 
 
+def overview_findings(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """An overview's ranked leads, resolved to the section findings they reference.
+
+    Each record is the section's finding with the lead's ID and rank, and a
+    selector naming its section, so it can be inspected through the overview.
+    """
+    sections = payload["sections"]
+    found = {
+        (name, record["id"]): record
+        for name, section in sections.items()
+        for record in section.get("findings", [])
+    }
+    output = []
+    for lead in payload.get("leads", []):
+        name = lead["section"]
+        record = found[(name, lead["finding_id"])]
+        output.append(
+            {
+                **record,
+                "id": lead["id"],
+                "lead": lead["lead"],
+                "selector": {
+                    **record["selector"],
+                    "analysis_section": name,
+                    "scope_ref": f"sections.{name}.scope",
+                    "parameters_ref": f"sections.{name}.parameters",
+                    "missing_convention_ref": f"sections.{name}.missing_convention",
+                },
+            }
+        )
+    return output
+
+
 @dataclass(frozen=True, repr=False)
 class Result(Mapping[str, Any]):
     """Saved evidence from any analysis, browsable without the source frame.
@@ -125,6 +158,18 @@ class Result(Mapping[str, Any]):
             raise ValueError(f"Section {name!r} was not requested")
         return Result.from_dict(data)
 
+    @property
+    def findings(self) -> list[dict[str, Any]]:
+        """Findings in rank order, each with an ID usable by inspect and select.
+
+        An overview stores ranked references to its sections' findings; this
+        resolves them. Other kinds return their ``findings`` list (empty for
+        analyses that report measurements only).
+        """
+        if self.kind == "overview":
+            return overview_findings(self.payload)
+        return self.payload.get("findings", [])
+
     def to_frame(self, section: str = "findings") -> pd.DataFrame:
         """Tabulate a saved list, such as findings, availability or dependencies.
 
@@ -140,7 +185,8 @@ class Result(Mapping[str, Any]):
             ``pandas.json_normalize`` of the records (nested fields become dotted
             columns). This is evidence, not source rows.
         """
-        return pd.json_normalize(self.payload.get(section, []))
+        records = self.findings if section == "findings" else self.payload.get(section, [])
+        return pd.json_normalize(records)
 
     def relationships(
         self, feature: str | None = None, *, kinds: Iterable[str] | None = None
@@ -214,7 +260,7 @@ class Result(Mapping[str, Any]):
 
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs from the ordered analysis source")
-        records = self.payload["findings"]
+        records = self.findings
         record = (
             records[finding]
             if isinstance(finding, int)

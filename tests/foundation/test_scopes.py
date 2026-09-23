@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from fieldwork import KeySpec, explore, grain
+from fieldwork import KeySpec, grain, profile
 
 
 def test_contexts_do_not_change_global_pair_or_each_other() -> None:
@@ -13,9 +13,9 @@ def test_contexts_do_not_change_global_pair_or_each_other() -> None:
         {"a": ["x", "x", "y"], "b": [1, 2, 2], "site": ["N", None, "S"], "batch": [None, "B", "B"]}
     )
     options = {"dropna": True, "include_absence": True}
-    baseline = explore(frame, ["a", "b"], **options)["sections"]["pairs"]["pairs"][0]
-    single = explore(frame, ["a", "b"], pair_contexts=[{"site": "N"}], **options)
-    multiple = explore(frame, ["a", "b"], pair_contexts=[{"site": "N"}, {"batch": "B"}], **options)
+    baseline = profile(frame, ["a", "b"], **options)["sections"]["pairs"]["pairs"][0]
+    single = profile(frame, ["a", "b"], pair_contexts=[{"site": "N"}], **options)
+    multiple = profile(frame, ["a", "b"], pair_contexts=[{"site": "N"}, {"batch": "B"}], **options)
     records = multiple["sections"]["pairs"]["pairs"]
     assert baseline == single["sections"]["pairs"]["pairs"][0] == records[0]
     assert baseline["relation"] == "n:m"
@@ -39,7 +39,7 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
             "target": [0, None, 0, 1, 0, 0],
         }
     )
-    result = explore(
+    result = profile(
         frame,
         ["a", "b"],
         candidate_keys=["id"],
@@ -79,7 +79,7 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
             + record["evaluated_rows"]
         )
     json.dumps(result.to_dict(), allow_nan=False)
-    full_grain = explore(
+    full_grain = profile(
         frame, ["a", "b"], candidate_keys=["id"], dropna=True, top_n=1, top_n_mode="pre"
     )["sections"]["grain"]
     assert full_grain["scope"]["name"] == "input"

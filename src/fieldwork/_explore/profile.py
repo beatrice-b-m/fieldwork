@@ -1,16 +1,18 @@
-"""Explicit composition of levels, census, grain and pairs for chosen dimensions."""
+"""The profile of chosen dimensions: levels, census, grain and pairs together."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Unpack
 
 import numpy as np
 import pandas as pd
 
+from .._runtime import operation
 from ..result import Result
+from ..typing import Runtime, SchemaRole
 from .census import _complete, _preselect, census, levels
-from .grain import grain
+from .grain import KeySpec, grain
 from .relations import pairs
 
 if TYPE_CHECKING:
@@ -47,34 +49,83 @@ def _cohort(
     )
 
 
-def explore(
+@operation("profile")
+def profile(
     df: pd.DataFrame,
-    dimensions: Iterable[Any],
+    dimensions: Iterable[str],
     *,
-    features: Iterable[Any] | None = None,
-    candidate_keys: Iterable[Any] | None = None,
+    candidate_keys: Iterable[str | KeySpec | Mapping[str, Any]] | None = None,
+    features: Iterable[str] | None = None,
     top_n: int | None = None,
-    top_n_mode: str = "post",
+    top_n_mode: Literal["pre", "post"] = "post",
     top_n_per_parent: bool = False,
-    top_n_applies_to: str = "census",
+    top_n_applies_to: Literal["census", "both"] = "census",
     min_retained_fraction: float = 0.01,
     max_depth: int | None = None,
     max_levels: int | None = 100,
     max_nodes: int | None = 10000,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[Any, str] | None = None,
+    schema: dict[str, SchemaRole] | None = None,
     include_pairs: bool = True,
     include_absence: bool = False,
-    reference_domains: Mapping[Any, Iterable[Any]] | None = None,
-    pair_contexts: Iterable[Mapping[Any, Any]] | None = None,
+    reference_domains: Mapping[str, Iterable[Any]] | None = None,
+    pair_contexts: Iterable[Mapping[str, Any]] | None = None,
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
+    **runtime: Unpack[Runtime],
 ) -> Result:
+    """Profile chosen dimensions: levels, census, optional grain, and pairs.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Source frame, read without mutation.
+    dimensions : iterable of str
+        Nonempty ordered census dimensions; pairs use the first max_depth.
+    candidate_keys : iterable of str, KeySpec or mapping, or None, optional
+        Keys for a grain section; default None skips grain.
+    features : iterable of str or None, optional
+        Columns for levels; default None uses the dimensions.
+    top_n, top_n_mode, top_n_per_parent, min_retained_fraction, max_depth,
+    max_levels, max_nodes, min_count, schema : optional
+        Census options (see census); levels share top_n, max_levels, min_count
+        and schema.
+    top_n_applies_to : {'census', 'both'}, optional
+        With top_n_mode='pre', pairs always analyze the census pre-selection;
+        'both' makes grain analyze it too. Requires top_n and pre mode.
+    dropna : bool, optional
+        Exclude missing values in every section, each on its own complete cases.
+    include_pairs : bool, optional
+        Compute the pairs section; default True.
+    include_absence, reference_domains, pair_contexts, max_absence_cells,
+    max_contexts, max_pairs : optional
+        Pair options (see pairs); include_absence requires include_pairs.
+    scope, missing, table_id
+        Source context shared by every section.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+
+    Returns
+    -------
+    Result
+        Kind 'profile': ``sections`` holding the levels, census, grain and pairs
+        results (unrequested ones with status 'not_requested'), and the levels
+        and census warnings. A pre-selection is shared as a Scope named
+        "census top_n cohort".
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
+    >>> fw.profile(df, ["site", "visit"], include_pairs=False).section("census").kind
+    'census'
+    """
     from ..evidence import columns
 
     selected = columns(df, dimensions)
@@ -160,4 +211,4 @@ def explore(
     }
     payload["sections"] = sections
     payload["warnings"] = [*level_result["warnings"], *census_result["warnings"]]
-    return Result("explore", payload)
+    return Result("profile", payload)

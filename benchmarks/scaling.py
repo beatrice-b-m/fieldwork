@@ -72,7 +72,7 @@ def workload(frame, args, progress=None):
     selected = list(frame.columns[: args.features]) if args.features else None
     common = {"features": selected}
     dependency_options = {"max_key_size": 1, **common}
-    path_options = dict(common)
+    path_options = {}
     if args.candidates is not None:
         dependency_options["max_candidates"] = args.candidates
         path_options["max_candidates"] = args.candidates
@@ -87,9 +87,14 @@ def workload(frame, args, progress=None):
         "dependencies": lambda: fw.discover_dependencies(
             frame, progress=progress, **dependency_options
         ),
-        "paths": lambda: fw.suggest_paths(frame, progress=progress, **path_options),
+        "paths": lambda: fw.suggest_paths(frame, progress=progress, **common, **path_options),
         "patterns": lambda: fw.value_patterns(frame, max_pairs=20, progress=progress, **common),
-        "explore": lambda: fw.explore(frame, discovery=path_options, progress=progress),
+        "explore": lambda: fw.explore(
+            frame,
+            features=selected,
+            options={"paths": path_options} if path_options else None,
+            progress=progress,
+        ),
         "levels": lambda: fw.levels(
             frame, selected or list(frame.columns), top_n=5, progress=progress
         ),

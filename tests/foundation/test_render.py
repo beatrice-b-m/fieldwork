@@ -9,9 +9,9 @@ import pytest
 from fieldwork import (
     Result,
     census,
-    explore,
     infer_schema,
     levels,
+    profile,
     render_plaintext,
     visualization_data,
 )
@@ -84,7 +84,7 @@ def test_pair_text_names_columns_and_contexts_not_internal_ids():
     frame = pd.DataFrame(
         {"alpha": ["x", "x", "x", "y"], "beta": [1, 2, 1, 1], "site": ["N", "N", "S", "S"]}
     )
-    result = explore(frame, ["alpha", "beta"], pair_contexts=[{"site": "N"}, {"site": "S"}])
+    result = profile(frame, ["alpha", "beta"], pair_contexts=[{"site": "N"}, {"site": "S"}])
     text = render_plaintext(result["sections"]["pairs"], width=100)
     contexts = visualization_data(result, section="pairs")["contexts"]
     assert all(context["label"] in text for context in contexts[1:])  # after the global one
@@ -96,7 +96,7 @@ def test_warning_codes_and_unrequested_sections_are_visible():
     frame = pd.DataFrame({"id": [1, 2], "a": pd.Series(["x", 1], dtype=object)})
     assert "EXPLICIT_ROLE_SELECTION" in render_plaintext(levels(frame, ["id"], schema={"id": "id"}))
     assert "MIXED_LEVEL_TYPES" in render_plaintext(levels(frame, ["a"]))
-    text = render_plaintext(explore(frame, ["a"], include_pairs=False))
+    text = render_plaintext(profile(frame, ["a"], include_pairs=False))
     assert text.count("not_requested") == 2  # grain and pairs
 
 

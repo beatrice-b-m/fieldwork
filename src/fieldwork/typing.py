@@ -9,23 +9,15 @@ versioned JSON-compatible mappings; see ``Result`` for their contract.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
+from collections.abc import Iterable
+from typing import Literal, TypeAlias, TypedDict
 
 from .progress import CancellationToken, Progress
-
-if TYPE_CHECKING:
-    from ._explore.result import KeySpec
-    from .evidence import Scope
 
 __all__ = [
     "CensusOptions",
     "DependencyOptions",
-    "DiscoveryOptions",
-    "ExplicitDiscoveryOptions",
-    "FoundationOptions",
     "MissingnessOptions",
-    "OverviewOptions",
     "PathOptions",
     "PatternOptions",
     "Runtime",
@@ -86,42 +78,6 @@ class CensusOptions(TypedDict, total=False):
     """Default False includes missing levels; True excludes rows missing active dimensions."""
     schema: dict[str, SchemaRole] | None
     """Optional advisory roles by column; default None."""
-
-
-class OverviewOptions(TypedDict, total=False):
-    """Common context overrides for automatic ``explore``.
-
-    Explicit keys replace matching ``discovery`` entries. They apply across
-    requested sections; section-specific feature choices can further override
-    ``features``. A scope reduces analytical rows, but source identity still
-    covers the entire original frame.
-    """
-
-    scope: Scope | None
-    """Source-bound selection, or None (default) for all rows."""
-    missing: Mapping[str, Iterable[Any]] | None
-    """Additional missing sentinels per string column; default None, native missing always counts."""
-    table_id: str
-    """Nonempty source label; default 'table'."""
-    features: Iterable[str] | None
-    """Selected unique string column names, or None (default) for all columns."""
-
-
-class ExplicitDiscoveryOptions(TypedDict, total=False):
-    """Common context allowed in ``discovery`` with explicit dimensions.
-
-    Unlike automatic exploration, duplicate keys supplied directly to ``explore``
-    raise ValueError. Foundation labels may be strings, integers, or tuples.
-    """
-
-    scope: Scope | None
-    """Source-bound selection, or None for all rows."""
-    missing: Mapping[str, Iterable[Any]] | None
-    """Additional missing sentinels by typed column label; default None."""
-    table_id: str
-    """Nonempty source label; default 'table'."""
-    features: Iterable[str] | None
-    """Columns for independent levels; default None uses dimensions."""
 
 
 class PathOptions(TypedDict, total=False):
@@ -240,30 +196,6 @@ class PatternOptions(TypedDict, total=False):
     """Nonnegative representative source-row limit per finding side; default 5."""
 
 
-class DiscoveryOptions(PathOptions, total=False):
-    """Automatic overview configuration: paths plus shared context and availability.
-
-    Search keys affect paths only. ``by`` also configures dependencies and value
-    patterns. Entity settings affect missingness only. Use ``section_options``
-    for independent analytical budgets. No runtime controls may be stored here.
-    """
-
-    scope: Scope | None
-    """Source-bound selection; default None for all rows."""
-    missing: Mapping[str, Iterable[Any]] | None
-    """Additional missing sentinels by string column; default None."""
-    table_id: str
-    """Nonempty source label; default 'table'."""
-    by: Iterable[str] | None
-    """Context columns for availability, dependencies, and value patterns; default None."""
-    entity: str | Iterable[str] | None
-    """Availability entity keys; default None."""
-    unit: Literal["rows", "entities"]
-    """Availability counting unit; default 'rows'."""
-    entity_presence: Literal["any", "all"]
-    """Availability entity aggregation; default 'any'."""
-
-
 class SectionOptions(TypedDict, total=False):
     """Per-section options overriding automatic overview defaults.
 
@@ -279,30 +211,3 @@ class SectionOptions(TypedDict, total=False):
     """Path-search options for the requested paths section."""
     value_patterns: PatternOptions
     """Value-summary options for the requested value_patterns section."""
-
-
-class FoundationOptions(CensusOptions, ExplicitDiscoveryOptions, total=False):
-    """Forwarded options for ``explore`` with explicit dimensions.
-
-    Includes census and source context options. Pair budgets apply independently
-    from census display limits. Omitted keys use explicit exploration defaults.
-    """
-
-    candidate_keys: Iterable[str | KeySpec] | None
-    """Explicit grain candidates; default None skips grain."""
-    top_n_applies_to: Literal["census", "both"]
-    """Default 'census'; 'both' also restricts pairs/grain and requires pre mode and top_n."""
-    include_pairs: bool
-    """Include pair relationships; default True."""
-    include_absence: bool
-    """Include bounded absent combinations; default False; requires include_pairs."""
-    reference_domains: Mapping[str, Iterable[Any]] | None
-    """Declared pair value domains, otherwise observed domains; default None."""
-    pair_contexts: Iterable[Mapping[str, Any]] | None
-    """Additional pair analyses restricted by exact context values; default None."""
-    max_absence_cells: int | None
-    """Nonnegative absent-cell output budget; default 1000, None is unbounded."""
-    max_contexts: int | None
-    """Total context budget including global; default 32, zero skips all, None is unbounded."""
-    max_pairs: int | None
-    """Nonnegative pair budget; default 15, None is unbounded."""

@@ -11,7 +11,7 @@ import fieldwork as fw
 
 @pytest.mark.parametrize("label", [1, ("visit", (2, "code"))])
 @pytest.mark.parametrize("context_kind", ["identity", "scope", "missing"])
-@pytest.mark.parametrize("operation", [fw.census, fw.explore])
+@pytest.mark.parametrize("operation", [fw.census, fw.profile])
 def test_source_context_applies_to_foundation_analyses(label, context_kind, operation):
     df = pd.DataFrame({label: [1, -999, 2], "value": [4, 5, 6]})
     original = df.copy(deep=True)
@@ -49,7 +49,7 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
     if operation.startswith("scoped"):
         context["scope"] = fw.Scope.from_positions(df, [0, 1, 2], name="selected")
     if operation == "scoped_explicit":
-        result = fw.explore(df, ["site", "exam"], candidate_keys=["site", "exam"], **context)
+        result = fw.profile(df, ["site", "exam"], candidate_keys=["site", "exam"], **context)
         grain = result["sections"]["grain"]
         assert result["sections"]["grain"]["graph"]["edges"]
         for section in result["sections"].values():
@@ -82,7 +82,7 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
 def test_scoped_pre_selection_cohort_counts_rows_once(applies_to, dropna):
     df = pd.DataFrame({"site": ["A", "B", None, "C"], "exam": [1, 2, 3, 4]})
     scope = fw.Scope.from_positions(df, [0, 1, 2], name="selected")
-    result = fw.explore(
+    result = fw.profile(
         df,
         ["site", "exam"],
         scope=scope,

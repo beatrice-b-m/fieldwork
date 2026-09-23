@@ -29,14 +29,12 @@ def test_recommendation_census_preserves_context_and_original_population():
         paths.best.census(df.iloc[::-1])
     with pytest.raises(TypeError, match="unexpected keyword argument.*missing"):
         paths.best.census(df, missing={})
-    explicit = fw.explore(
-        df, ["value"], discovery={"scope": scope, "missing": {"value": [-999]}}, dropna=True
-    )
+    explicit = fw.profile(df, ["value"], scope=scope, missing={"value": [-999]}, dropna=True)
     for name in ("levels", "census", "pairs"):
         assert explicit["sections"][name]["scope"]["input_rows"] == 4
         assert explicit["sections"][name]["scope"]["restriction_excluded_rows"] == 1
-    with pytest.raises(ValueError, match="search options"):
-        fw.explore(df, ["site"], discovery={"objective": "compact"})
+    with pytest.raises(TypeError, match="unexpected keyword"):
+        fw.profile(df, ["site"], objective="compact")
 
 
 def test_sparse_candidates_keep_compatible_grain_views():
@@ -137,7 +135,7 @@ def test_signature_to_complete_scope_and_saved_overview_inspection():
     with pytest.raises(ValueError, match="differs"):
         saved.select(df.iloc[::-1], signature["finding_id"])
     overview = fw.explore(df)
-    record = next(f for f in overview["findings"] if f["pattern"] == "availability_signature")
+    record = next(f for f in overview.findings if f["pattern"] == "availability_signature")
     assert len(overview.select(df, record["id"]).positions) == 3
     statement = next(f for f in saved["findings"] if f["id"] == signature["finding_id"])
     assert all(
@@ -272,12 +270,12 @@ def test_connected_feature_relationships_preserve_evidence_types():
 
 def test_overview_entity_context_configuration_and_selection():
     df = pd.DataFrame({"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]})
-    overview = fw.explore(df, discovery={"by": ["site"], "entity": "entity", "unit": "entities"})
+    overview = fw.explore(df, by=["site"], entity="entity", unit="entities")
     assert overview["sections"]["missingness"]["analysis_unit"]["denominator"] == 2
     assert overview["sections"]["dependencies"]["coverage"]["contexts_evaluated"] == 2
     signature = next(
         f
-        for f in overview["findings"]
+        for f in overview.findings
         if f["pattern"] == "availability_signature" and "x" in f["structure"]["present"]
     )
     assert overview.select(df, signature["id"]).positions == (0, 1)
@@ -289,7 +287,7 @@ def test_path_empty_exception_selection_and_entity_presentation_units():
     path = next(f for f in paths["findings"] if f["pattern"] == "census_path")
     assert paths.select(df, path["id"], exceptions=True).positions == ()
     assert paths.inspect(df, path["id"], exceptions=True, all_matches=True).empty
-    overview = fw.explore(df, discovery={"entity": "e", "unit": "entities"})
+    overview = fw.explore(df, entity="e", unit="entities")
     data = fw.visualization_data(overview)
     # Signatures count the two entities, not the three rows.
     assert data["analysis_unit"]["counting_unit"] == "entities"
@@ -326,7 +324,7 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
         "entity_keys": ["e"],
         "presence_aggregation": aggregation,
     }
-    for result in (fw.missingness(df, **config), fw.explore(df, discovery=config)):
+    for result in (fw.missingness(df, **config), fw.explore(df, **config)):
         saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
         topology = fw.visualization_data(saved, detail="topology")
         family = next(f for f in topology["findings"] if f["pattern"] == "availability_family")
@@ -381,13 +379,13 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     )
     finding_id = next(
         f["id"]
-        for f in overview["findings"]
+        for f in overview.findings
         if f["pattern"] == "exact_dependency"
         and f["measurements"]["determinant"] == ["X"]
         and f["measurements"]["target"] == "Y"
     )
     assert overview.select(df, finding_id).positions == (0, 2)
-    finding = next(f for f in overview["findings"] if f["id"] == finding_id)
+    finding = next(f for f in overview.findings if f["id"] == finding_id)
     assert finding["measurements"]["target_coverage"] == 0.5
     assert finding["measurements"]["repeat_modal_accuracy"] is None
 

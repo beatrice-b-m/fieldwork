@@ -15,7 +15,7 @@ from ._explore.render import render_plaintext as foundation_text
 from ._explore.visual_data import visualization_data as foundation_data
 from ._html import collection, document
 from .evidence import limit, qualitative_analysis_unit
-from .result import Result
+from .result import Result, overview_findings
 
 
 def structural_evidence(structure):
@@ -177,6 +177,17 @@ def _data(result, section=None):
         if data["sections"][section].get("status") == "not_requested":
             raise ValueError(f"Section {section!r} was not requested")
         return data["sections"][section]
+    if data.get("kind") == "overview":
+        sections = data["sections"]
+        data = {**data, "findings": overview_findings(data)}
+        if "analysis_unit" in sections["missingness"]:
+            data["analysis_unit"] = sections["missingness"]["analysis_unit"]
+        omitted = [n for n, s in sections.items() if s.get("status") == "not_requested"]
+        if omitted:
+            data["section_selection"] = {
+                "requested": [n for n in sections if n not in omitted],
+                "omitted": omitted,
+            }
     return data
 
 

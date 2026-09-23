@@ -4,7 +4,7 @@ import math
 
 import pandas as pd
 
-from fieldwork import KeySpec, explore, grain, infer_schema
+from fieldwork import KeySpec, grain, infer_schema, profile
 
 
 def test_fd_support_and_violations() -> None:
@@ -34,7 +34,7 @@ def test_schema_proposal_marks_requested_fd_probe_as_evaluated() -> None:
 
 def test_pairs_relation_cramers_and_absence() -> None:
     frame = pd.DataFrame({"a": ["x", "x", "y"], "b": [1, 2, 2]})
-    pair = explore(
+    pair = profile(
         frame,
         ["a", "b"],
         include_absence=True,
@@ -49,7 +49,7 @@ def test_pairs_relation_cramers_and_absence() -> None:
 
 def test_top_n_both_requires_pre_and_records_conditional_grain() -> None:
     frame = pd.DataFrame({"id": [1, 2, 3], "a": ["x", "x", "y"], "b": [1, 2, 2]})
-    result = explore(
+    result = profile(
         frame,
         ["a", "b"],
         candidate_keys=[KeySpec("id", ("id",))],

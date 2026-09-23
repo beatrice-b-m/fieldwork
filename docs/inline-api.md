@@ -48,16 +48,11 @@ recommendation's source context; `scope`, `missing`, `table_id`, and replacement
 validation inside the method. `grain` exposes only public options; encodings and
 cache objects are passed through its private implementation.
 
-`explore` has two statically declared overloads. Omitted/None dimensions select
-automatic discovery; explicit dimensions select foundation composition. Both
-return a `Result`. The runtime implementation keeps
-its forwarding dictionary so that existing duplicate-setting and override rules
-remain intact. Both overloads spell out keyword arguments because not every editor
-expands `Unpack[TypedDict]` into completion suggestions. Editors may display both
-overloads before enough context is available to select one.
+`explore(df)` (the overview) and `profile(df, dimensions)` (explicit composition)
+are separate functions with explicit keyword arguments; both return a `Result`.
 
-Reusable dictionaries can be annotated with `DiscoveryOptions`, `SectionOptions`,
-`OverviewOptions`, `FoundationOptions`, or individual operation option types from
+Reusable dictionaries can be annotated with `SectionOptions` (the overview's
+per-section `options`) or the individual operation option types from
 `fieldwork.typing`. These are ordinary dictionaries, not runtime validation models.
 Optional keys inherit the operation defaults. Option field docstrings are present
 in source for editor hovers. Flexible serialized evidence remains a versioned

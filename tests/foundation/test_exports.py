@@ -10,11 +10,11 @@ from fieldwork import (
     Result,
     Scope,
     census,
-    explore,
     grain,
     infer_schema,
     joint_counts,
     levels,
+    profile,
     render_plaintext,
     visualization_data,
 )
@@ -93,7 +93,7 @@ def test_global_pre_selection_keeps_values_excluded_by_other_dimensions():
 
 def test_combined_warnings_name_section_columns_with_different_feature_orders():
     frame = pd.DataFrame({"a": pd.Series([1, "x"], dtype=object), "b": [1, 2]})
-    result = explore(frame, ["b", "a"], features=["a", "b"], schema={"b": "id"})
+    result = profile(frame, ["b", "a"], features=["a", "b"], schema={"b": "id"})
     assert [w["column"] for w in result["warnings"]] == ["a", "b", "b", "a"]
     assert "feature_id=" not in render_plaintext(result)
 
@@ -115,7 +115,7 @@ def test_grain_graph_and_joint_cells_reference_their_records():
 
 def test_combined_pairs_absence_and_unrequested_sections():
     frame = pd.DataFrame({"a": ["x", "y"], "b": [1, 2]})
-    result = explore(frame, ["a", "b"], include_absence=True)
+    result = profile(frame, ["a", "b"], include_absence=True)
     data = result.to_dict()
     assert data["sections"]["grain"] == {"status": "not_requested"}
     pair = data["sections"]["pairs"]["pairs"][0]
@@ -168,7 +168,7 @@ def test_projection_references_have_labels_including_omission_parents(detail):
     assert all(r["feature_label"] in {"site", "id"} for r in graph["evidence"])
     joint = visualization_data(joint_counts(frame, ["site", "id"]), detail=detail)
     assert joint["cells"][0]["a_label"] == "N"
-    pair = visualization_data(explore(frame, ["site", "id"]), section="pairs", detail=detail)
+    pair = visualization_data(profile(frame, ["site", "id"]), section="pairs", detail=detail)
     cell = pair["contexts"][0]["cells"][0]
     assert cell["a_label"] == "site" and cell["b_label"] == "id"
 
@@ -181,7 +181,7 @@ def test_empty_results_have_readable_displays_and_resolved_exports():
         grain(frame, ["a"]),
         joint_counts(frame, ["a", "b"]),
         infer_schema(frame),
-        explore(frame, ["a"]),
+        profile(frame, ["a"]),
     ):
         assert "Unsupported" not in repr(result)
         assert "empty" in repr(result)

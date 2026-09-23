@@ -1,12 +1,12 @@
 """Static consumer contract; pyright checks this file without running it."""
 
-from typing import assert_type
+from typing import Any, assert_type
 
 import pandas as pd
 
 import fieldwork as fw
 from fieldwork.navigation import Path
-from fieldwork.typing import DiscoveryOptions, SectionOptions
+from fieldwork.typing import SectionOptions
 
 
 def consume(df: pd.DataFrame) -> None:
@@ -16,12 +16,14 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(scope, fw.Scope)
     assert_type(scope.refine(df, []), fw.Scope)
     assert_type(token.cancelled, bool)
-    options: DiscoveryOptions = {"objective": "availability", "max_candidates": 20}
-    sections: SectionOptions = {"dependencies": {"include_grain": False}}
+    options: SectionOptions = {
+        "paths": {"objective": "availability", "max_candidates": 20},
+        "dependencies": {"include_grain": False},
+    }
     overview = fw.explore(
         df,
-        discovery=options,
-        section_options=sections,
+        by=["site"],
+        options=options,
         progress=events.append,
         cancel=token,
         timeout=5,
@@ -32,7 +34,9 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(overview.inspect(df, "f0", all_matches=True), pd.DataFrame)
     assert_type(overview.select(df, "f0"), fw.Scope)
     assert_type(overview.relationships("site"), pd.DataFrame)
-    assert_type(fw.explore(df, ["site"], candidate_keys=["site"]), fw.Result)
+    assert_type(overview.findings, list[dict[str, Any]])
+    assert_type(overview.section("paths"), fw.Result)
+    assert_type(fw.profile(df, ["site"], candidate_keys=["site"]), fw.Result)
     assert_type(fw.census(df, ["site"], top_n=2, progress=True), fw.Result)
     assert_type(fw.levels(df, ["site"], timeout=2), fw.Result)
     assert_type(fw.grain(df, [fw.KeySpec("site", ("site",))]), fw.Result)
@@ -64,7 +68,9 @@ def consume(df: pd.DataFrame) -> None:
     # ignore reporting, accepting any of these becomes a failing contract.
     fw.missingness(df, unit="people")  # pyright: ignore[reportArgumentType]
     fw.explore(df, candidate_keys=["site"])  # pyright: ignore[reportCallIssue]
-    fw.explore(df, ["site"], sections=["paths"])  # pyright: ignore[reportArgumentType]
+    fw.explore(df, ["site"])  # pyright: ignore[reportCallIssue]
+    fw.explore(df, discovery={})  # pyright: ignore[reportCallIssue]
+    fw.profile(df, ["site"], sections=["paths"])  # pyright: ignore[reportCallIssue]
     fw.census(df, ["site"], include_pairs=True)  # pyright: ignore[reportCallIssue]
     fw.grain(df, ["site"], _cache=None)  # pyright: ignore[reportCallIssue]
     paths.path().census(df, missing={})  # pyright: ignore[reportCallIssue]

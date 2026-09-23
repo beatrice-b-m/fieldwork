@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from fieldwork import KeySpec, explore, joint_counts, render_html, render_svg
+from fieldwork import KeySpec, joint_counts, profile, render_html, render_svg
 
 
 def main() -> None:
@@ -26,7 +26,7 @@ def main() -> None:
             "site": ["North", "South", "North", "South", "North", "South"],
         }
     )
-    result = explore(
+    result = profile(
         frame,
         ["side", "finding"],
         features=["side", "finding"],
