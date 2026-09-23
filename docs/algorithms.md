@@ -165,8 +165,9 @@ exclusive or empty columns, presence rules with exceptions, mixed string formats
 equivalent encodings and partially populated columns. Trivially true or purely
 descriptive findings (constant targets, unique determinants, uniform formats,
 numeric ranges, census paths) rank last. After the first finding of a pattern on a
-given leading column, further ones are halved, so one near-key determining many
-targets does not crowd out other leads. Scores are for ordering only; they are not
+given leading column, further ones are halved (all equivalent-encoding findings
+after the first, since they chain across columns), so one near-key determining
+many targets does not crowd out other leads. Scores are for ordering only; they are not
 probabilities or measurements. Section results keep their own order and IDs.
 
 ## Explicit work budgets and exact kernels

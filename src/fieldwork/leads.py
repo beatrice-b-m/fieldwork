@@ -76,13 +76,15 @@ def rank(findings: list[dict[str, Any]], constant_columns: set[str]) -> list[dic
 
     Repeats of the same pattern on the same leading column (for example one
     near-key determining many targets) are halved after the first, so the top
-    of the list covers distinct leads.
+    of the list covers distinct leads. Equivalent encodings form chains across
+    columns, so all but the first are halved regardless of column.
     """
     seen: dict[tuple[str, str], int] = {}
     scored = []
     for record in findings:
         score, reason = lead(record, constant_columns)
-        key = (record["pattern"], record["features"][0]["column"] if record["features"] else "")
+        leading = record["features"][0]["column"] if record["features"] else ""
+        key = (record["pattern"], "" if record["pattern"] == "value_alias" else leading)
         if seen.get(key):
             score /= 2
         seen[key] = seen.get(key, 0) + 1

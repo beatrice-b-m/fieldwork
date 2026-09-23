@@ -522,3 +522,22 @@ def test_similarity_with_an_always_present_feature_is_not_reported():
     df = pd.DataFrame({"complete": range(10), "nearly": [1] * 9 + [None]})
     result = fw.missingness(df, min_similarity=0.8)
     assert not [f for f in result["findings"] if f["pattern"] == "similar_availability"]
+
+
+def test_overview_summary_leads_with_ranked_findings_and_merged_grains():
+    df = pd.DataFrame(
+        {
+            "site": ["A", "A", "B", "B", "C", "C"],
+            "site_name": ["Alpha", "Alpha", "Beta", "Beta", "Gamma", "Gamma"],
+            "note": ["x", None, None, None, None, None],
+        }
+    )
+    overview = fw.explore(df)
+    data = fw.visualization_data(overview)["overview"]
+    first = data["grains"][0]
+    assert {first["columns"][0], *first["equivalent"]} == {"site", "site_name"}
+    assert {s["absent"] == ["note"] for s in data["signatures"]} == {True, False}
+    lines = str(overview).splitlines()
+    leads = lines.index("Leads (inspect with result.inspect(df, id))")
+    assert lines[leads + 1].startswith(f"  [f0] {overview['findings'][0]['statement']}")
+    assert "  Missing: note (5 rows)" in lines

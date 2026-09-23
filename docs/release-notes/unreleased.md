@@ -36,3 +36,10 @@ between releases without migration.
   change**; section results keep their own IDs.
 - Trivially true dependencies (constant targets, unique determinants) are no
   longer edges in the overview feature network.
+- The text overview opens with up to eight ranked **Leads** (finding ID,
+  statement and reason). Candidate grains take one line each, and single-column
+  candidates with the same partition are merged and listed as `equivalent`
+  (also in the SVG, HTML and `visualization_data` overview). Availability
+  signatures are described by the columns they are missing ("Missing: notes",
+  "All populated") instead of long lists of present columns that truncated to
+  identical lines. HTML finding cards show each lead reason.

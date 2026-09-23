@@ -122,6 +122,51 @@ def _candidate_summaries(data):
     return sorted(candidates, key=lambda c: candidate_priority(c, legacy=legacy))
 
 
+def _collapse_equivalent(candidates):
+    """Merge single-column candidates that partition the same rows identically.
+
+    Mutual determination only implies the same partition on the same evaluated
+    population, so group counts and evaluated rows must also match.
+    """
+    kept = []
+    for candidate in candidates:
+        columns = candidate["columns"]
+        twin = next(
+            (
+                k
+                for k in kept
+                if len(columns) == 1
+                and len(k["columns"]) == 1
+                and k["groups"] == candidate["groups"]
+                and k["evaluated_rows"] == candidate["evaluated_rows"]
+                and columns[0] in k.get("determines", [])
+                and k["columns"][0] in candidate.get("determines", [])
+            ),
+            None,
+        )
+        if twin is None:
+            kept.append({**candidate, "equivalent": []})
+        else:
+            twin["equivalent"].append(columns[0])
+    return kept
+
+
+def _grain_title(candidate):
+    title = ", ".join(candidate["columns"])
+    if candidate.get("equivalent"):
+        title += " (equivalent: " + ", ".join(candidate["equivalent"]) + ")"
+    return title
+
+
+def _signature_label(signature):
+    present, absent = signature["present"], signature["absent"]
+    if not absent:
+        return "All populated"
+    if len(absent) <= len(present):
+        return "Missing: " + ", ".join(absent)
+    return "Only: " + (", ".join(present) or "none")
+
+
 def _available(value):
     return "unavailable" if value is None else str(value)
 
@@ -391,6 +436,7 @@ def visualization_data(
             "grains": [
                 {
                     "columns": c["columns"],
+                    "equivalent": c["equivalent"],
                     "role": candidate_role(c),
                     **(
                         {
@@ -409,7 +455,7 @@ def visualization_data(
                         else {}
                     ),
                 }
-                for c in (
+                for c in _collapse_equivalent(
                     _candidate_summaries(sections["dependencies"])
                     if detail == "full"
                     else sections["dependencies"].get("candidates", [])
@@ -607,26 +653,38 @@ def render_plaintext(
         lines.append("Analysis: " + _unit_label(data["analysis_unit"]))
     if data["kind"] == "overview":
         overview = data["overview"]
-        lines.append("Availability families")
-        lines.extend("  " + ", ".join(group) for group in overview["families"][: min(5, max_nodes)])
-        lines.append("Major availability signatures")
-        for signature in overview["signatures"][: min(5, max_nodes)]:
-            text = "  Present: " + (", ".join(signature["present"]) or "none")
-            if detail == "full":
-                text += f" ({signature['count']} {data.get('analysis_unit', {}).get('counting_unit', 'rows')})"
-            lines.append(text)
+        unit = data.get("analysis_unit", {}).get("counting_unit", "rows")
+        if detail == "full":
+            leads = [row for row in data["findings"] if row.get("lead", {}).get("score", 0) >= 0.3]
+            lines.append("Leads (inspect with result.inspect(df, id))")
+            lines.extend(
+                f"  [{row['id']}] {row['statement']} ({row['lead']['reason']})"
+                for row in leads[: min(8, max_nodes)]
+            )
+            if not leads:
+                lines.append("  none stood out; browse the sections below")
         lines.append("Candidate grains")
         for candidate in overview["grains"][: min(5, max_nodes)]:
-            text = "  " + ", ".join(candidate["columns"]) + ": " + candidate["role"]
+            text = "  " + _grain_title(candidate) + ": " + candidate["role"]
             if detail == "full":
-                lines.append(text)
-                lines.extend(
-                    "    " + part for part in _candidate_explanation(candidate).split("; ")
+                text += (
+                    f"; {candidate['groups']} groups, {len(candidate['determines'])} exact"
+                    f" targets, {len(candidate['determines_with_repeated_support'] or [])}"
+                    " with repeated support"
                 )
-            else:
-                lines.append(text)
+            lines.append(text)
         lines.append("Suggested census paths")
         lines.extend("  " + " > ".join(path) for path in overview["paths"][:max_nodes])
+        lines.append("Availability families")
+        lines.extend("  " + ", ".join(group) for group in overview["families"][: min(5, max_nodes)])
+        if not overview["families"]:
+            lines.append("  none")
+        lines.append("Major availability signatures")
+        for signature in overview["signatures"][: min(5, max_nodes)]:
+            text = "  " + _signature_label(signature)
+            if detail == "full":
+                text += f" ({signature['count']} {unit})"
+            lines.append(text)
         if "feature_network" in data:
             lines.append("Connected feature evidence")
             for group in data["feature_network"]["components"][: min(5, max_nodes)]:
@@ -808,7 +866,7 @@ def render_svg(
             displayed_lists.append(("candidate grains", len(candidates), min(5, max_findings)))
             rows = [
                 {
-                    "statement": ", ".join(c["columns"]) + ": " + c["role"],
+                    "statement": _grain_title(c) + ": " + c["role"],
                     "analysis_unit": {"counting_unit": "rows"},
                     "counting_unit": "rows",
                     "measurements": {},
@@ -1067,7 +1125,7 @@ def render_html(
         if candidates:
             cards = [
                 "<details data-record><summary>"
-                + _esc(", ".join(c["columns"]))
+                + _esc(_grain_title(c))
                 + ' <span class="badge">'
                 + _esc(c["role"])
                 + "</span></summary>"
@@ -1110,6 +1168,11 @@ def render_html(
             + _esc(row["pattern"].replace("_", " "))
             + "</span>"
             + _esc(row["statement"])
+            + (
+                ' <span class="badge">' + _esc(row["lead"]["reason"]) + "</span>"
+                if "lead" in row
+                else ""
+            )
             + '</summary><div class="content">'
         ]
         card.append("<p>Analysis: " + _esc(_unit_label(row["analysis_unit"])) + "</p>")

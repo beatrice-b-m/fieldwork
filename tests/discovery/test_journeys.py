@@ -117,7 +117,9 @@ def test_candidate_roles_and_priority():
     assert roles[("id",)] == "unique identifier"
     assert roles[("entity",)] == "repeated grouping"
     assert overview["grains"][0]["role"] == "repeated grouping"
-    assert len(overview["grains"]) == 5
+    # label partitions rows exactly like entity, so it is listed as equivalent.
+    assert len(overview["grains"]) == 4
+    assert overview["grains"][0]["equivalent"] == ["label"]
 
 
 def test_signature_to_complete_scope_and_saved_overview_inspection():

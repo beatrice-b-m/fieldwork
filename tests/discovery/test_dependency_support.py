@@ -185,8 +185,9 @@ def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
     assert x["determines_with_repeated_support"] == []
     assert z["determines_with_repeated_support"] == ["W"]
     projected = fw.visualization_data(overview_of(result))["overview"]["grains"]
-    order = [c["columns"] for c in projected]
-    assert order.index(["Z"]) < order.index(["X"])
+    order = [c["columns"] + c["equivalent"] for c in projected]
+    position = {c: i for i, columns in enumerate(order) for c in columns}
+    assert position["Z"] < position["X"]
     assert original_order == [c["columns"] for c in result["candidates"]]
     legacy = json.loads(json.dumps(result))
     for c in legacy["candidates"]:
@@ -213,8 +214,9 @@ def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
         "repeated_groups"
     )
     fallback = fw.visualization_data(overview_of(legacy))["overview"]["grains"]
-    fallback_order = [c["columns"] for c in fallback]
-    assert fallback_order.index(["X"]) < fallback_order.index(["Z"])
+    fallback_order = [c["columns"] + c["equivalent"] for c in fallback]
+    position = {c: i for i, columns in enumerate(fallback_order) for c in columns}
+    assert position["X"] < position["Z"]
     assert (
         next(c for c in fallback if c["columns"] == ["X"])["determines_with_repeated_support"]
         is None
