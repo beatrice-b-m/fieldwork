@@ -150,14 +150,15 @@ once and weight their frequencies. Bounded examples avoid allocating every match
 `select` evaluates a finding's saved predicate directly rather than replaying
 unrelated graphs and summaries; source identity is still validated.
 
-A dependency test's full-population counts are reused by grain views whose
-population equals it; other view populations are counted afresh. Retained graph
-masks are packed and interned. Grain reuses integer groups and missing codes
-without retaining cell dictionaries. Path search caches prefix groupings up to
-32 MiB (worth about 10% of path search on 500,000 rows). Once encoding became
-`pandas.factorize`, the bounded caches of value dictionaries and of
-subset-population test metrics no longer changed measured runtime and were removed.
-The prefix cache is not a memory budget for a whole operation. Input frames, encoded
+A dependency test's counts are reused by grain views on the same population:
+full-population counts always, and view-population counts up to 512 entries and
+16 MiB of packed mask keys (about a third of the structured 300,000-row discovery
+time). Retained graph masks are packed and interned. Grain reuses integer groups
+and missing codes without retaining cell dictionaries. Path search caches prefix
+groupings up to 32 MiB (about 10% of path search on 500,000 rows). Once encoding
+became `pandas.factorize`, the bounded cache of value dictionaries no longer
+changed measured runtime and was removed. These caches are not memory budgets
+for a whole operation. Input frames, encoded
 columns, output graphs, and source-position lists can still be large. Work grows
 with rows, selected features, candidate/target tests, distinct context groups,
 and graph views. Unique IDs, continuous values, long strings, and mixed scalar

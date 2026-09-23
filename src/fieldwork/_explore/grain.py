@@ -118,8 +118,7 @@ def check_dependency(
     counts = encoded.cache.get(cache_key, mask)
     if counts is None:
         counts = _group_counts(encoded, spec.columns, target, mask)
-        if row_mask is None:
-            encoded.cache.put(cache_key, counts)
+        encoded.cache.put(cache_key, mask, counts, global_population=row_mask is None)
     groups, violating = counts["evaluated_groups"], counts["violating_groups"]
     evaluated = counts["evaluated_rows"]
     record = {
