@@ -159,3 +159,36 @@ history at tag `v0.2.1` under `docs/performance-results/`. Use the baseline
 revision's harness to reproduce the historical runs, since it predates runtime
 and compact options. See [performance controls](performance.md) for the public
 APIs and remaining memory/latency limitations.
+
+## Architecture simplification after 0.2.1
+
+Measured on 2026-09-23 with the same Python, pandas, NumPy and macOS versions,
+comparing v0.2.1 (`61239b2`) with the simplified architecture (unreleased).
+Each workload is one fresh-process run of `benchmarks/scaling.py` (seed 721)
+unless noted; figures are analysis seconds and ordinary JSON export bytes.
+Most gains come from counting `pandas.factorize` codes instead of per-value
+Python identities, and export sizes fall because results no longer copy nested
+results or repeat tagged values.
+
+| Workload | v0.2.1 | Simplified |
+| --- | ---: | ---: |
+| mixed 100k × 20 `explore` | 3.844 s, 1,549,991 B | 2.402 s, 940,642 B |
+| mixed 100k × 20 `discover_dependencies` | 3.192 s | 1.756 s |
+| mixed 100k × 20 `suggest_paths` | 2.097 s | 0.729 s |
+| mixed 100k × 20 `levels` / `census` / `grain` | 2.054 / 0.539 / 1.506 s | 0.400 / 0.134 / 0.383 s |
+| mixed 100k × 20 `pairs` | 3.679 s, 45.3 MB | 1.220 s, 26.2 MB |
+| mixed 100k × 20 `infer_schema` | 1.412 s | 0.319 s |
+| mixed 100k × 20 `missingness` / `value_patterns` | 0.086 / 0.089 s | 0.086 / 0.090 s |
+| sparse 10k × 150 `explore` | 1.000 s, 12.0 MB | 0.639 s, 7.4 MB |
+| sparse 10k × 150 `discover_dependencies` | 0.885 s, 9.8 MB | 0.540 s, 6.3 MB |
+| sparse 10k × 150 `value_patterns` (median of 5) | 0.033 s | 0.031 s |
+| structured 300k × 20 `explore` | 6.335 s, 3.6 MB | 5.585 s, 1.9 MB |
+| structured 300k × 20 `discover_dependencies` | 4.978 s | 4.153 s |
+| structured 300k × 20 `levels` / `census` / `grain` | 0.751 / 0.714 / 0.868 s | 0.204 / 0.160 / 0.384 s |
+| 500k × 14 (10 small ints, 3 unique floats, 1 string) `explore` | 11.691 s, 715,849 B | 6.085 s, 443,903 B |
+| 500k × 14 `levels` on a unique float column | 2.395 s | 0.323 s |
+| lab table (`examples/wide_table.py`) overview | 0.193 s, 2,560,237 B | 0.147 s, 1,610,043 B |
+
+No workload became slower. `benchmarks/parity.py` confirmed that each
+function split left analytical output unchanged; intended output changes are
+listed in the release notes.
