@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .evidence import qualitative_analysis_unit
+from .leads import TRIVIAL
 
 RELATIONS = {
     "availability_family": "identical_availability",
@@ -17,13 +18,17 @@ RELATIONS = {
 
 
 def feature_network(base):
-    """Connect features without treating connectedness as equivalence or composing FDs."""
+    """Connect features without treating connectedness as equivalence or composing FDs.
+
+    Trivially true dependencies (constant targets, unique determinants) are left
+    out: they would connect every feature without describing any structure.
+    """
     relationships = []
     nodes = {}
     adjacency = {}
     for record in base["findings"]:
         kind = RELATIONS.get(record["pattern"])
-        if kind is None:
+        if kind is None or record.get("lead", {}).get("reason") in TRIVIAL:
             continue
         selector = record["selector"]
         section = selector["analysis_section"]

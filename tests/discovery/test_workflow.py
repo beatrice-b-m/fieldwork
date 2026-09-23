@@ -488,6 +488,36 @@ def test_availability_omits_vacuous_findings_but_keeps_measurements():
     assert [f["features"] for f in result["families"]] == [["left", "twin"]]
 
 
+def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
+    rows = 40
+    df = pd.DataFrame(
+        {
+            "row_id": range(rows),
+            "site": ["A", "B"] * (rows // 2),
+            "region": ["north", "south"] * (rows // 2),
+            "constant": ["same"] * rows,
+        }
+    )
+    df.loc[2, "region"] = "south"  # one exception to site -> region
+    overview = fw.explore(df)
+    top = overview["findings"][0]
+    assert top["id"] == "f0" and top["pattern"] == "approximate_dependency"
+    assert top["measurements"]["determinant"] == ["site"]
+    assert top["lead"]["reason"] == "near-rule with exceptions"
+    scores = [f["lead"]["score"] for f in overview["findings"]]
+    assert scores == sorted(scores, reverse=True)
+    trivial = [
+        f
+        for f in overview["findings"]
+        if f["lead"]["reason"] in {"target is constant", "determinant is unique here"}
+    ]
+    assert trivial
+    network = overview["feature_network"]["relationships"]
+    linked = {e["evidence"]["overview_finding_id"] for e in network}
+    assert linked.isdisjoint(f["id"] for f in trivial)
+    assert overview.inspect(df, "f0", exceptions=True, all_matches=True).index.tolist() == [2]
+
+
 def test_similarity_with_an_always_present_feature_is_not_reported():
     df = pd.DataFrame({"complete": range(10), "nearly": [1] * 9 + [None]})
     result = fw.missingness(df, min_similarity=0.8)

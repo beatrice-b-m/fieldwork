@@ -19,6 +19,7 @@ from .availability import missingness
 from .discovery import discover_dependencies
 from .evidence import InvestigationResult, Scope, finding, foundation_context, prepare, result
 from .families import feature_network
+from .leads import rank
 from .navigation import suggest_paths
 from .patterns import value_patterns
 from .progress import CancellationToken, Progress
@@ -234,7 +235,9 @@ def explore(
     -------
     InvestigationResult or ExplorerResult
         Automatic mode returns kind 'overview', with linked findings, feature
-        relationships, and independent section results. Explicit mode returns
+        relationships, and independent section results. Overview findings are
+        ranked as leads (f0 first), each with lead.score and lead.reason; section
+        results keep their own order. Explicit mode returns
         kind 'explore', with levels/census/grain/pairs sections. Unrequested
         sections carry status='not_requested'.
 
@@ -354,16 +357,14 @@ def explore(
             "requested": [n for n in names if n in requested],
             "omitted": [n for n in names if n not in requested],
         }
-    base["findings"] = []
+    findings = []
     for section in names:
         if section not in analyses:
             continue
-        analysis = analyses[section]
-        for record in analysis["findings"]:
-            base["findings"].append(
+        for record in analyses[section]["findings"]:
+            findings.append(
                 {
                     **record,
-                    "id": f"f{len(base['findings'])}",
                     "selector": {
                         **record["selector"],
                         "analysis_section": section,
@@ -373,6 +374,17 @@ def explore(
                     },
                 }
             )
+    constant = set()
+    for c in df.columns:
+        try:
+            if df[c].nunique(dropna=True) <= 1:
+                constant.add(c)
+        except TypeError:  # Unhashable cells: such columns are skipped anyway.
+            pass
+    # Overview IDs follow lead rank, so f0 is the most promising finding.
+    base["findings"] = [
+        {**record, "id": f"f{i}"} for i, record in enumerate(rank(findings, constant))
+    ]
     with phase("assembling overview"):
         base["feature_network"] = feature_network(base)
     return result("overview", base)

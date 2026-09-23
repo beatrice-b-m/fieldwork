@@ -141,6 +141,9 @@ The overview includes value-pattern discovery and a `feature_network` with
 feature nodes, typed relationships, and connected components. Availability
 identity/similarity/implication/exclusion, indexed names, equivalent value
 partitions and exact/approximate dependencies remain separate relationship types.
+Trivially true dependencies (a constant target, or a determinant that is unique
+within the target's evaluated rows) remain findings but are not network edges;
+otherwise they would connect every feature without describing structure.
 A connected component means reachability through this evidence, not equivalence
 or a composed functional dependency. Composite determinants and typed context
 predicates remain explicit. Each relationship links to its section finding,
@@ -151,6 +154,20 @@ returns a dataframe for filtering and following evidence to `inspect`/`select`.
 Saved HTML provides feature disclosures and links to the supporting findings.
 Topology removes evidence pointers and populations while retaining relation types,
 direction and context. Its relationship order is canonical.
+
+### Overview lead ranking
+
+Overview findings are ordered by a heuristic lead score (`src/fieldwork/leads.py`)
+and numbered in that order, so `f0` is the most promising lead. Each carries
+`lead.score` and a short `lead.reason`. The score favors evidence an analyst would
+want to explain: near-rules with repeated support and a few exceptions, mutually
+exclusive or empty columns, presence rules with exceptions, mixed string formats,
+equivalent encodings and partially populated columns. Trivially true or purely
+descriptive findings (constant targets, unique determinants, uniform formats,
+numeric ranges, census paths) rank last. After the first finding of a pattern on a
+given leading column, further ones are halved, so one near-key determining many
+targets does not crowd out other leads. Scores are for ordering only; they are not
+probabilities or measurements. Section results keep their own order and IDs.
 
 ## Explicit work budgets and exact kernels
 

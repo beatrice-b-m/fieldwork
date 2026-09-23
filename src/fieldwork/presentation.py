@@ -287,6 +287,8 @@ def visualization_data(
                 examples=record["examples"],
                 exceptions=record["exceptions"],
             )
+            if "lead" in record:
+                row["lead"] = record["lead"]
             if record["pattern"] in {"exact_dependency", "approximate_dependency"}:
                 dependency_data = data.get("sections", {}).get("dependencies", data)
                 row["measurements"] = _dependency_measurements(record["measurements"])

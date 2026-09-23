@@ -237,9 +237,9 @@ def test_recommendations_explain_evidence_and_diversify_feature_choices():
 def test_connected_feature_relationships_preserve_evidence_types():
     df = pd.DataFrame(
         {
-            "a_1": [1, 2, 3, 4, 5, None],
-            "a_2": [10, 20, 30, 40, None, None],
-            "mirror": [1, 2, 3, 4, 5, None],
+            "a_1": [1, 1, 2, 2, 3, None],
+            "a_2": [10, 10, 20, 20, None, None],
+            "mirror": [1, 1, 2, 2, 3, None],
         }
     )
     overview = fw.explore(df)
@@ -389,12 +389,19 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     narrow = dependencies["grain_views"][1]
     assert narrow["population"]["positions"] == [0, 2]
     assert len(narrow["grain"]["graph"]["nodes"]) == 1
-    edge = next(
-        e
+    # Within Y's observed rows X is unique, so the rule is trivial: it stays a
+    # finding but does not connect features in the network.
+    assert not any(
+        e.get("determinant") == ["X"] and e.get("target") == "Y"
         for e in overview["feature_network"]["relationships"]
-        if e.get("determinant") == ["X"] and e.get("target") == "Y"
     )
-    finding_id = edge["evidence"]["overview_finding_id"]
+    finding_id = next(
+        f["id"]
+        for f in overview["findings"]
+        if f["pattern"] == "exact_dependency"
+        and f["measurements"]["determinant"] == ["X"]
+        and f["measurements"]["target"] == "Y"
+    )
     assert overview.select(df, finding_id).positions == (0, 2)
     finding = next(f for f in overview["findings"] if f["id"] == finding_id)
     assert finding["measurements"]["target_coverage"] == 0.5

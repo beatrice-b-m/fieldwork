@@ -30,3 +30,9 @@ between releases without migration.
   feature. On a complete 43-column table this removes about 440 findings and
   lets the feature network separate into meaningful components.
 - Similar-presence findings are omitted when either feature is always present.
+- Overview findings are ranked as investigation leads and numbered in that order
+  (`f0` is the top lead). Each carries `lead.score` and `lead.reason`; see
+  [lead ranking](../algorithms.md#overview-lead-ranking). **Overview finding IDs
+  change**; section results keep their own IDs.
+- Trivially true dependencies (constant targets, unique determinants) are no
+  longer edges in the overview feature network.
