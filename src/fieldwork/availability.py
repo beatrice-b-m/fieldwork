@@ -18,6 +18,7 @@ from .evidence import (
     EvidenceRows,
     InvestigationResult,
     Scope,
+    analyzable,
     columns,
     context_statement,
     finding,
@@ -81,7 +82,9 @@ def missingness(
         integer row positions. Unsupported scalar objects raise TypeError.
     features : iterable of str or None, optional
         Unique column names to analyze, in requested order; default None selects
-        all columns. Restricts analysis, not full-source identity validation.
+        all columns, skipping those with unsupported values (such as lists,
+        dicts or Decimal) and listing them in skipped_features. Restricts
+        analysis, not full-source identity validation.
     by : iterable of str or None, optional
         Joint context columns; default None. Missing context values form categories.
         An entity spanning contexts contributes once within each relevant context.
@@ -149,7 +152,8 @@ def missingness(
     ValueError
         Columns, limits, thresholds, constraints, or source scope are invalid.
     TypeError
-        The frame, column labels, or scalar values are unsupported.
+        The frame or column labels are unsupported, or an explicitly requested
+        column contains unsupported values.
     AnalysisCancelled
         Cancellation or the cooperative timeout stops analysis.
 
@@ -200,7 +204,9 @@ def missingness(
         table_id=table_id,
         features=[*contexts, *entities],
         presence_features=selected,
+        optional=selected if features is None else (),
     )
+    selected = analyzable(selected, base)
     codes = {c: np.where(present[c], values, -1) for c, values in codes.items()}
     eligible = np.ones(len(frame), dtype=bool)
     for c in entities:

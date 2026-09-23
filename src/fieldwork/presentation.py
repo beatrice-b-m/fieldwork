@@ -296,6 +296,8 @@ def visualization_data(
         output["findings"].append(row)
     if "analysis_unit" in data:
         output["analysis_unit"] = _qualitative_unit(data["analysis_unit"])
+    if data.get("skipped_features"):
+        output["skipped_features"] = data["skipped_features"]
     for side in ("before", "after"):
         scope = data.get(f"{side}_scope")
         unit = data.get(f"{side}_analysis_unit")
@@ -481,6 +483,12 @@ def _coverage_lines(data):
     return lines
 
 
+def _skipped_label(skipped):
+    return "Skipped columns with unsupported values: " + ", ".join(
+        f"{record['feature']} ({record['value_type']})" for record in skipped
+    )
+
+
 def _sample_label(label, sample):
     positions = sample["positions"]
     total = sample.get("total")
@@ -576,6 +584,8 @@ def render_plaintext(
         lines.append(f"Population: {data.get('scope', {}).get('evaluated_rows', 0)} rows")
     if data.get("section_selection", {}).get("omitted"):
         lines.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
+    if data.get("skipped_features"):
+        lines.append(_skipped_label(data["skipped_features"]))
     lines.extend(_comparison_labels(data))
     if detail == "full":
         coverage = _coverage_lines(data)
@@ -767,6 +777,8 @@ def render_svg(
     context_labels = _comparison_labels(data)
     if data.get("section_selection", {}).get("omitted"):
         context_labels.append("Not requested: " + ", ".join(data["section_selection"]["omitted"]))
+    if data.get("skipped_features"):
+        context_labels.append(_skipped_label(data["skipped_features"]))
     if "analysis_unit" in data and data["kind"] != "comparison":
         context_labels.append("Analysis: " + _unit_label(data["analysis_unit"]))
     for label in context_labels:
@@ -975,6 +987,10 @@ def render_html(
             '<p class="notice">Not requested: '
             + _esc(", ".join(projected["section_selection"]["omitted"]))
             + "</p>"
+        )
+    if projected.get("skipped_features"):
+        parts.append(
+            '<p class="notice">' + _esc(_skipped_label(projected["skipped_features"])) + "</p>"
         )
     if full:
         coverage = _coverage_lines(projected)

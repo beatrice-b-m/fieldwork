@@ -10,8 +10,13 @@ string encodings, and native missing scalars share a missing token. Results have
 frozen top-level attributes, but nested payload containers are mutable.
 
 Discovery currently requires unique string column names. Foundation operations
-also support integer and recursively tuple-valued labels. Unsupported cell types
-raise `TypeError`; no arbitrary object stringification is used to merge values.
+also support integer and recursively tuple-valued labels. No arbitrary object
+stringification is used to merge values. When discovery selects columns
+automatically (`features=None`), columns containing unsupported cell types (such
+as lists, dicts or `Decimal`) are skipped and listed in `skipped_features` with
+their value type; the other columns are analyzed normally. A column named
+explicitly (in `features`, `by`, `entity`, or a foundation operation) still raises
+`TypeError`.
 Foundation context (`scope`, `missing`, `table_id`) preserves those labels. When
 columns include typed labels, `analysis_context.missing_convention` stores
 `sentinels_by_column` records with tagged `column` identities and sentinel `values`,

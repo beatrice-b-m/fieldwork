@@ -16,6 +16,7 @@ from ._runtime import checkpoint, operation, phase
 from .evidence import (
     InvestigationResult,
     Scope,
+    analyzable,
     bounded_rows,
     columns,
     finding,
@@ -52,7 +53,9 @@ def value_patterns(
         integer row positions. Unsupported scalar objects raise TypeError.
     features : iterable of str or None, optional
         Unique column names to analyze, in requested order; default None selects
-        all columns. Restricts analysis, not full-source identity validation.
+        all columns, skipping those with unsupported values (such as lists,
+        dicts or Decimal) and listing them in skipped_features. Restricts
+        analysis, not full-source identity validation.
     by : iterable of str or None, optional
         Joint context columns for within-context constancy; default None. Rows
         missing any context key are excluded from that analysis; each target also
@@ -102,7 +105,8 @@ def value_patterns(
     ValueError
         Columns, limits, thresholds, constraints, or source scope are invalid.
     TypeError
-        The frame, column labels, or scalar values are unsupported.
+        The frame or column labels are unsupported, or an explicitly requested
+        column contains unsupported values.
     AnalysisCancelled
         Cancellation or the cooperative timeout stops analysis.
 
@@ -143,7 +147,9 @@ def value_patterns(
         table_id=table_id,
         features=[*selected, *contexts] if contexts else [],
         presence_features=selected,
+        optional=selected if features is None else (),
     )
+    selected = analyzable(selected, base)
     families = defaultdict(list)
     base["summaries"] = []
     with phase("value summaries", len(selected), "columns") as tracker:

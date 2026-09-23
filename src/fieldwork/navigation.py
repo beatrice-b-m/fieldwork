@@ -19,6 +19,7 @@ from ._runtime import checkpoint, operation, phase
 from .evidence import (
     InvestigationResult,
     Scope,
+    analyzable,
     columns,
     finding,
     fingerprint,
@@ -285,7 +286,9 @@ def suggest_paths(
         start_with dimensions. Scores are heuristic costs, not probabilities.
     features : iterable of str or None, optional
         Unique column names to analyze, in requested order; default None selects
-        all columns. Restricts analysis, not full-source identity validation.
+        all columns, skipping those with unsupported values (such as lists,
+        dicts or Decimal) and listing them in skipped_features. Restricts
+        analysis, not full-source identity validation.
     start_with : iterable of str or None, optional
         Required ordered initial columns; default None. Must fit both feature and
         dimension budgets. Required for the context objective.
@@ -351,7 +354,8 @@ def suggest_paths(
     ValueError
         Columns, limits, thresholds, constraints, or source scope are invalid.
     TypeError
-        The frame, column labels, or scalar values are unsupported.
+        The frame or column labels are unsupported, or an explicitly requested
+        column contains unsupported values.
     AnalysisCancelled
         Cancellation or the cooperative timeout stops analysis.
 
@@ -422,7 +426,9 @@ def suggest_paths(
         missing=missing,
         table_id=table_id,
         features=[*selected, *([target] if target is not None else [])],
+        optional=[c for c in selected if c not in required] if features is None else (),
     )
+    selected = analyzable(selected, base)
     encoded = {c: np.where(present[c], code, -1) for c, code in encoded.items()}
     cardinality = {c: len(np.unique(encoded[c])) for c in selected}
     active = [c for c in selected if cardinality[c] > 1 or c in required]

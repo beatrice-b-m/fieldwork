@@ -443,3 +443,26 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     assert fw.Recipe("explore").run(df, scope=scope)["scope"]["selection_positions"] == [0, 1]
     with pytest.raises(TypeError, match="discovery dictionary"):
         loaded.run(df, max_candidates=2)
+
+
+def test_unsupported_cells_skip_automatic_columns_but_reject_explicit_ones():
+    from decimal import Decimal
+
+    df = pd.DataFrame(
+        {
+            "site": ["A", "A", "B"],
+            "tags": [["x"], ["y"], None],
+            "meta": [{"k": 1}, None, {"k": 2}],
+            "amount": [Decimal("1.5"), Decimal(2), None],
+        }
+    )
+    overview = fw.explore(df)
+    assert [r["feature"] for r in overview["skipped_features"]] == ["tags", "meta", "amount"]
+    assert {r["value_type"] for r in overview["skipped_features"]} == {"list", "dict", "Decimal"}
+    analyzed = {c["column"] for f in overview["findings"] for c in f["features"]}
+    assert analyzed == {"site"}
+    assert "tags (list)" in fw.render_plaintext(overview)
+    for analysis in (fw.missingness, fw.discover_dependencies, fw.value_patterns):
+        assert analysis(df)["parameters"]["features"] == ["site"]
+        with pytest.raises(TypeError, match="'tags'"):
+            analysis(df, features=["site", "tags"])

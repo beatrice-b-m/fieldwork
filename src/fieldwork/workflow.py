@@ -161,8 +161,10 @@ def explore(
         Nonempty source label; default 'table'. Does not replace the fingerprint.
     features : iterable of column labels or None, optional
         Automatic mode: unique string columns for all sections, default None
-        selects all. Explicit mode: typed labels for independent levels, default
-        None uses dimensions. Section options can override automatic features.
+        selects all, skipping columns with unsupported values (listed in
+        skipped_features). Explicit mode: typed labels for independent levels,
+        default None uses dimensions. Section options can override automatic
+        features.
     candidate_keys : iterable of column labels or KeySpec or None, optional
         Explicit mode only. Default None skips grain. Labels denote single-column
         keys; use KeySpec for composite determinants. Tuple labels denote one
@@ -339,6 +341,11 @@ def explore(
         name: analyses[name].to_dict() if name in analyses else {"status": "not_requested"}
         for name in names
     }
+    skipped = {}
+    for analysis in analyses.values():
+        for record in analysis["skipped_features"]:
+            skipped.setdefault(record["feature"], record)
+    base["skipped_features"] = list(skipped.values())
     paths = analyses.get("paths")
     if paths is not None and paths.best:
         base["sections"]["census"] = paths["paths"][0]["preview"]
