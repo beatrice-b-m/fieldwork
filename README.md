@@ -61,11 +61,13 @@ to go from an overview to examining individual records, or work through the
 [documentation](https://fieldwork.beabm.dev/) covers the tools you can use as
 your questions become more specific.
 
-Fieldwork 0.2.0 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
+Fieldwork 0.2.1 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
 only required runtime dependencies.
 
-See the [0.2.0 release notes](docs/release-notes/v0.2.0.md) for ranked investigation
-leads, support for columns with unsupported values, faster source checks, and saved-result
+See the [0.2.1 release notes](docs/release-notes/v0.2.1.md) for a value-pattern fix and a
+test suite that checks analyses against independent recomputation, and the
+[0.2.0 release notes](docs/release-notes/v0.2.0.md) for ranked investigation leads,
+support for columns with unsupported values, faster source checks, and saved-result
 compatibility changes.
 
 For contributing and local setup, see the [developer documentation](docs/index.md).
