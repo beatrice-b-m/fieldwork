@@ -170,8 +170,10 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
             (i for i, p in enumerate(parameters) if p.kind is p.VAR_KEYWORD), len(parameters)
         )
         parameters[position:position] = [
-            inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=kind)
-            for name, kind in _CONTROLS.items()
+            inspect.Parameter(
+                control, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=kind
+            )
+            for control, kind in _CONTROLS.items()
         ]
 
         @wraps(function)
