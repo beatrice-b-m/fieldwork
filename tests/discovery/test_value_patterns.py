@@ -1,5 +1,6 @@
 """value_patterns measurements against known answers and a string-shape oracle."""
 
+import json
 import string
 from collections import Counter
 
@@ -198,3 +199,13 @@ def test_context_constancy_counts_populated_groups():
     m = joint[("site", "arm", "value")]["measurements"]
     # Joint groups (A,t), (B,t), (B,c) each hold one value; (C,c) holds none.
     assert (m["evaluated_groups"], m["constant_groups"]) == (3, 3)
+
+
+def test_live_string_patterns_match_their_saved_export():
+    # Regression: counts were tuples in memory and lists once saved, so a live
+    # result rendered differently from its own export.
+    result = fw.value_patterns(pd.DataFrame({"id": ["AB-1", "AB-2", "x"]}))
+    saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
+    assert result.to_dict() == saved
+    for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
+        assert render(result) == render(saved)

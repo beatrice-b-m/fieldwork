@@ -130,7 +130,7 @@ def value_patterns(
     >>> df = pd.DataFrame({"code": ["AB12", "CD34", None]})
     >>> result = fw.value_patterns(df)
     >>> result["summaries"][0]["formats"]
-    [('A9', 2)]
+    [['A9', 2]]
     """
     for name, value in [
         ("max_pairs", max_pairs),
@@ -170,10 +170,11 @@ def value_patterns(
                     formats[re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", v))] += int(count)
                     lengths[len(v)] += int(count)
                     prefixes[v[:3]] += int(count)
+                # Lists, not most_common() tuples, so live and saved payloads match.
                 record.update(
-                    formats=formats.most_common(max_patterns),
-                    lengths=lengths.most_common(max_patterns),
-                    prefixes=prefixes.most_common(max_patterns),
+                    formats=[list(item) for item in formats.most_common(max_patterns)],
+                    lengths=[list(item) for item in lengths.most_common(max_patterns)],
+                    prefixes=[list(item) for item in prefixes.most_common(max_patterns)],
                     format_count=len(formats),
                     omitted_format_rows=sum(n for _, n in formats.most_common()[max_patterns:]),
                 )
