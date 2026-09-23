@@ -6,8 +6,8 @@ Outputs are intentionally separate from timing measurements.
 """
 
 import argparse
-from copy import deepcopy
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np

@@ -1,11 +1,12 @@
 """Measure end-to-end discovery and strict JSON result size on seeded wide data."""
 import argparse
 import json
-from pathlib import Path
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 import fieldwork as fw
 
 parser = argparse.ArgumentParser()
