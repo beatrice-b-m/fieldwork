@@ -52,3 +52,7 @@ between releases without migration.
   `select` and scoped `census`. **Breaking:** fingerprints saved by 0.1.x no longer
   match, so older saved results and scopes still load and render but cannot
   inspect or select against a source. Column dtype is now part of source identity.
+- Grain views in dependency results store bounded `population.examples` and an
+  `anchor_candidate_id` instead of every row position (`population.positions`),
+  which dominated export size on large frames. The anchor's complete cases define
+  the view population.

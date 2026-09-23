@@ -389,7 +389,11 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     assert assignment["nodes"] == []
     assert assignment["reason"] == "different_target_population"
     narrow = dependencies["grain_views"][1]
-    assert narrow["population"]["positions"] == [0, 2]
+    assert narrow["population"]["examples"]["positions"] == [0, 2]
+    assert narrow["population"]["examples"]["total"] == 2
+    anchor = narrow["population"]["anchor_candidate_id"]
+    anchor_columns = next(c for c in dependencies["candidates"] if c["id"] == anchor)["columns"]
+    assert df[anchor_columns].notna().all(axis=1).to_numpy().nonzero()[0].tolist() == [0, 2]
     assert len(narrow["grain"]["graph"]["nodes"]) == 1
     # Within Y's observed rows X is unique, so the rule is trivial: it stays a
     # finding but does not connect features in the network.

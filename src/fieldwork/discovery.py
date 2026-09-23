@@ -27,6 +27,7 @@ from .evidence import (
     limit,
     prepare,
     result,
+    selection,
 )
 from .progress import CancellationToken, Progress
 
@@ -390,7 +391,7 @@ def discover_dependencies(
     ordered_anchors = sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0]))
     chosen_anchors = ordered_anchors[:max_grain_views] if include_grain else []
     with phase("grain views", len(chosen_anchors), "views") as tracker:
-        for _, mask in chosen_anchors:
+        for anchor, mask in chosen_anchors:
             members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
             analysis = _grain(
                 graph_frame,
@@ -409,7 +410,10 @@ def discover_dependencies(
                         "evaluated_rows": int(mask.sum()),
                         "restriction_excluded_rows": len(df) - len(frame),
                         "missing_excluded_rows": int((~mask).sum()),
-                        "positions": positions[mask].tolist(),
+                        # The anchor's complete cases define the population, so
+                        # only bounded examples are stored, not every position.
+                        "anchor_candidate_id": f"key{anchor}",
+                        "examples": selection(positions[mask], int(mask.sum()), example_limit),
                         "rule": "complete_cases_of_candidate_components"
                         if dropna
                         else "missing_as_category",

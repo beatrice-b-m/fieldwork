@@ -212,3 +212,13 @@ def test_compact_rejects_cycles_and_unknown_version():
         )
     with pytest.raises(ValueError, match="Unsupported"):
         expand_result({"format": "fieldwork.compact", "version": "2.0"})
+
+
+def test_grain_view_populations_store_bounded_examples():
+    frame = pd.DataFrame({"key": np.arange(200) % 20, "value": np.arange(200) % 20 * 2})
+    result = fw.discover_dependencies(frame, max_key_size=1, example_limit=3)
+    for view in result["grain_views"]:
+        examples = view["population"]["examples"]
+        assert examples["positions"] == [0, 1, 2]
+        assert examples["total"] == view["population"]["evaluated_rows"] == 200
+        assert "positions" not in view["population"]
