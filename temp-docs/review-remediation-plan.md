@@ -1,7 +1,7 @@
 # Review remediation plan
 
 Status: steps 1–3 complete and released in v0.2.0 (2026-09-23); step 4
-complete on branch `test-suite-rebalance` (unreleased). Step 5 is scoped for a
+complete and released in v0.2.1 (2026-09-23). Step 5 is scoped for a
 separate, self-contained session. Read the status log at the end first: it
 records what each step changed and measured, and facts later sections depend on. Update the status log as each step lands, and retire this
 document when all five steps are complete (move anything durable into `docs/`).
@@ -625,8 +625,7 @@ Acceptance:
 - 2026-09-23: **released as v0.2.0** at `eb45a2d` (release PR #4), published to
   PyPI, and `fieldwork-docs` was synchronized (PR #5). See
   `docs/releases/v0.2.0.md`. Steps 4 and 5 start from this release.
-- 2026-09-23, **step 4 complete** on branch `test-suite-rebalance` (not yet
-  merged or released).
+- 2026-09-23, **step 4 complete** (merged in PR #6).
   - **Oracles and gap tests, added first:** `fba8556` (shared
     `tests/oracle.py`; the count oracle now covers None/NaN/`pd.NA`/NaT and
     1–4 columns × 0–40 rows), `4cda52a` (dependency-discovery groupby oracle:
@@ -698,3 +697,6 @@ Acceptance:
       internals for cleanup, `render._width_function`/`_fallback_width` for
       Unicode width, and `resolve_result`.
     - The legacy fixture and its tests remain for 5.4.
+- 2026-09-23: **released as v0.2.1** at `77685d0` (release PR #7), published to
+  PyPI, and `fieldwork-docs` was synchronized (PR #6). See
+  `docs/releases/v0.2.1.md`. Step 5 starts from this release.

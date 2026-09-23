@@ -26,3 +26,4 @@ independent oracles. See [the test suite](development.md#test-suite).
 - [v0.1.1 release record](releases/v0.1.1.md)
 - [v0.1.2 release record](releases/v0.1.2.md)
 - [v0.2.0 release record](releases/v0.2.0.md)
+- [v0.2.1 release record](releases/v0.2.1.md)
