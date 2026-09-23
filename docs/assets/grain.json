@@ -1,6 +1,8 @@
 {
   "kind": "grain",
   "detail": "full",
+  "conditional": false,
+  "status": "computed",
   "caption": "Observed groupings among tested keys.",
   "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
   "missingness": "missing as level",
@@ -435,6 +437,376 @@
       "repeated_groups": 2,
       "affected_rows": 4,
       "feature_label": "dose"
+    }
+  ],
+  "dependencies": [
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "exam_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "modality",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "slot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "image_1",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "image_2",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "site",
+      "columns": [
+        "site"
+      ],
+      "target": "dose",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "site",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 0,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 0
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "modality",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 0,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 0
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "slot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 5,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 11
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "image_1",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 3,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 7
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "image_2",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 3,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 7
+    },
+    {
+      "key": "exam_id",
+      "columns": [
+        "exam_id"
+      ],
+      "target": "dose",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 6,
+      "violating_groups": 2,
+      "singleton_groups": 1,
+      "repeated_groups": 5,
+      "affected_rows": 4
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "site",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "exam_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "slot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 2,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 12
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "image_1",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "image_2",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 8
+    },
+    {
+      "key": "modality",
+      "columns": [
+        "modality"
+      ],
+      "target": "dose",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 12 evaluated / 12 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 12,
+      "evaluated_groups": 2,
+      "violating_groups": 1,
+      "singleton_groups": 0,
+      "repeated_groups": 2,
+      "affected_rows": 4
+    }
+  ],
+  "targets": [
+    {
+      "label": "site",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "exam_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "exam_id",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "modality",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "exam_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "slot",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "image_1",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "image_2",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "dose",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
     }
   ]
 }

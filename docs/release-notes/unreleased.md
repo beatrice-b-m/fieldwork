@@ -134,3 +134,17 @@ public API without migration shims.
   (or `overview.best.census(df)`). `section_selection` is replaced by the
   `parameters["sections"]` list and each section's `status`.
 - `feature_network` relationships still reference overview finding IDs.
+
+## One presentation pipeline
+
+- Every result kind is projected once (`visualization_data`) and drawn by one
+  text, one SVG and one HTML renderer. Text output of foundation kinds now
+  starts with the same `Fieldwork · <kind>` header as other kinds (was
+  `Fieldwork feature explorer v0.3`), and schema proposals also render as SVG
+  and HTML cards.
+- `visualization_data` of a profile returns every section's projection
+  (under `sections`); SVG and HTML of a profile still default to its grain
+  section. Foundation projections gain the fields the text view needs (grain
+  `dependencies` and `targets`, pair `records`, level summaries, warnings,
+  a `conditional` flag); census rows take their depth from parentage.
+- Unknown SVG views raise `ValueError("Invalid view ...")` for every kind.

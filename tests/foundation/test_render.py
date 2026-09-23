@@ -116,7 +116,7 @@ def test_line_budget_marks_only_actual_truncation():
 def test_unicode_is_displayed_by_default_within_cell_width(
     monkeypatch: pytest.MonkeyPatch, wcwidth_installed: bool
 ) -> None:
-    from fieldwork._explore import render
+    from fieldwork._present import common as render
 
     render._width_function.cache_clear()
     if not wcwidth_installed:

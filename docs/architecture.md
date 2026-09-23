@@ -31,18 +31,20 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `_explore/census.py` | Independent levels, bounded ordered observed prefixes |
 | `_explore/grain.py`, `grain_graph.py` | Exact FDs, scope compatibility, equivalence, DAG |
 | `_explore/relations.py`, `roles.py` | Pair contexts/absence, joint counts, schema suggestions |
-| `_explore/visual_data.py`, `render.py`, `graphics.py` | Foundation projections and renderers |
-| `result.py` | The `Result` model shared by every analysis: export, sections, inspection, selection, recomputation |
+| `_explore/profile.py` | `profile`: levels, census, grain and pairs for chosen dimensions |
+| `result.py` | The `Result` model shared by every analysis: export, sections, findings, inspection, selection, recomputation |
 | `evidence.py`, `_selection.py` | Scopes, fingerprints, source preparation, findings, targeted source selection |
 | `_runtime.py`, `progress.py` | Call-scoped reuse, progress events/display, cancellation |
 | `availability.py` | Presence signatures, families, implications, entity summaries |
 | `discovery.py` | Supplied search bounds, exact/approximate/conditional FDs |
 | `navigation.py` | Deterministic beam search and objective-specific prefix costs |
-| `families.py` | Typed feature relationships linked to section findings |
+| `families.py`, `leads.py` | Typed feature relationships and lead ranking |
 | `patterns.py` | Populated strings/numbers, indexed families, context constancy |
-| `workflow.py` | Composition, recipes, delivery comparisons |
-| `presentation.py` | Discovery projections and dispatch to foundation renderers |
-| `_html.py` | Shared offline document, responsive styles, filtering and evidence-link controls |
+| `overview.py` | `explore`: overview sections, ranked leads, feature network |
+| `workflow.py` | Recipes and delivery comparisons |
+| `presentation.py` | Public renderers: project once, then draw |
+| `_present/project.py` | One allowlisted projection per result kind (full or topology) |
+| `_present/text.py`, `svg.py`, `html.py` | One renderer per medium, one function per kind or figure |
 
 ## Extension boundaries
 

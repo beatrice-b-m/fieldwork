@@ -1,6 +1,8 @@
 {
   "kind": "grain",
   "detail": "full",
+  "conditional": false,
+  "status": "computed",
   "caption": "Observed groupings among tested keys.",
   "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
   "missingness": "missing as level",
@@ -4350,6 +4352,4748 @@
       "repeated_groups": 320,
       "affected_rows": 960,
       "feature_label": "raw_signal"
+    }
+  ],
+  "dependencies": [
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "enrollment_site",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "cohort",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "study_arm",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "enrollment_month",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "smoking_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 0
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "specimen_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "visit_number",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "collection_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "storage_hours",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 39,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 936
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 29,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 696
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "assay_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "analyte",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "assay_method",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "result_unit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "detection_limit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "reference_upper",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "dilution_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "instrument_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "instrument_model",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "lab_room",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "installation_year",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "service_interval_days",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "firmware_version",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "run_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "run_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "operator",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "reagent_lot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "calibration_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "run_qc_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 30,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 720
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "concentration",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "normalized_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "result_flag",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "recovery_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "review_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "participant_id",
+      "columns": [
+        "participant_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 40,
+      "violating_groups": 40,
+      "singleton_groups": 0,
+      "repeated_groups": 40,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "participant_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "enrollment_site",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "cohort",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "study_arm",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "enrollment_month",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "smoking_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "specimen_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "visit_number",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "collection_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "storage_hours",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "assay_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "analyte",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "assay_method",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "result_unit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "detection_limit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "reference_upper",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "dilution_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "instrument_model",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "lab_room",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "installation_year",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "service_interval_days",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "firmware_version",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 0
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "run_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "run_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "operator",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "reagent_lot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "calibration_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "run_qc_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "concentration",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "normalized_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "result_flag",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "recovery_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "review_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "instrument_id",
+      "columns": [
+        "instrument_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 3,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 3,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "participant_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "enrollment_site",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "cohort",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "study_arm",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "enrollment_month",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "smoking_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "specimen_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "visit_number",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "collection_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "storage_hours",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "analyte",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "assay_method",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "result_unit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "detection_limit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "reference_upper",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "dilution_factor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 0
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "instrument_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "instrument_model",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "lab_room",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "installation_year",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "service_interval_days",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "firmware_version",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "run_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "run_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "operator",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "reagent_lot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "calibration_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "run_qc_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 720
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "concentration",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "normalized_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "result_flag",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 3,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 720
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "recovery_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "review_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "assay_id",
+      "columns": [
+        "assay_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 4,
+      "violating_groups": 4,
+      "singleton_groups": 0,
+      "repeated_groups": 4,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "participant_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "enrollment_site",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "cohort",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "study_arm",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "enrollment_month",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "smoking_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "visit_number",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "collection_day",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "storage_hours",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "assay_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "analyte",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "assay_method",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "result_unit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "detection_limit",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "reference_upper",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "dilution_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "instrument_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "instrument_model",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "lab_room",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "installation_year",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "service_interval_days",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "firmware_version",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "run_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "run_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "operator",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "reagent_lot",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "calibration_factor",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "run_qc_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 30,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 360
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "concentration",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "normalized_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "result_flag",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 78,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 936
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "recovery_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "review_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_id",
+      "columns": [
+        "specimen_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 80,
+      "violating_groups": 80,
+      "singleton_groups": 0,
+      "repeated_groups": 80,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "participant_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "enrollment_site",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "cohort",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "study_arm",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "enrollment_month",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "smoking_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "specimen_id",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "visit_number",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "collection_day",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "storage_hours",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "assay_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "analyte",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "assay_method",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "result_unit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "detection_limit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "reference_upper",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "dilution_factor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "instrument_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "instrument_model",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "lab_room",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "installation_year",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "service_interval_days",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "firmware_version",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "run_day",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "operator",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "reagent_lot",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "calibration_factor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "run_qc_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 0
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "concentration",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "normalized_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "result_flag",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 23,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 690
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "recovery_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "review_status",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "run_id",
+      "columns": [
+        "run_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 32,
+      "violating_groups": 32,
+      "singleton_groups": 0,
+      "repeated_groups": 32,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "participant_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "enrollment_site",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "cohort",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "age_at_enrollment",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "study_arm",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "enrollment_month",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "smoking_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "visit_number",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "collection_day",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "sample_volume_ml",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "storage_hours",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "freeze_thaw_cycles",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "hemolysis_index",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "analyte",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "assay_method",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "result_unit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "detection_limit",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "reference_upper",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "dilution_factor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "instrument_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "instrument_model",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "instrument_vendor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "lab_room",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "installation_year",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "service_interval_days",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "firmware_version",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "run_id",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "run_day",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "operator",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "reagent_lot",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "calibration_factor",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "ambient_temp_c",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "run_qc_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "concentration",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "normalized_signal",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "result_flag",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "recovery_pct",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "replicate_cv_pct",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "review_status",
+      "state": "holds",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 0,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 0
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "replicate",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 320,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 960
+    },
+    {
+      "key": "specimen_assay",
+      "columns": [
+        "specimen_id",
+        "assay_id"
+      ],
+      "target": "raw_signal",
+      "state": "fails",
+      "reason": null,
+      "scope": "Input population \u00b7 960 evaluated / 960 input rows \u00b7 0 missing, 0 restricted exclusions",
+      "excluded": false,
+      "evaluated_rows": 960,
+      "evaluated_groups": 320,
+      "violating_groups": 320,
+      "singleton_groups": 0,
+      "repeated_groups": 320,
+      "affected_rows": 960
+    }
+  ],
+  "targets": [
+    {
+      "label": "participant_id",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "enrollment_site",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "cohort",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "age_at_enrollment",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "study_arm",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "enrollment_month",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "smoking_status",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "participant_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "specimen_id",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "visit_number",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id",
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": [
+        [
+          "specimen_id",
+          "run_id"
+        ]
+      ]
+    },
+    {
+      "label": "collection_day",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "sample_volume_ml",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "storage_hours",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "freeze_thaw_cycles",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "hemolysis_index",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "assay_id",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "analyte",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "assay_method",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "result_unit",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "detection_limit",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "reference_upper",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "dilution_factor",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "assay_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "instrument_id",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "instrument_model",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "instrument_vendor",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "lab_room",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "installation_year",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "service_interval_days",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "firmware_version",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "instrument_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "run_id",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "run_day",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "operator",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "reagent_lot",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "calibration_factor",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "ambient_temp_c",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "run_qc_status",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "run_id"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "concentration",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "normalized_signal",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "result_flag",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "recovery_pct",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "replicate_cv_pct",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "review_status",
+      "comparable": true,
+      "determined": true,
+      "coarsest": [
+        "specimen_assay"
+      ],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "replicate",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
+    },
+    {
+      "label": "raw_signal",
+      "comparable": true,
+      "determined": false,
+      "coarsest": [],
+      "equivalent": [],
+      "incomparable": []
     }
   ]
 }

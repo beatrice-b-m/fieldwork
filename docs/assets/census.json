@@ -1,8 +1,14 @@
 {
   "kind": "census",
   "detail": "full",
+  "conditional": true,
+  "status": "computed",
   "scope": "Conditional cohort \u00b7 8 evaluated / 12 input rows \u00b7 0 missing, 4 restricted exclusions",
   "caption": "Observed paths; omitted branches retain their original mass.",
+  "dimensions": [
+    "site",
+    "exam_id"
+  ],
   "rows": [
     {
       "id": "c0",
@@ -74,5 +80,6 @@
       "parent_share": 0.3333333333333333,
       "parent_label": "site=South"
     }
-  ]
+  ],
+  "warnings": []
 }
