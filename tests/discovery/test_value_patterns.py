@@ -209,3 +209,22 @@ def test_live_string_patterns_match_their_saved_export():
     assert result.to_dict() == saved
     for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
         assert render(result) == render(saved)
+
+
+def test_numeric_summaries_follow_values_not_dtype():
+    numbers = [1, 2.5, None, 4]
+    native = pd.DataFrame({"x": numbers, "y": [v + 1 if v is not None else None for v in numbers]})
+    stored = native.astype(object)
+    for frame in (native, stored):
+        result = fw.value_patterns(frame)
+        assert findings(result, "numeric_range")[("x",)]["measurements"]["minimum"] == 1.0
+        assert findings(result, "numeric_offset")[("x", "y")]["measurements"]["value"] == 1.0
+    # One string among the values makes the column non-numeric.
+    mixed = pd.DataFrame({"x": [1, "2", 3]})
+    assert not findings(fw.value_patterns(mixed), "numeric_range")
+
+
+def test_context_constancy_skips_the_context_columns():
+    frame = pd.DataFrame({"site": ["A", "A", "B"], "arm": ["t", "c", "t"], "v": [1, 1, 2]})
+    result = fw.value_patterns(frame, by=["site", "arm"])
+    assert set(findings(result, "context_constancy")) == {("site", "arm", "v")}

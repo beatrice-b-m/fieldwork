@@ -170,7 +170,11 @@ def dense_counts(codes: np.ndarray, rows: np.ndarray) -> dict[int, int]:
 def exact_pair_ids(
     parents: np.ndarray, levels: np.ndarray, *, packing_limit: int | None = None
 ) -> tuple[np.ndarray, list[tuple[int, int]]]:
-    """Dense IDs for exact integer pairs, with an overflow-safe tuple fallback."""
+    """Dense IDs for exact integer pairs, with an overflow-safe tuple fallback.
+
+    IDs follow the sorted order of the distinct pairs on both paths, so callers
+    see the same numbering whether or not the pairs could be packed.
+    """
 
     if parents.shape != levels.shape:
         raise ValueError("parent and level arrays must have the same shape")

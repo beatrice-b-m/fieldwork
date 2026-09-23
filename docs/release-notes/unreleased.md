@@ -148,3 +148,14 @@ public API without migration shims.
   `dependencies` and `targets`, pair `records`, level summaries, warnings,
   a `conditional` flag); census rows take their depth from parentage.
 - Unknown SVG views raise `ValueError("Invalid view ...")` for every kind.
+
+## Value patterns
+
+- Numeric summaries, offsets and ratios follow the values, not the dtype: an
+  object or categorical column whose populated values are all (non-boolean)
+  numbers now gets `numeric_range`, `numeric_offset` and `numeric_ratio`
+  findings exactly as its numeric-dtype equivalent does. Saved selectors of
+  these findings reapply to such columns.
+- `context_constancy` is no longer reported for the `by` columns themselves,
+  which were trivially constant within their own contexts; later finding IDs
+  shift accordingly.

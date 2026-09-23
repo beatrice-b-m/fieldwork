@@ -94,11 +94,14 @@ or an order-invariant joint-information score.
 String formats replace digit runs with `9` and ASCII letter runs with `A`; report
 three-character prefixes and lengths. `max_patterns=10` bounds displayed counts.
 Indexed-name families are explicitly name evidence, augmented by identical presence
-when observed. Numeric summaries use finite values, observed minimum spacing, and
-an allclose grid check. Offset and ratio checks require at least two finite paired
+when observed. A column is numeric when every populated value is a non-boolean
+number, whatever its dtype, so an object column of numbers is summarized like its
+numeric equivalent. Numeric summaries use finite values, observed minimum spacing,
+and an allclose grid check. Offset and ratio checks require at least two finite paired
 rows; ratios exclude zero denominators. Tolerances are rtol 1e-5 and atol 1e-8.
 They are simple measured relationships, not fitted latent models. Context constancy
-reports how many populated context groups have a single populated target value.
+reports how many populated context groups have a single populated target value; the
+context columns themselves are not tested.
 
 ### Population-compatible grain views
 
