@@ -153,8 +153,9 @@ independent benchmarks.
 .venv/bin/python benchmarks/scaling.py --rows 300000 --columns 150 --operations explore --progress --repeats 3 --timeout 180 --output /tmp/progress.json
 ```
 
-[Raw JSON measurements](performance-results/) include fixture definitions,
-environment versions, every repeat, memory and export sizes. Use the baseline
+The raw JSON measurements (fixture definitions, environment versions, every
+repeat, memory and export sizes) were retired after 0.2.1; they remain in git
+history at tag `v0.2.1` under `docs/performance-results/`. Use the baseline
 revision's harness to reproduce the historical runs, since it predates runtime
 and compact options. See [performance controls](performance.md) for the public
 APIs and remaining memory/latency limitations.

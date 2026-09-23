@@ -24,8 +24,9 @@ selection semantics, required dependencies, and public call signatures are uncha
 ## Qualification
 
 The repeatable browser harness is `scripts/check_output_ux.cjs`; fixture generation
-is `scripts/output_ux_fixtures.py`. The checked-in
-[browser results](output-ux-browser.json) record Chromium version and cases.
+is `scripts/output_ux_fixtures.py`. Its recorded
+browser results (Chromium version and cases) were retired after 0.2.1 and remain
+in git history at tag `v0.2.1` (`docs/evaluation/output-ux-browser.json`).
 
 - 16 synthetic reports, including 20,000 rows × 66 columns, 18 candidate keys,
   the 960-row laboratory example, long unbroken/Unicode/markup-like labels,
@@ -64,4 +65,4 @@ checks substitute for testing with screen readers, touch hardware, or other engi
 this qualification used Chromium only.
 
 The stable documentation was synchronized after v0.1.2 publication, in accordance
-with its source-version policy; see the [release record](../releases/v0.1.2.md).
+with its source-version policy; see the [v0.1.2 release notes](../release-notes/v0.1.2.md).

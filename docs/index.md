@@ -23,7 +23,3 @@ independent oracles. See [the test suite](development.md#test-suite).
 - [Dependency support qualification (v0.1.1)](evaluation/dependency-support.md)
 - [Exploring saved outputs](output-ux.md)
 - [Output UX review and browser qualification](evaluation/output-ux.md)
-- [v0.1.1 release record](releases/v0.1.1.md)
-- [v0.1.2 release record](releases/v0.1.2.md)
-- [v0.2.0 release record](releases/v0.2.0.md)
-- [v0.2.1 release record](releases/v0.2.1.md)
