@@ -16,14 +16,44 @@ with a `src` layout. The package metadata caps supported Python at `<3.15`; CI t
 3.11, 3.12, 3.13 and 3.14. pandas 2.2+ permits Python 3.11; uv selects compatible
 versions for each interpreter. pandas 3.x requires Python 3.11 or newer.
 
-Foundation tests preserve typed scalar, scope accounting, exact graph, omission,
-rendering and strict-JSON semantics, including Hypothesis differential oracles.
-Discovery fixtures check co-absence, sentinels, unequal entities, duplicate indexes,
-modal exceptions, conditional/composite dependencies, constraints and saved exports.
+## Test suite
+
+Tests assert analytical behavior (counts, relationships, populations, selections)
+and structural contracts (round trips, source-mismatch rejection, bounded
+exports). They never assert sentence text, CSS or docstring layout, so wording
+and presentation can change without editing tests. `uv run pytest` runs the
+suite and every docstring example in `src/fieldwork` in under about 10 seconds;
+`uv run pytest -m "not slow"` skips the realistic-scale smoke test.
+
+- **Independent oracles.** `tests/oracle.py` recomputes levels, census prefixes
+  and dependency tests with plain Python and pandas groupby, importing no
+  production code. Hypothesis frames mix types and every native missing
+  spelling (None, NaN, `pd.NA`, NaT): `foundation/test_differential.py` checks
+  levels and census, `discovery/test_dependency_oracle.py` checks every
+  dependency record, exception group, finding and candidate summary with
+  composite keys, `dropna` both ways, contexts and scopes.
+- **Known answers and properties.** `foundation/test_pairs.py` (relation classes,
+  Cramér's V, absence classes), `foundation/test_census.py` (all census options as
+  properties), `discovery/test_value_patterns.py` and `discovery/test_compare.py`.
+- **Invariances.** `discovery/test_native_dtypes.py` requires categorical,
+  nullable, pyarrow-backed, tz-aware and float32 columns to give the same evidence
+  as their object equivalents. `discovery/test_permutation.py` requires row order
+  never to change evidence, only relabel saved positions.
+- **Rendering contracts.** `tests/test_rendering_contracts.py` checks every result
+  kind in every medium once: valid self-contained output, no mutation, escaping,
+  unique HTML IDs, and topology output that depends on structure, not quantities.
+- **Scale.** `discovery/test_scale.py` (marked `slow`) runs the overview on a
+  50,000-row wide export with planted structure and bounded saved positions.
+
+Use private kernels in tests only where a property oracle checks them (as for
+`modal_groups` and `exact_pair_ids`); otherwise test through public functions.
+Prefer a mutation check (temporarily breaking the code) when a new property test
+passes on its first run.
+
 The notebook executes as part of validation with IPython; no external data is used.
-Its checks also verify the numerical conclusions in the narrative and agreement
-with the Python companion's initial and corrected deliveries. After editing notebook
-cells, refresh the checked-in text, table, and SVG outputs with:
+Its checks verify the conclusions stated in the narrative, not incidental numbers,
+and agreement with the Python companion's initial and corrected deliveries. After
+editing notebook cells, refresh the checked-in text, table, and SVG outputs with:
 
 ```bash
 uv run python scripts/execute_notebook.py
@@ -151,8 +181,10 @@ documentation site can offer the exact example alongside its SVG/HTML/JSON expor
 bounds; [implementation measurements](performance-results.md) record representative
 before/after runs. `tests/discovery/test_performance_contracts.py`, `test_runtime.py`,
 and `test_scaling_controls.py` check fingerprint change detection, vectorized group
-oracles, scoped/entity selections, cache populations/lifetimes/bounds, cancellation,
-callback errors, ETA/throttling, omitted work and saved-export round trips.
+oracles, scoped/entity selections, population-exact graph comparisons, progress
+ordering, cancellation, callback errors, session cleanup, omitted work and
+saved-export round trips. ETA arithmetic, cache sizes and internal call sequences
+are deliberately not tested.
 
 For a revision-to-revision default-output check, run the same parity script with
 both source trees and identical pandas/NumPy versions:
