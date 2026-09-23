@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
 import math
-import statistics
 import time
-from collections import OrderedDict, deque
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -41,23 +40,8 @@ class Session:
         self.next_phase = 0
         self.last_emit = -math.inf
         self.fingerprints = {}
+        self.labelled = {}
         self.prepared = {}
-        self.encodings = OrderedDict()
-        self.dictionary_tokens = 0
-
-    def remember_encoding(self, key, value):
-        # Scalar identities can dwarf code arrays on wide continuous frames.
-        # Bound retained dictionaries by cardinality, independently of row codes.
-        old = self.encodings.pop(key, None)
-        if old is not None:
-            self.dictionary_tokens -= len(old[1])
-        if len(value[1]) > 100_000:
-            return
-        self.encodings[key] = value
-        self.dictionary_tokens += len(value[1])
-        while self.dictionary_tokens > 100_000:
-            _, removed = self.encodings.popitem(last=False)
-            self.dictionary_tokens -= len(removed[1])
 
     def check(self):
         if self.cancel is not None and self.cancel.cancelled:
@@ -69,27 +53,14 @@ class Session:
         # Tracebacks or a callback may retain this object after the call exits.
         # Release cached frames/arrays even in that case.
         self.fingerprints.clear()
+        self.labelled.clear()
         self.prepared.clear()
-        self.encodings.clear()
-        self.dictionary_tokens = 0
 
     def emit(self, phase, status, *, force=False):
         now = time.monotonic()
         if self.callback is None or (not force and now - self.last_emit < 0.2):
             return
         self.last_emit = now
-        eta = None
-        rates = list(phase.rates)
-        if (
-            status == "running"
-            and phase.total is not None
-            and len(rates) >= 4
-            and now - phase.started >= 0.5
-            and now - phase.sampled <= 1.0
-        ):
-            rate = statistics.mean(rates)
-            if rate > 0 and statistics.pstdev(rates) / rate < 0.35:
-                eta = max(0, phase.total - phase.completed) / rate
         event = ProgressEvent(
             self.operation,
             phase.name,
@@ -100,7 +71,6 @@ class Session:
             phase.unit,
             now - self.started,
             now - phase.started,
-            eta,
             phase.detail,
             status,
         )
@@ -118,26 +88,20 @@ class Phase:
         self.session = session
         self.name, self.total, self.unit = name, total, unit
         self.completed, self.detail = 0, None
-        self.started = self.sampled = time.monotonic()
-        self.sample_count = 0
-        self.rates = deque(maxlen=8)
+        self.started = time.monotonic()
         self.id = session.next_phase if session else 0
         self.parent = session.stack[-1].id if session and session.stack else None
         if session:
             session.next_phase += 1
 
     def advance(self, amount=1, *, detail=None):
-        # A miscounted estimate is cosmetic; never let it abort the analysis.
+        # A miscounted total is cosmetic; never let it abort the analysis.
         self.completed += amount
         if self.total is not None:
             self.completed = min(self.completed, self.total)
         self.detail = detail
         if self.session:
             self.session.check()
-            now = time.monotonic()
-            if now - self.sampled >= 0.1:
-                self.rates.append((self.completed - self.sample_count) / (now - self.sampled))
-                self.sample_count, self.sampled = self.completed, now
             self.session.emit(self, "running")
 
 
@@ -180,6 +144,11 @@ def current_session():
     return _current.get()
 
 
+_CONTROLS = {
+    "progress": "Progress",
+    "cancel": "CancellationToken | None",
+    "timeout": "float | None",
+}
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -188,8 +157,32 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Add common runtime controls without putting them in analytical payloads."""
 
     def decorate(function: Callable[P, R]) -> Callable[P, R]:
+        # Signatures declare the controls once, as ``**runtime: Unpack[Runtime]``.
+        # That var-keyword must not let misspelled options through silently.
+        signature = inspect.signature(function)
+        parameters = list(signature.parameters.values())
+        strict = any(p.kind is p.VAR_KEYWORD and p.name == "runtime" for p in parameters)
+        named = {p.name for p in parameters if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)}
+        # Introspection (help, IPython, editors without a type checker) lists the
+        # controls as ordinary keyword-only parameters.
+        parameters = [p for p in parameters if not (strict and p.kind is p.VAR_KEYWORD)]
+        position = next(
+            (i for i, p in enumerate(parameters) if p.kind is p.VAR_KEYWORD), len(parameters)
+        )
+        parameters[position:position] = [
+            inspect.Parameter(
+                control, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=kind
+            )
+            for control, kind in _CONTROLS.items()
+        ]
+
         @wraps(function)
         def run(*args, progress=None, cancel=None, timeout=None, **kwargs):
+            unknown = sorted(kwargs.keys() - named) if strict else []
+            if unknown:
+                raise TypeError(
+                    f"{function.__name__}() got an unexpected keyword argument {unknown[0]!r}"
+                )
             parent = _current.get()
             token = None
             if parent is None:
@@ -207,6 +200,7 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
                     owned.close()
                     _current.reset(token)
 
+        run.__signature__ = signature.replace(parameters=parameters)  # type: ignore[attr-defined]
         return cast(Callable[P, R], run)
 
     return decorate

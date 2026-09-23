@@ -1,5 +1,9 @@
 # Discovery algorithms and budgets
 
+Budgets written `name=default` below are keys of each analysis's `limits`
+mapping, except `max_key_size`, `max_dimensions` and `n_paths`, which are
+ordinary arguments.
+
 ## Availability
 
 Needed value columns are encoded once per call context; native presence-only
@@ -72,7 +76,11 @@ sum(prefix_counts) / display_budget
 + 3 * equivalent_pair_steps
 ```
 
-A redundant step leaves the prefix count unchanged. Lower scores rank first.
+A redundant step leaves the prefix count unchanged. Lower scores rank first. The
+weights (2, 3, and 8 and 12 below) are hand-tuned heuristics, named in
+`src/fieldwork/navigation.py` (`REDUNDANT_STEP`, `ALIAS_STEP`, `NESTING_INVERSION`,
+`SEPARATION`); they were chosen so that nesting and separation dominate prefix size,
+not fitted to data.
 Structure and context objectives add eight per reversed supported nesting edge.
 Compact uses the base score. Target adds twelve times summed within-prefix modal
 impurity of the target values. Availability adds twelve times the same impurity for
@@ -90,11 +98,14 @@ or an order-invariant joint-information score.
 String formats replace digit runs with `9` and ASCII letter runs with `A`; report
 three-character prefixes and lengths. `max_patterns=10` bounds displayed counts.
 Indexed-name families are explicitly name evidence, augmented by identical presence
-when observed. Numeric summaries use finite values, observed minimum spacing, and
-an allclose grid check. Offset and ratio checks require at least two finite paired
+when observed. A column is numeric when every populated value is a non-boolean
+number, whatever its dtype, so an object column of numbers is summarized like its
+numeric equivalent. Numeric summaries use finite values, observed minimum spacing,
+and an allclose grid check. Offset and ratio checks require at least two finite paired
 rows; ratios exclude zero denominators. Tolerances are rtol 1e-5 and atol 1e-8.
 They are simple measured relationships, not fitted latent models. Context constancy
-reports how many populated context groups have a single populated target value.
+reports how many populated context groups have a single populated target value; the
+context columns themselves are not tested.
 
 ### Population-compatible grain views
 
@@ -111,6 +122,13 @@ it stores bounded `examples` rather than every source position. No relation is c
 All candidates remain in `candidates`, with view membership; unsupported candidates
 also appear in `graph_selection.excluded` with `no_evaluated_support`. With
 `dropna=False`, all candidates share the scoped population.
+
+Inside a grain result (standalone or in a view) there are two populations. Each
+key→target record in `dependencies` counts its own complete cases for that key and
+target, as a standalone test would, so it can count more rows than the view. The
+graph's `tests` table, nodes and placements compare keys on the graph's common
+rows (`graph.evaluated_rows`). Read placements from the graph and per-pair support
+from `dependencies`.
 
 Presentation ranks supported repeated groupings before unique identifiers,
 constants, and candidates without evaluated support. Within each class, more exact
@@ -159,9 +177,10 @@ direction and context. Its relationship order is canonical.
 
 ### Overview lead ranking
 
-Overview findings are ordered by a heuristic lead score (`src/fieldwork/leads.py`)
-and numbered in that order, so `f0` is the most promising lead. Each carries
-`lead.score` and a short `lead.reason`. The score favors evidence an analyst would
+Overview leads rank the sections' findings by a heuristic score
+(`src/fieldwork/leads.py`) and are numbered in that order, so `f0` is the most
+promising lead. Each carries `lead.score` and a short `lead.reason`, and refers to
+its section finding instead of copying it (`Result.findings` resolves them). The score favors evidence an analyst would
 want to explain: near-rules with repeated support and a few exceptions, mutually
 exclusive or empty columns, presence rules with exceptions, mixed string formats,
 equivalent encodings and partially populated columns. Trivially true or purely
@@ -174,9 +193,9 @@ probabilities or measurements. Section results keep their own order and IDs.
 
 ## Explicit work budgets and exact kernels
 
-Overview `sections` and `section_options` select and configure operations
-independently. Dependency discovery adds `include_grain`, `max_grain_views`, and
-`max_dependency_tests`; omitted graph views and candidate/target/context tests have
+Overview `sections` and per-section `options` select and configure operations
+independently. Dependency discovery adds `include_grain` and the `max_grain_views` and
+`max_dependency_tests` limits; omitted graph views and candidate/target/context tests have
 explicit coverage metadata. Defaults preserve previous work and result ordering.
 See [usage and contracts](performance.md#choose-the-work-you-need).
 

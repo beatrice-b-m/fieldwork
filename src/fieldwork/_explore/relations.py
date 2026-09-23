@@ -1,63 +1,93 @@
-"""Sparse pair relationships, association, and bounded absence summaries."""
+"""Pair mappings, association, bounded absence summaries, and joint counts."""
 
 from __future__ import annotations
 
 import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from itertools import combinations
-from typing import Any
+from typing import TYPE_CHECKING, Any, Unpack
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation
-from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel
+from ..result import Result
+from ..typing import PairLimits, Runtime
 from ._kernels import exact_pair_ids
-from .census import _scope, _source
-from .encoding import (
-    ScalarIdentity,
-    encode_series,
-    missing_code,
-    normalize_scalar,
-    resolve_columns,
-    validate_limit,
-)
-from .result import ExplorerResult
+from .census import _complete
+from .encoding import code_of, json_value, python_value, validate_limit, value_key
+
+if TYPE_CHECKING:
+    from ..evidence import Scope
+
+Key = tuple[int, Any]
 
 
-def _relation(pair_counts: Counter[tuple[ScalarIdentity, ScalarIdentity]]) -> str | None:
+def _key(value: Any) -> Key:
+    """Identity of a dictionary value; the missing value sorts last."""
+    return (9, 0) if value is None else value_key(value)
+
+
+def _json(key: Key) -> Any:
+    return None if key[0] == 9 else json_value(key[1])
+
+
+def _context(df: pd.DataFrame, context: Mapping[Any, Any]) -> dict[str, Any]:
+    """Context predicates keyed by column name, with canonical values."""
+    from ..evidence import columns
+
+    return {c: python_value(v) for c, v in zip(columns(df, context), context.values())}
+
+
+def _predicates(context: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [{"column": c, "value": json_value(context[c])} for c in sorted(context)]
+
+
+def _as_mapping(context: Mapping[str, Any]) -> dict[str, Any]:
+    return {c: json_value(v) for c, v in context.items()}
+
+
+def _context_rows(
+    encoded: Mapping[str, tuple[list[Any], np.ndarray]],
+    context: Mapping[str, Any],
+    mask: np.ndarray,
+    dropna: bool,
+) -> tuple[np.ndarray, int]:
+    """Rows matching every context value, and how many rows were eligible before."""
+    if dropna:
+        mask = mask & _complete([encoded[c] for c in context], len(mask))
+    eligible = int(mask.sum())
+    for column, value in context.items():
+        values, codes = encoded[column]
+        code = code_of(values, value)
+        mask = mask & (codes == code) if code is not None else np.zeros_like(mask)
+    return np.flatnonzero(mask), eligible
+
+
+def _relation(pair_counts: Counter[tuple[Key, Key]]) -> str | None:
     if not pair_counts:
         return None
-    a_to_b: dict[ScalarIdentity, set[ScalarIdentity]] = defaultdict(set)
-    b_to_a: dict[ScalarIdentity, set[ScalarIdentity]] = defaultdict(set)
-    for (a, b), count in pair_counts.items():
-        if count:
-            a_to_b[a].add(b)
-            b_to_a[b].add(a)
+    a_to_b: dict[Key, set[Key]] = defaultdict(set)
+    b_to_a: dict[Key, set[Key]] = defaultdict(set)
+    for a, b in pair_counts:
+        a_to_b[a].add(b)
+        b_to_a[b].add(a)
     a_many = any(len(values) > 1 for values in a_to_b.values())
     b_many = any(len(values) > 1 for values in b_to_a.values())
-    if not a_many and not b_many:
-        return "1:1"
-    if a_many and not b_many:
-        return "1:n"
-    if not a_many and b_many:
-        return "n:1"
-    return "n:m"
+    return {(False, False): "1:1", (True, False): "1:n", (False, True): "n:1"}.get(
+        (a_many, b_many), "n:m"
+    )
 
 
 def _cramers_v(
-    pairs: Counter[tuple[ScalarIdentity, ScalarIdentity]],
-    a_support: Counter[ScalarIdentity],
-    b_support: Counter[ScalarIdentity],
+    pairs: Counter[tuple[Key, Key]], a_support: Counter[Key], b_support: Counter[Key]
 ) -> tuple[float | None, str | None]:
     total = sum(pairs.values())
-    positive_a = [value for value, count in a_support.items() if count]
-    positive_b = [value for value, count in b_support.items() if count]
     if total == 0:
         return None, "empty_population"
-    denominator = min(len(positive_a) - 1, len(positive_b) - 1)
+    denominator = min(len(a_support) - 1, len(b_support) - 1)
     if denominator <= 0:
         return None, "constant_dimension"
     chi_term = sum(count * count / (a_support[a] * b_support[b]) for (a, b), count in pairs.items())
@@ -66,423 +96,297 @@ def _cramers_v(
 
 
 def _declared_domain(
-    reference_domains: Mapping[Any, Iterable[Any]] | None,
-    column: Any,
-    observed: set[ScalarIdentity],
-) -> tuple[list[ScalarIdentity], str]:
-    if reference_domains is None or column not in reference_domains:
-        return sorted(observed, key=ScalarIdentity.sort_key), "empirical_observed"
-    normalized = {normalize_scalar(value) for value in reference_domains[column]}
-    missing = observed - normalized
+    reference_domains: Mapping[str, Iterable[Any]], column: str, observed: set[Key]
+) -> tuple[list[Key], str]:
+    if column not in reference_domains:
+        return sorted(observed), "empirical_observed"
+    declared = {_key(python_value(value)) for value in reference_domains[column]}
+    missing = observed - declared
     if missing:
         raise ValueError(
             f"Declared reference domain for {column!r} omits observed levels: "
-            f"{[value.to_dict() for value in sorted(missing, key=ScalarIdentity.sort_key)]}"
+            f"{[_json(key) for key in sorted(missing)]}"
         )
-    return sorted(normalized, key=ScalarIdentity.sort_key), "caller_declared"
+    return sorted(declared), "caller_declared"
+
+
+def _support(values: list[Any], codes: np.ndarray) -> Counter[Key]:
+    raw = np.bincount(codes, minlength=len(values))
+    return Counter({_key(values[i]): int(n) for i, n in enumerate(raw) if n})
+
+
+@dataclass
+class _Pair:
+    """One analyzed column pair: codes, pair population, marginals and domains."""
+
+    columns: tuple[str, str]
+    encoded: tuple[tuple[list[Any], np.ndarray], tuple[list[Any], np.ndarray]]
+    base: np.ndarray
+    margins: tuple[Counter[Key], Counter[Key]]
+    domains: tuple[list[Key], list[Key]]
+    sources: tuple[str, str]
+
+
+_LIMITS = {"max_pairs": 15, "max_contexts": 32, "max_absence_cells": 1000}
 
 
 @operation("pairs")
 def pairs(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     dropna: bool = False,
     include_absence: bool = False,
-    reference_domains: Mapping[Any, Iterable[Any]] | None = None,
-    pair_contexts: Iterable[Mapping[Any, Any]] | None = None,
-    max_absence_cells: int | None = 1000,
-    max_contexts: int | None = 32,
-    max_pairs: int | None = 15,
-    scope_metadata: dict[str, Any] | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-) -> ExplorerResult:
-    """Measure sparse pair mappings, association, and optional absence.
+    reference_domains: Mapping[str, Iterable[Any]] | None = None,
+    pair_contexts: Iterable[Mapping[str, Any]] | None = None,
+    limits: PairLimits | None = None,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    **runtime: Unpack[Runtime],
+) -> Result:
+    """Measure how column pairs map onto each other, globally and within contexts.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    dimensions : iterable of column labels
-        Nonempty unique columns. Pairs are generated in requested column order.
+        Source frame, read without mutation.
+    dimensions : iterable of str
+        Nonempty columns; pairs follow their order.
     dropna : bool, optional
-        Default False includes missing categories. True excludes missing values
-        from each tested pair and its context columns, so populations may differ.
-    include_absence : bool, optional
-        Include absent domain combinations when True; default False. Observed
-        mapping and association evidence is computed independently.
-    reference_domains : mapping or None, optional
-        Optional declared value domains by column; default None uses observed
-        domains. Absence means unobserved in the evaluated population, not invalid.
+        True excludes rows missing either column (or a context column) from each
+        pair; default False keeps missing values as a category.
+    include_absence, reference_domains : optional
+        Also count and sample value combinations never observed (default False),
+        drawn from declared value domains by column (default observed values).
     pair_contexts : iterable of mappings or None, optional
-        Additional exact column-to-value context filters; default None. Context
-        columns must be disjoint from the evaluated pair. Global evidence remains.
-    max_absence_cells : int or None, optional
-        Nonnegative absent-cell output budget; default 1000. None is unbounded;
-        zero retains absence totals without enumerating cells.
-    max_contexts : int or None, optional
-        Nonnegative total context budget, including the global population; default
-        32. None is unbounded; zero skips all pair/context records; one keeps
-        only global pair evidence.
-    max_pairs : int or None, optional
-        Nonnegative pair budget; default 15. None is unbounded; zero skips pairs.
-        Omitted tests are reported, not treated as failed relationships.
-    scope_metadata : mapping or None, optional
-        Optional descriptive lineage supplied by composition; default None. This
-        does not select rows. Use a Scope with census/explore for row selection.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+        Extra analyses restricted to exact column values, such as
+        ``{"site": "North"}``; context columns must not be in the pair.
+    limits : PairLimits or None, optional
+        Budgets, None unbounded: pairs (``max_pairs``, default 15), contexts
+        including the global one (``max_contexts``, 32) and sampled absent cells
+        (``max_absence_cells``, 1000). Omitted work is reported.
+    scope, missing, table_id
+        Source context shared by every analysis.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
-    ExplorerResult
-        Kind 'pairs', with per-pair/context scopes, mapping and association
-        measurements, optional absence summaries, and omission coverage.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Association is uncorrected Cramer's V and does not imply causality.
-    Undefined statistics and their reasons remain explicit for degenerate tables.
-    Absence uses declared domains when supplied, otherwise observed domains;
-    limits bound output/search without sampling rows.
+    Result
+        Kind 'pairs': one record per pair and context with its evaluated rows,
+        relation ('1:1', '1:n', 'n:1', 'n:m'), uncorrected Cramér's V (None with
+        a reason when undefined), marginals and optional absence summary.
 
     Examples
     --------
     >>> import pandas as pd
     >>> import fieldwork as fw
     >>> result = fw.pairs(pd.DataFrame({"a": [1, 2], "b": ["x", "y"]}), ["a", "b"])
-    >>> result.kind
-    'pairs'
+    >>> result["pairs"][0]["relation"]
+    '1:1'
     """
-    selected = resolve_columns(df, dimensions, argument="dimensions")
-    validate_limit("max_absence_cells", max_absence_cells)
-    validate_limit("max_contexts", max_contexts)
-    validate_limit("max_pairs", max_pairs)
-    requested_pairs = list(combinations(range(len(selected)), 2))
-    processed_pairs = requested_pairs[:max_pairs] if max_pairs is not None else requested_pairs
-    requested_context_values = list(pair_contexts or [])
-    requested_context_values.sort(
-        key=lambda context: tuple(
-            sorted(
-                (
-                    normalize_scalar(column, label=True).sort_key(),
-                    normalize_scalar(value).sort_key(),
-                )
-                for column, value in context.items()
-            )
-        )
+    from ..evidence import budgets, columns, prepare_values
+
+    selected = columns(df, dimensions)
+    if not selected:
+        raise ValueError("dimensions must contain at least one column")
+    caps = budgets(limits, _LIMITS, nullable=_LIMITS)
+    max_contexts, max_pairs = caps["max_contexts"], caps["max_pairs"]
+    requested = [_context(df, context) for context in pair_contexts or []]
+    requested.sort(key=lambda context: tuple(sorted((c, _key(v)) for c, v in context.items())))
+    contexts = [{}, *requested]
+    contexts = contexts[:max_contexts] if max_contexts is not None else contexts
+    context_columns = list(dict.fromkeys(c for context in contexts for c in context))
+    frame, _, encoded, base = prepare_values(
+        df,
+        list(dict.fromkeys([*selected, *context_columns])),
+        scope=scope,
+        missing=missing,
+        table_id=table_id,
     )
-    contexts: list[Mapping[Any, Any]] = [{}]
-    contexts.extend(requested_context_values)
-    if max_contexts is not None:
-        contexts = contexts[:max_contexts]
-    context_columns = tuple(dict.fromkeys(column for context in contexts for column in context))
-    if context_columns:
-        context_columns = resolve_columns(df, context_columns, argument="pair_contexts")
-    encoded = {
-        column: encode_series(df[column]) for column in dict.fromkeys((*selected, *context_columns))
-    }
-    records: list[dict[str, Any]] = []
-    examples_remaining = max_absence_cells
-    for a_index, b_index in processed_pairs:
+    domains = {str(c): values for c, values in (reference_domains or {}).items()}
+    candidates = list(combinations(selected, 2))
+    processed = candidates[:max_pairs] if max_pairs is not None else candidates
+    budget: list[int | None] = [caps["max_absence_cells"]]
+    records = []
+    for a, b in processed:
         checkpoint()
-        a_column, b_column = selected[a_index], selected[b_index]
-        pair_tokens = {
-            normalize_scalar(a_column, label=True),
-            normalize_scalar(b_column, label=True),
-        }
-        if any(normalize_scalar(column, label=True) in pair_tokens for column in context_columns):
+        if {a, b} & set(context_columns):
             raise ValueError("pair context columns must be disjoint from the analyzed pair")
-        a_values, a_codes = encoded[a_column]
-        b_values, b_codes = encoded[b_column]
-        base_mask = np.ones(len(df), dtype=bool)
-        if dropna:
-            for column in (a_column, b_column):
-                values, codes = encoded[column]
-                absent = missing_code(values)
-                if absent is not None:
-                    base_mask &= codes != absent
-        base_rows = np.flatnonzero(base_mask)
-        global_a_raw = np.bincount(a_codes[base_rows], minlength=len(a_values))
-        global_b_raw = np.bincount(b_codes[base_rows], minlength=len(b_values))
-        global_a = Counter(
-            {a_values[index]: int(count) for index, count in enumerate(global_a_raw) if count}
-        )
-        global_b = Counter(
-            {b_values[index]: int(count) for index, count in enumerate(global_b_raw) if count}
-        )
-        domain_a, source_a = _declared_domain(reference_domains, a_column, set(global_a))
-        domain_b, source_b = _declared_domain(reference_domains, b_column, set(global_b))
-        for context_index, context in enumerate(contexts):
-            local_mask = base_mask.copy()
-            if dropna:
-                for column in context:
-                    values, codes = encoded[column]
-                    absent = missing_code(values)
-                    if absent is not None:
-                        local_mask &= codes != absent
-            eligible_rows = int(local_mask.sum())
-            for column, raw_value in context.items():
-                values, codes = encoded[column]
-                wanted = normalize_scalar(raw_value)
-                try:
-                    wanted_code = values.index(wanted)
-                except ValueError:
-                    local_mask[:] = False
-                    break
-                local_mask &= codes == wanted_code
-            local_rows = np.flatnonzero(local_mask)
-            local_a_codes = a_codes[local_rows]
-            local_b_codes = b_codes[local_rows]
-            pair_ids, code_pairs = exact_pair_ids(local_a_codes, local_b_codes)
-            pair_sizes = np.bincount(pair_ids, minlength=len(code_pairs))
-            pair_counts = Counter(
-                {
-                    (a_values[a_code], b_values[b_code]): int(count)
-                    for (a_code, b_code), count in zip(code_pairs, pair_sizes)
-                    if count
-                }
-            )
-            a_raw = np.bincount(local_a_codes, minlength=len(a_values))
-            b_raw = np.bincount(local_b_codes, minlength=len(b_values))
-            a_support = Counter(
-                {a_values[index]: int(count) for index, count in enumerate(a_raw) if count}
-            )
-            b_support = Counter(
-                {b_values[index]: int(count) for index, count in enumerate(b_raw) if count}
-            )
-            association, association_reason = _cramers_v(pair_counts, a_support, b_support)
-            record: dict[str, Any] = {
-                "pair": [f"f{a_index}", f"f{b_index}"],
-                "columns": [
-                    normalize_scalar(a_column, label=True).to_dict(),
-                    normalize_scalar(b_column, label=True).to_dict(),
-                ],
-                "context": [
-                    {
-                        "column": normalize_scalar(column, label=True).to_dict(),
-                        "value": normalize_scalar(value).to_dict(),
-                    }
-                    for column, value in sorted(
-                        context.items(),
-                        key=lambda item: normalize_scalar(item[0], label=True).sort_key(),
-                    )
-                ],
-                "scope": _scope(
-                    f"pair:{a_index}:{b_index}:context:{context_index}",
-                    len(df),
-                    len(df) - eligible_rows,
-                    eligible_rows - len(local_rows),
-                    bool(context) or bool((scope_metadata or {}).get("conditional")),
-                    parent_scope=(scope_metadata or {}).get("scope"),
-                ),
-                "evaluated_rows": len(local_rows),
-                "relation": _relation(pair_counts),
-                "relation_reason": None if pair_counts else "empty_population",
-                "cramers_v": association,
-                "cramers_v_reason": association_reason,
-                "claim": "support_description_only",
-                "higher_order_constraints_ruled_out": False,
-                "marginals": {
-                    "a_supported_levels": len(a_support),
-                    "b_supported_levels": len(b_support),
-                    "a": [
-                        {"value": value.to_dict(), "count": count}
-                        for value, count in sorted(
-                            a_support.items(), key=lambda item: item[0].sort_key()
-                        )
-                    ],
-                    "b": [
-                        {"value": value.to_dict(), "count": count}
-                        for value, count in sorted(
-                            b_support.items(), key=lambda item: item[0].sort_key()
-                        )
-                    ],
-                },
-                "observed_cells": len(pair_counts),
-                "domains": {
-                    "a_size": len(domain_a),
-                    "b_size": len(domain_b),
-                    "a_source": source_a,
-                    "b_source": source_b,
-                },
-            }
+        pair = _pair(encoded, (a, b), dropna, domains, len(frame))
+        for context in contexts:
+            rows, eligible = _context_rows(encoded, context, pair.base, dropna)
+            record, counts = _pair_record(pair, context, rows, eligible, len(frame))
             if include_absence:
-                total_cells = len(domain_a) * len(domain_b)
-                total_absent = total_cells - len(pair_counts)
-                zero_a = sum(1 for value in domain_a if global_a[value] == 0)
-                zero_b = sum(1 for value in domain_b if global_b[value] == 0)
-                zero_support = zero_a * len(domain_b) + zero_b * len(domain_a) - zero_a * zero_b
-                positive_a = len(domain_a) - zero_a
-                positive_b = len(domain_b) - zero_b
-                local_zero_a = sum(
-                    1 for value in domain_a if global_a[value] > 0 and a_support[value] == 0
-                )
-                local_zero_b = sum(
-                    1 for value in domain_b if global_b[value] > 0 and b_support[value] == 0
-                )
-                parent_absent = (
-                    local_zero_a * positive_b
-                    + local_zero_b * positive_a
-                    - local_zero_a * local_zero_b
-                )
-                within = total_absent - zero_support - parent_absent
-                cap = examples_remaining
-                example_cap = total_absent if cap is None else max(0, cap)
-                examples: list[dict[str, Any]] = []
-                scan_limit = max(1000, example_cap * 20)
-                scanned = 0
-                for a in domain_a:
-                    for b in domain_b:
-                        if len(examples) >= example_cap or scanned >= scan_limit:
-                            break
-                        scanned += 1
-                        if (a, b) not in pair_counts:
-                            examples.append({"a": a.to_dict(), "b": b.to_dict()})
-                    if len(examples) >= example_cap or scanned >= scan_limit:
-                        break
-                if examples_remaining is not None:
-                    examples_remaining -= len(examples)
-                record["absence"] = {
-                    "status": "computed",
-                    "total_cells": total_cells,
-                    "observed_cells": len(pair_counts),
-                    "absent_cells": total_absent,
-                    "classes": {
-                        "unobserved_zero_support": zero_support,
-                        "level_absent_under_parent": parent_absent,
-                        "unobserved_within_supported_margins": within,
-                    },
-                    "examples": examples,
-                    "examples_omitted": total_absent - len(examples),
-                }
+                record["absence"] = _absence(pair, counts, budget)
             records.append(record)
-    return ExplorerResult(
-        "pairs",
-        {
-            "status": "computed" if records else "empty",
-            "source": _source(df),
-            "scopes": [],
-            "pairs": records,
-            "features": [normalize_scalar(c, label=True).to_dict() for c in selected],
-            "contexts": [
-                [
-                    {
-                        "column": normalize_scalar(c, label=True).to_dict(),
-                        "value": normalize_scalar(v).to_dict(),
-                    }
-                    for c, v in sorted(
-                        context.items(),
-                        key=lambda item: normalize_scalar(item[0], label=True).sort_key(),
-                    )
-                ]
-                for context in contexts
-            ],
-            "absence_status": "computed" if include_absence else "not_requested",
-            "requested_pairs": len(requested_pairs),
-            "processed_pairs": len(processed_pairs),
-            "omitted_pairs": len(requested_pairs) - len(processed_pairs),
-            "requested_contexts": 1 + len(requested_context_values),
-            "processed_contexts": len(contexts),
-            "omitted_contexts": 1 + len(requested_context_values) - len(contexts),
-            "scope_metadata": scope_metadata,
-            "warnings": [],
+    base["status"] = "computed" if records else "empty"
+    base["parameters"] = {
+        "dimensions": selected,
+        "dropna": dropna,
+        "include_absence": include_absence,
+        "reference_domains": {
+            c: [json_value(python_value(v)) for v in values] for c, values in domains.items()
         },
+        "pair_contexts": [_as_mapping(context) for context in requested],
+        "limits": caps,
+    }
+    base.update(
+        pairs=records,
+        features=selected,
+        contexts=[_predicates(context) for context in contexts],
+        absence_status="computed" if include_absence else "not_requested",
+        requested_pairs=len(candidates),
+        processed_pairs=len(processed),
+        omitted_pairs=len(candidates) - len(processed),
+        requested_contexts=1 + len(requested),
+        processed_contexts=len(contexts),
+        omitted_contexts=1 + len(requested) - len(contexts),
+        warnings=[],
     )
+    return Result("pairs", base)
+
+
+def _pair(encoded, columns: tuple[str, str], dropna: bool, domains, size: int) -> _Pair:
+    """Codes, pair population (dropna) and global value domains for one pair."""
+    pair_encoded = (encoded[columns[0]], encoded[columns[1]])
+    mask = _complete(list(pair_encoded), size) if dropna else np.ones(size, dtype=bool)
+    rows = np.flatnonzero(mask)
+    margins = (
+        _support(pair_encoded[0][0], pair_encoded[0][1][rows]),
+        _support(pair_encoded[1][0], pair_encoded[1][1][rows]),
+    )
+    domain_a, source_a = _declared_domain(domains, columns[0], set(margins[0]))
+    domain_b, source_b = _declared_domain(domains, columns[1], set(margins[1]))
+    return _Pair(columns, pair_encoded, mask, margins, (domain_a, domain_b), (source_a, source_b))
+
+
+def _pair_record(
+    pair: _Pair, context: Mapping[str, Any], rows: np.ndarray, eligible: int, size: int
+) -> tuple[dict[str, Any], tuple[Counter, Counter, Counter]]:
+    (a_values, a_codes), (b_values, b_codes) = pair.encoded
+    ids, code_pairs = exact_pair_ids(a_codes[rows], b_codes[rows])
+    sizes = np.bincount(ids, minlength=len(code_pairs))
+    counts = Counter(
+        {
+            (_key(a_values[a]), _key(b_values[b])): int(n)
+            for (a, b), n in zip(code_pairs, sizes)
+            if n
+        }
+    )
+    a_support = _support(a_values, a_codes[rows])
+    b_support = _support(b_values, b_codes[rows])
+    association, reason = _cramers_v(counts, a_support, b_support)
+    record = {
+        "columns": list(pair.columns),
+        "context": _predicates(context),
+        "evaluated_rows": len(rows),
+        "missing_excluded_rows": size - eligible,
+        "restriction_excluded_rows": eligible - len(rows),
+        "relation": _relation(counts),
+        "relation_reason": None if counts else "empty_population",
+        "cramers_v": association,
+        "cramers_v_reason": reason,
+        "marginals": {
+            "a_supported_levels": len(a_support),
+            "b_supported_levels": len(b_support),
+            "a": [{"value": _json(k), "count": n} for k, n in sorted(a_support.items())],
+            "b": [{"value": _json(k), "count": n} for k, n in sorted(b_support.items())],
+        },
+        "observed_cells": len(counts),
+        "domains": {
+            "a_size": len(pair.domains[0]),
+            "b_size": len(pair.domains[1]),
+            "a_source": pair.sources[0],
+            "b_source": pair.sources[1],
+        },
+    }
+    return record, (counts, a_support, b_support)
+
+
+def _absence(pair: _Pair, counts, budget: list[int | None]) -> dict[str, Any]:
+    """Classify unobserved domain cells and sample them within the shared budget."""
+    observed, a_support, b_support = counts
+    (domain_a, domain_b), (global_a, global_b) = pair.domains, pair.margins
+    total = len(domain_a) * len(domain_b)
+    absent = total - len(observed)
+    zero_a = sum(1 for v in domain_a if global_a[v] == 0)
+    zero_b = sum(1 for v in domain_b if global_b[v] == 0)
+    zero_support = zero_a * len(domain_b) + zero_b * len(domain_a) - zero_a * zero_b
+    local_a = sum(1 for v in domain_a if global_a[v] > 0 and a_support[v] == 0)
+    local_b = sum(1 for v in domain_b if global_b[v] > 0 and b_support[v] == 0)
+    parent_absent = (
+        local_a * (len(domain_b) - zero_b) + local_b * (len(domain_a) - zero_a) - local_a * local_b
+    )
+    cap = absent if budget[0] is None else max(0, budget[0])
+    examples, scanned, limit = [], 0, max(1000, cap * 20)
+    for a in domain_a:
+        for b in domain_b:
+            if len(examples) >= cap or scanned >= limit:
+                break
+            scanned += 1
+            if (a, b) not in observed:
+                examples.append({"a": _json(a), "b": _json(b)})
+        if len(examples) >= cap or scanned >= limit:
+            break
+    if budget[0] is not None:
+        budget[0] -= len(examples)
+    return {
+        "status": "computed",
+        "total_cells": total,
+        "observed_cells": len(observed),
+        "absent_cells": absent,
+        "classes": {
+            "unobserved_zero_support": zero_support,
+            "level_absent_under_parent": parent_absent,
+            "unobserved_within_supported_margins": absent - zero_support - parent_absent,
+        },
+        "examples": examples,
+        "examples_omitted": absent - len(examples),
+    }
 
 
 @operation("joint counts")
 def joint_counts(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
-    context: Mapping[Any, Any] | None = None,
+    context: Mapping[str, Any] | None = None,
     dropna: bool = False,
     max_cells: int = 2500,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-) -> ExplorerResult:
-    """Count observed cells for one selected pair and optional context.
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    **runtime: Unpack[Runtime],
+) -> Result:
+    """Count the observed value combinations of one column pair.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    dimensions : iterable of column labels
-        Exactly two distinct column labels, in axis order.
+        Source frame, read without mutation.
+    dimensions : iterable of str
+        Exactly two columns, in axis order.
     context : mapping or None, optional
-        Exact context values by column; default None. Context columns must be
-        disjoint from the selected pair. An unmatched value yields an empty result.
+        Exact values restricting rows, such as ``{"site": "North"}``; context
+        columns must not be in the pair. Default None.
     dropna : bool, optional
-        Default False includes missing categories. True excludes rows with
-        missing values in the selected pair or context columns.
+        True excludes rows missing a pair or context column; default False.
     max_cells : int, optional
-        Positive supported-domain Cartesian cell budget; default 2500. Includes
-        blank heatmap cells, not only nonzero cells. None is not supported.
-        Exceeding the budget raises ValueError instead of dropping cell mass.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+        Positive budget for the supported-value grid (blank cells included);
+        default 2500. Exceeding it raises ValueError rather than dropping mass.
+    scope, missing, table_id
+        Source context shared by every analysis.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
-    ExplorerResult
-        Kind 'joint_counts', with axis dictionaries a and b, observed cells,
-        context, and a population scope. Cells index the axis dictionaries.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Only observed cells are stored. The budget applies to the cross-product of
-    axis values supported in the evaluated context. Use a narrower context or
-    increase max_cells when that product exceeds the limit.
+    Result
+        Kind 'joint_counts': axis values ``a`` and ``b`` in value order, observed
+        ``cells`` indexing them, and the evaluated, missing-excluded and
+        context-excluded rows.
 
     Examples
     --------
@@ -492,67 +396,56 @@ def joint_counts(
     >>> counts["cells"][0]["count"]
     2
     """
-    selected = resolve_columns(df, dimensions, argument="dimensions")
+    from ..evidence import columns, prepare_values
+
+    selected = columns(df, dimensions)
     if len(selected) != 2:
         raise ValueError("joint_counts requires exactly two dimensions")
     if max_cells is None:
         raise ValueError("max_cells must be a positive integer")
     validate_limit("max_cells", max_cells, zero=False)
-    context = context or {}
-    context_columns = resolve_columns(df, context, argument="context") if context else ()
-    if set(context_columns) & set(selected):
+    restriction = _context(df, context or {})
+    if set(restriction) & set(selected):
         raise ValueError("context columns must be disjoint from the analyzed pair")
-    encoded = {c: encode_series(df[c]) for c in (*selected, *context_columns)}
-    mask = np.ones(len(df), dtype=bool)
-    if dropna:
-        for values, codes in encoded.values():
-            absent = missing_code(values)
-            if absent is not None:
-                mask &= codes != absent
-    eligible = int(mask.sum())
-    for column, value in context.items():
-        values, codes = encoded[column]
-        token = normalize_scalar(value)
-        if token not in values:
-            mask[:] = False
-        else:
-            mask &= codes == values.index(token)
-    a_values, a_codes = encoded[selected[0]]
-    b_values, b_codes = encoded[selected[1]]
-    a_supported = sorted(set(a_codes[mask].tolist()), key=lambda c: a_values[c].sort_key())
-    b_supported = sorted(set(b_codes[mask].tolist()), key=lambda c: b_values[c].sort_key())
+    frame, _, encoded, base = prepare_values(
+        df, [*selected, *restriction], scope=scope, missing=missing, table_id=table_id
+    )
+    size = len(frame)
+    mask = _complete([encoded[c] for c in selected], size) if dropna else np.ones(size, bool)
+    rows, eligible = _context_rows(encoded, restriction, mask, dropna)
+    (a_values, a_codes), (b_values, b_codes) = encoded[selected[0]], encoded[selected[1]]
+    a_supported = np.unique(a_codes[rows]).tolist()  # code order is value order
+    b_supported = np.unique(b_codes[rows]).tolist()
     if len(a_supported) * len(b_supported) > max_cells:
         raise ValueError(
             "Selected pair exceeds max_cells; narrow the context or increase the budget"
         )
-    a_indexes = {code: i for i, code in enumerate(a_supported)}
-    b_indexes = {code: i for i, code in enumerate(b_supported)}
-    pair_ids, code_pairs = exact_pair_ids(a_codes[mask], b_codes[mask])
-    sizes = np.bincount(pair_ids, minlength=len(code_pairs))
-    cells = [
-        {"a": a_indexes[a], "b": b_indexes[b], "count": int(size)}
-        for (a, b), size in zip(code_pairs, sizes)
-    ]
-    cells.sort(key=lambda c: (c["a"], c["b"]))
-    evaluated = int(mask.sum())
-    return ExplorerResult(
-        "joint_counts",
-        {
-            "status": "computed" if evaluated else "empty",
-            "source": _source(df),
-            "columns": [normalize_scalar(c, label=True).to_dict() for c in selected],
-            "context": [
-                {
-                    "column": normalize_scalar(c, label=True).to_dict(),
-                    "value": normalize_scalar(v).to_dict(),
-                }
-                for c, v in context.items()
-            ],
-            "scopes": [
-                _scope("joint", len(df), len(df) - eligible, eligible - evaluated, bool(context))
-            ],
-            "a": [a_values[c].to_dict() for c in a_supported],
-            "b": [b_values[c].to_dict() for c in b_supported],
-            "cells": cells,
-        },
+    a_index = {code: i for i, code in enumerate(a_supported)}
+    b_index = {code: i for i, code in enumerate(b_supported)}
+    ids, code_pairs = exact_pair_ids(a_codes[rows], b_codes[rows])
+    sizes = np.bincount(ids, minlength=len(code_pairs))
+    cells = sorted(
+        (
+            {"a": a_index[a], "b": b_index[b], "count": int(n)}
+            for (a, b), n in zip(code_pairs, sizes)
+        ),
+        key=lambda cell: (cell["a"], cell["b"]),
     )
+    base["status"] = "computed" if len(rows) else "empty"
+    base["parameters"] = {
+        "dimensions": selected,
+        "context": _as_mapping(restriction),
+        "dropna": dropna,
+        "max_cells": max_cells,
+    }
+    base.update(
+        columns=selected,
+        context=[{"column": c, "value": json_value(v)} for c, v in restriction.items()],
+        evaluated_rows=len(rows),
+        missing_excluded_rows=size - eligible,
+        restriction_excluded_rows=eligible - len(rows),
+        a=[json_value(a_values[c]) for c in a_supported],
+        b=[json_value(b_values[c]) for c in b_supported],
+        cells=cells,
+    )
+    return Result("joint_counts", base)

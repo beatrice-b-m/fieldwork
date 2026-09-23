@@ -5,28 +5,30 @@ import json
 import pandas as pd
 import pytest
 
-from fieldwork import KeySpec, explore, grain
+from fieldwork import KeySpec, grain, profile
 
 
 def test_contexts_do_not_change_global_pair_or_each_other() -> None:
     frame = pd.DataFrame(
         {"a": ["x", "x", "y"], "b": [1, 2, 2], "site": ["N", None, "S"], "batch": [None, "B", "B"]}
     )
-    options = {"dropna": True, "include_absence": True}
-    baseline = explore(frame, ["a", "b"], **options)["sections"]["pairs"]["pairs"][0]
-    single = explore(frame, ["a", "b"], pair_contexts=[{"site": "N"}], **options)
-    multiple = explore(frame, ["a", "b"], pair_contexts=[{"site": "N"}, {"batch": "B"}], **options)
+
+    def run(*contexts):
+        pairs = {"include_absence": True, "pair_contexts": list(contexts)}
+        return profile(frame, ["a", "b"], dropna=True, pairs=pairs)
+
+    baseline = run()["sections"]["pairs"]["pairs"][0]
+    single = run({"site": "N"})
+    multiple = run({"site": "N"}, {"batch": "B"})
     records = multiple["sections"]["pairs"]["pairs"]
     assert baseline == single["sections"]["pairs"]["pairs"][0] == records[0]
     assert baseline["relation"] == "n:m"
     assert baseline["cramers_v"] == pytest.approx(0.5)
-    north = next(
-        p for p in records if p["context"] and p["context"][0]["column"]["value"] == "site"
-    )
+    north = next(p for p in records if p["context"] and p["context"][0]["column"] == "site")
     single_north = single["sections"]["pairs"]["pairs"][1]
     assert north["evaluated_rows"] == single_north["evaluated_rows"] == 1
-    assert north["scope"]["missing_excluded_rows"] == 1
-    assert north["scope"]["restriction_excluded_rows"] == 1
+    assert north["missing_excluded_rows"] == 1
+    assert north["restriction_excluded_rows"] == 1
     assert north["absence"] == single_north["absence"]
 
 
@@ -41,46 +43,53 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
             "target": [0, None, 0, 1, 0, 0],
         }
     )
-    result = explore(
+    result = profile(
         frame,
         ["a", "b"],
         candidate_keys=["id"],
         dropna=True,
-        top_n=1,
-        top_n_mode="pre",
-        top_n_per_parent=per_parent,
+        census={"top_n": 1, "top_n_mode": "pre", "top_n_per_parent": per_parent},
+        pairs={"pair_contexts": [{"context": "N"}]},
         top_n_applies_to="both",
-        pair_contexts=[{"context": "N"}],
     )
+    census_tree = result["sections"]["census"]["tree"]
     pairs = result["sections"]["pairs"]
-    global_pair, local_pair = pairs["pairs"]
-    assert global_pair["scope"]["input_rows"] == 6
-    assert global_pair["scope"]["evaluated_rows"] == 3
-    assert global_pair["scope"]["missing_excluded_rows"] == 1
-    assert global_pair["scope"]["restriction_excluded_rows"] == 2
-    assert local_pair["scope"]["missing_excluded_rows"] == 2
-    assert local_pair["scope"]["restriction_excluded_rows"] == 3
-    assert local_pair["scope"]["evaluated_rows"] == 1
-    assert pairs["scope_metadata"]["source_scope"] == "s2"
     grain_data = result["sections"]["grain"]
-    target = next(d for d in grain_data["dependencies"] if d["target"]["value"] == "target")
-    target_scope = next(s for s in grain_data["scopes"] if s["scope_id"] == target["scope_id"])
-    assert target_scope["evaluated_rows"] == 2
-    scopes = [p["scope"] for p in pairs["pairs"]] + grain_data["scopes"]
-    for scope in scopes:
-        assert scope["conditional"] is True
-        assert "s2" in scope["lineage"]
-        assert scope["input_rows"] == (
-            scope["missing_excluded_rows"]
-            + scope["restriction_excluded_rows"]
-            + scope["evaluated_rows"]
+    # The census pre-selection (a=x, b=1 after dropping the row missing a) is the
+    # population both pairs and grain analyze.
+    assert census_tree["evaluated_rows"] == 3
+    assert census_tree["missing_excluded_rows"] == 1
+    assert census_tree["restriction_excluded_rows"] == 2
+    for section in (pairs, grain_data):
+        assert section["scope"]["name"] == "census top_n cohort"
+        assert section["scope"]["input_rows"] == 6
+        assert section["scope"]["evaluated_rows"] == 3
+        assert section["scope"]["restriction_excluded_rows"] == 3
+    global_pair, local_pair = pairs["pairs"]
+    assert global_pair["evaluated_rows"] == 3
+    assert global_pair["missing_excluded_rows"] == global_pair["restriction_excluded_rows"] == 0
+    assert local_pair["missing_excluded_rows"] == 1
+    assert local_pair["restriction_excluded_rows"] == 1
+    assert local_pair["evaluated_rows"] == 1
+    target = next(d for d in grain_data["dependencies"] if d["target"] == "target")
+    assert target["evaluated_rows"] == 2
+    records = [*pairs["pairs"], *grain_data["dependencies"]]
+    for record in records:
+        assert pairs["scope"]["evaluated_rows"] == (
+            record["missing_excluded_rows"]
+            + record.get("restriction_excluded_rows", 0)
+            + record["evaluated_rows"]
         )
     json.dumps(result.to_dict(), allow_nan=False)
-    full_grain = explore(
-        frame, ["a", "b"], candidate_keys=["id"], dropna=True, top_n=1, top_n_mode="pre"
+    full_grain = profile(
+        frame,
+        ["a", "b"],
+        candidate_keys=["id"],
+        dropna=True,
+        census={"top_n": 1, "top_n_mode": "pre"},
     )["sections"]["grain"]
-    assert full_grain["scope_metadata"] is None
-    assert all(s["input_rows"] == 6 and not s["conditional"] for s in full_grain["scopes"])
+    assert full_grain["scope"]["name"] == "input"
+    assert full_grain["scope"]["restriction_excluded_rows"] == 0
 
 
 @pytest.mark.parametrize("composite", [False, True])
@@ -92,8 +101,8 @@ def test_grain_key_comparison_uses_target_population(composite: bool) -> None:
         keys = [KeySpec("a", ("a", "constant")), KeySpec("b", ("b", "constant"))]
     full = grain(frame, keys, dropna=True)
     common = grain(frame.dropna(subset=["target"]), keys, dropna=True)
-    summary = next(t for t in full["targets"] if t["target"]["value"] == "target")
-    expected = next(t for t in common["targets"] if t["target"]["value"] == "target")
+    summary = next(t for t in full["targets"] if t["target"] == "target")
+    expected = next(t for t in common["targets"] if t["target"] == "target")
     assert summary == expected
     assert summary["equivalent_determinants"] == [["a", "b"]]
     assert summary["incomparable_candidates"] == []

@@ -534,7 +534,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_1: availability within modality = 'MR' (string)",
+      "statement": "image_1: availability within modality = MR",
       "features": [
         {
           "table": "table",
@@ -547,10 +547,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "MR"
-          }
+          "modality": "MR"
         }
       },
       "counting_unit": "rows",
@@ -584,7 +581,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_2: availability within modality = 'MR' (string)",
+      "statement": "image_2: availability within modality = MR",
       "features": [
         {
           "table": "table",
@@ -597,10 +594,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "MR"
-          }
+          "modality": "MR"
         }
       },
       "counting_unit": "rows",
@@ -636,7 +630,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "dose: availability within modality = 'MR' (string)",
+      "statement": "dose: availability within modality = MR",
       "features": [
         {
           "table": "table",
@@ -649,10 +643,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "MR"
-          }
+          "modality": "MR"
         }
       },
       "counting_unit": "rows",
@@ -686,7 +677,7 @@
     },
     {
       "pattern": "context_summary",
-      "statement": "Availability within modality = 'MR' (string)",
+      "statement": "Availability within modality = MR",
       "features": [
         {
           "table": "table",
@@ -707,10 +698,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "MR"
-          }
+          "modality": "MR"
         }
       },
       "counting_unit": "rows",
@@ -760,7 +748,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_1: availability within modality = 'CT' (string)",
+      "statement": "image_1: availability within modality = CT",
       "features": [
         {
           "table": "table",
@@ -773,10 +761,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "CT"
-          }
+          "modality": "CT"
         }
       },
       "counting_unit": "rows",
@@ -810,7 +795,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_2: availability within modality = 'CT' (string)",
+      "statement": "image_2: availability within modality = CT",
       "features": [
         {
           "table": "table",
@@ -823,10 +808,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "CT"
-          }
+          "modality": "CT"
         }
       },
       "counting_unit": "rows",
@@ -860,7 +842,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "dose: availability within modality = 'CT' (string)",
+      "statement": "dose: availability within modality = CT",
       "features": [
         {
           "table": "table",
@@ -873,10 +855,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "CT"
-          }
+          "modality": "CT"
         }
       },
       "counting_unit": "rows",
@@ -910,7 +889,7 @@
     },
     {
       "pattern": "context_summary",
-      "statement": "Availability within modality = 'CT' (string)",
+      "statement": "Availability within modality = CT",
       "features": [
         {
           "table": "table",
@@ -931,10 +910,7 @@
       ],
       "structure": {
         "context": {
-          "modality": {
-            "type": "string",
-            "value": "CT"
-          }
+          "modality": "CT"
         }
       },
       "counting_unit": "rows",
@@ -995,9 +971,9 @@
   "scope": {
     "name": "input",
     "parent": null,
+    "input_rows": 12,
     "evaluated_rows": 12,
     "restriction_excluded_rows": 0,
-    "positions_are": "zero_based_source_positions",
     "selection_positions": null
   },
   "coverage": {
@@ -1076,10 +1052,7 @@
   "contexts": [
     {
       "values": {
-        "modality": {
-          "type": "string",
-          "value": "MR"
-        }
+        "modality": "MR"
       },
       "rows": 8,
       "availability": [
@@ -1108,10 +1081,7 @@
     },
     {
       "values": {
-        "modality": {
-          "type": "string",
-          "value": "CT"
-        }
+        "modality": "CT"
       },
       "rows": 4,
       "availability": [

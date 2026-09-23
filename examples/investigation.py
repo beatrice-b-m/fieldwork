@@ -40,9 +40,13 @@ def sample():
 def mr_population(df):
     """Rebuild eligibility from modality, independently of image completeness."""
     cohorts = fw.missingness(
-        df, features=FEATURES, by=["modality"], missing=MISSING, example_limit=1
+        df,
+        features=FEATURES,
+        by=["modality"],
+        missing=MISSING,
+        limits={"example_limit": 1},
     )
-    context = next(c for c in cohorts["contexts"] if c["values"]["modality"]["value"] == "MR")
+    context = next(c for c in cohorts["contexts"] if c["values"]["modality"] == "MR")
     return cohorts.select(df, context["finding_id"], name="MR export slots")
 
 
@@ -61,7 +65,7 @@ def investigate():
         by=["modality"],
         missing=MISSING,
         min_implication=0.85,
-        example_limit=1,
+        limits={"example_limit": 1},
     )
     edge = next(
         f
@@ -90,8 +94,8 @@ def investigate():
         missing=MISSING,
     )
     tree = paths.best.census(df)
-    assert tree["scopes"][0]["input_rows"] == 12
-    assert tree["scopes"][0]["evaluated_rows"] == 8
+    assert tree["scope"]["input_rows"] == 12
+    assert tree["tree"]["evaluated_rows"] == 8
     recipe = fw.Recipe(
         "missingness",
         {
@@ -116,7 +120,7 @@ def investigate():
     assert image_change["after"]["populated"] == 4
     # Results retain evidence for this source; recipes retain reusable settings.
     saved = json.loads(json.dumps(availability.to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(saved)
+    restored = fw.Result.from_dict(saved)
     assert restored.select(df, edge["id"], exceptions=True).positions == (8,)
     assert "Inspect findings" in fw.render_html(restored)
     return df, availability, exceptions, paths, tree

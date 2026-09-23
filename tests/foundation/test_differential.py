@@ -42,25 +42,22 @@ def test_generated_counts_match_independent_oracle(frame) -> None:
         assert actual == level_counts(frame, column)
 
     nested = census(frame, columns, max_levels=None, max_nodes=None)
-    dictionary = {
-        item["level_id"]: record_token(item["value"]) for item in nested["level_dictionary"]
-    }
     nodes = {item["node_id"]: item for item in nested["tree"]["nodes"]}
     actual_prefixes = [Counter() for _ in columns]
     for node in nodes.values():
         path = []
         cursor = node
         while cursor["parent_id"] != "root":
-            path.append(dictionary[cursor["level_id"]])
+            path.append(record_token(cursor["value"]))
             cursor = nodes[cursor["parent_id"]]
-        path.append(dictionary[cursor["level_id"]])
+        path.append(record_token(cursor["value"]))
         actual_prefixes[node["depth"] - 1][tuple(reversed(path))] = node["count"]
     assert actual_prefixes == prefix_counts(frame, columns)
 
     dropped = census(frame, columns, max_levels=None, max_nodes=None, dropna=True)
     complete = sum(all(token != MISSING for token in path) for path in _paths(frame, columns))
     assert dropped["tree"]["root"]["count"] == complete
-    assert dropped["scopes"][0]["missing_excluded_rows"] == len(frame) - complete
+    assert dropped["tree"]["missing_excluded_rows"] == len(frame) - complete
 
 
 def _paths(frame, columns):

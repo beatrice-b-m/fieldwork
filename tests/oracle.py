@@ -1,9 +1,9 @@
 """Small independent oracles; deliberately import no production code.
 
 Values are compared through ``token``: native missing scalars (None, NaN, pd.NA,
-NaT) collapse to one token, integers and floats stay distinct, and the other
-tokens mirror the tagged ``{"type", "value"}`` records in exports, so
-``record_token`` can compare them directly.
+NaT) collapse to one token, and booleans, integers, floats and strings stay
+distinct even when they print alike. Exports hold plain JSON values (None for
+missing, infinities as "inf"/"-inf"); ``record_token`` maps one to its token.
 """
 
 from __future__ import annotations
@@ -37,9 +37,11 @@ def token(value: Any) -> tuple[str, Any]:
     raise TypeError(type(value).__name__)
 
 
-def record_token(record: dict[str, Any]) -> tuple[str, Any]:
-    """Token of a tagged scalar record from a Fieldwork export."""
-    return (record["type"], record.get("value"))
+def record_token(value: Any) -> tuple[str, Any]:
+    """Token of an exported value; JSON keeps the Python types that ``token`` separates."""
+    if value in ("inf", "-inf"):
+        return ("float", value)
+    return token(value)
 
 
 def column_tokens(frame: pd.DataFrame, column: Any) -> list[tuple[str, Any]]:

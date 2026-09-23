@@ -21,7 +21,7 @@ def test_levels_are_independent() -> None:
 def test_pre_census_recomputes_common_population() -> None:
     frame = pd.DataFrame({"a": ["x", "x", "y"], "b": [1, 2, 2]})
     result = census(frame, ["a", "b"], top_n=1, top_n_mode="pre")
-    assert result["scopes"][0]["evaluated_rows"] == 1
+    assert result["tree"]["evaluated_rows"] == 1
     assert result["tree"]["root"]["count"] == 1
     assert all(node["count"] == 1 for node in result["tree"]["nodes"])
 
@@ -38,6 +38,8 @@ def test_row_permutation_is_canonical() -> None:
     frame = pd.DataFrame({"a": ["y", "x", "x"], "b": [2, 2, 1]})
     one = census(frame, ["a", "b"]).to_dict()
     two = census(frame.sample(frac=1, random_state=2), ["a", "b"]).to_dict()
+    # Row order changes the source identity, never the evidence.
+    assert one.pop("source") != two.pop("source")
     assert one == two
 
 
@@ -87,24 +89,20 @@ def test_census_options_bound_output_without_changing_counts(case) -> None:
         assert not any(all(tokens[i][d] in sure[d] for d in range(len(active))) for i in eligible)
         return
 
-    dictionary = {r["level_id"]: record_token(r["value"]) for r in result["level_dictionary"]}
     root = result["tree"]["root"]
     nodes = {n["node_id"]: n for n in result["tree"]["nodes"]}
     paths = {"root": ()}
     for node in result["tree"]["nodes"]:  # parents precede children
-        paths[node["node_id"]] = (*paths[node["parent_id"]], dictionary[node["level_id"]])
+        paths[node["node_id"]] = (*paths[node["parent_id"]], record_token(node["value"]))
 
     # The evaluated population: complete cases (dropna), then any pre-selection.
     if pre and top_n is not None:
         retained = result["tree"]["retained_sets"]
         if options["top_n_per_parent"]:
             chosen = {
-                (
-                    tuple(dictionary[f"f{d}:l{c}"] for d, c in enumerate(r["path"])),
-                    dictionary[f"f{r['depth'] - 1}:l{code}"],
-                )
+                (tuple(record_token(v) for v in r["path"]), record_token(value))
                 for r in retained
-                for code in r["level_codes"]
+                for value in r["values"]
             }
             evaluated = [
                 i
@@ -112,20 +110,18 @@ def test_census_options_bound_output_without_changing_counts(case) -> None:
                 if all((tokens[i][:d], tokens[i][d]) in chosen for d in range(len(active)))
             ]
             for record in retained:
-                prefix = tuple(dictionary[f"f{d}:l{c}"] for d, c in enumerate(record["path"]))
+                prefix = tuple(record_token(v) for v in record["path"])
                 depth = record["depth"] - 1
                 siblings = Counter(
                     tokens[i][depth] for i in eligible if tokens[i][:depth] == prefix
                 )
-                kept = {dictionary[f"f{depth}:l{c}"] for c in record["level_codes"]}
+                kept = {record_token(v) for v in record["values"]}
                 assert len(kept) == min(top_n, len(siblings))
                 assert min(siblings[v] for v in kept) >= max(
                     (n for v, n in siblings.items() if v not in kept), default=0
                 )
         else:
-            kept = [
-                {dictionary[f"f{d}:l{c}"] for c in r["level_codes"]} for d, r in enumerate(retained)
-            ]
+            kept = [{record_token(v) for v in r["values"]} for r in retained]
             for depth, levels_kept in enumerate(kept):
                 counts = Counter(tokens[i][depth] for i in eligible)
                 assert len(levels_kept) == min(top_n, len(counts))
@@ -137,9 +133,9 @@ def test_census_options_bound_output_without_changing_counts(case) -> None:
             ]
     else:
         evaluated = eligible
-    assert root["count"] == len(evaluated) == result["scopes"][0]["evaluated_rows"]
-    assert result["scopes"][0]["missing_excluded_rows"] == len(frame) - len(eligible)
-    assert result["scopes"][0]["restriction_excluded_rows"] == len(eligible) - len(evaluated)
+    assert root["count"] == len(evaluated) == result["tree"]["evaluated_rows"]
+    assert result["tree"]["missing_excluded_rows"] == len(frame) - len(eligible)
+    assert result["tree"]["restriction_excluded_rows"] == len(eligible) - len(evaluated)
 
     prefixes = Counter(tokens[i][:d] for i in evaluated for d in range(1, len(active) + 1))
     children = {"root": []} | {node_id: [] for node_id in nodes}

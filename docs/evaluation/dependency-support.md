@@ -18,13 +18,11 @@ starting revision. The implementation source is
 validation, documentation, and regenerated notebook output without changing the
 measurements or ranking.
 
-- [Before report](dependency-support-before.json) and [after report](dependency-support-after.json)
-  record fixture/harness version, seed, Python/pandas/NumPy versions, parameters,
-  scope, candidate and presentation order, dependencies and graph digests.
-- [Parity report](dependency-support-parity.json) records the exact extension
-  allowlists, 100-case corpus hashes, and graph/order comparisons.
-- [Performance samples](dependency-support-performance.json) keep timings separate
-  from correctness evidence.
+- The before and after reports (fixture/harness version, seed, Python/pandas/NumPy
+  versions, parameters, scope, candidate and presentation order, dependencies and
+  graph digests), the parity report (extension allowlists, 100-case corpus hashes,
+  graph/order comparisons) and separate performance samples were retired after
+  0.2.1; they remain in git history at tag `v0.2.1` under `docs/evaluation/`.
 - [Executable example](../../examples/dependency_support.py) and
   [rendered HTML](../assets/dependency-support.html) demonstrate the sparse case.
   The generated PNG was visually checked for readable, unclipped qualifications.
@@ -111,10 +109,9 @@ dependency was added. [Development](../development.md) lists the commands.
 ## Boundaries and follow-on work
 
 [Algorithms](../algorithms.md#dependency-target-coverage-and-repeated-support) and
-[contracts](../contracts.md#additive-dependency-support-fields-discovery-schema-10)
+[contracts](../contracts.md#dependencies)
 are the durable behavioral specification. The
-[v0.1.1 release record](../releases/v0.1.1.md) records publication and the matching
-documentation synchronization.
+[v0.1.1 release notes](../release-notes/v0.1.1.md) describe the published change.
 
 Future experiments remain separate: bias-adjusted AFD ranking versus this corrected
 baseline, closed availability bundles, entropy prefix losses, explanation diversity,

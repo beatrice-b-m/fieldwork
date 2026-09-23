@@ -1,18 +1,22 @@
-"""Target populations, repeated support, and source-free schema-1.0 compatibility."""
+"""Target populations, repeated support, and candidate ranking."""
 
 import json
-from pathlib import Path
 
 import pandas as pd
-import pytest
 
 import fieldwork as fw
-
-LEGACY = Path(__file__).parent / "fixtures" / "dependency-schema-1.0.json"
 
 
 def sparse_frame():
     return pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None]}, index=[0] * 4)
+
+
+EXCEPTION_FIELDS = {"exception_groups", "omitted_exception_groups"}
+
+
+def measured(record):
+    """A dependency test as its finding measures it: exception groups stay in the test."""
+    return {k: v for k, v in record.items() if k not in EXCEPTION_FIELDS}
 
 
 def dependency(result, key=("X",), target="Y", context=None):
@@ -33,19 +37,6 @@ def test_sparse_target_characterization():
     assert result["candidates"][0]["determines"] == ["Y"]
     finding = next(f for f in result["findings"] if f["measurements"]["determinant"] == ["X"])
     assert result.select(sparse_frame(), finding["id"]).positions == (0, 2)
-
-
-def test_legacy_export_loads_without_source():
-    data = json.loads(LEGACY.read_text())
-    result = fw.InvestigationResult.from_dict(data)
-    assert result.schema_version == "1.0"
-    assert result.to_dict() == data
-    for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
-        assert "X" in render(result)
-    # 0.1.x source fingerprints are not comparable with current ones: saved
-    # evidence still renders, but source inspection refuses rather than guessing.
-    with pytest.raises(ValueError, match="Source dataset differs"):
-        result.select(sparse_frame(), result["findings"][0]["id"])
 
 
 def test_sparse_support_and_finding_measurements():
@@ -77,7 +68,7 @@ def test_singletons_do_not_inflate_repeat_consistency():
     assert d["repeated_rows"] == 2
     assert d["repeat_coverage"] == 0.02
     assert d["repeat_modal_accuracy"] == 0.5
-    assert any(f["measurements"] == d for f in result["findings"])
+    assert any(f["measurements"] == measured(d) for f in result["findings"])
 
 
 def test_empty_denominators_and_missing_category():
@@ -122,7 +113,7 @@ def test_scoped_composite_contexts_and_global_counts():
         scope=fw.Scope.from_positions(df, [0, 1, 2, 3]),
         max_key_size=2,
     )
-    local = dependency(result, ("X", "Z"), context={"C": {"type": "missing"}})
+    local = dependency(result, ("X", "Z"), context={"C": None})
     assert (
         local["target_coverage"] == local["repeat_coverage"] == local["repeat_modal_accuracy"] == 1
     )
@@ -135,7 +126,7 @@ def test_scoped_composite_contexts_and_global_counts():
     assert all(
         c["global_targets_tested"] == c["global_targets_possible"] for c in result["candidates"]
     )
-    f = next(f for f in result["findings"] if f["measurements"] == local)
+    f = next(f for f in result["findings"] if f["measurements"] == measured(local))
     assert result.select(df, f["id"]).positions == (0, 1)
     # Conditional exactness alone must never enter the global exact lists.
     conditional = fw.discover_dependencies(
@@ -152,11 +143,13 @@ def test_scoped_composite_contexts_and_global_counts():
 def test_budgets_do_not_count_graph_or_conditional_tests():
     df = sparse_frame().assign(Z=[1, 1, 2, 2])
     for budget, expected in [(0, [0, 0, 0]), (1, [1, 0, 0]), (3, [2, 0, 0])]:
-        result = fw.discover_dependencies(df, max_key_size=1, by=["Z"], max_dependency_tests=budget)
+        result = fw.discover_dependencies(
+            df, max_key_size=1, by=["Z"], limits={"max_dependency_tests": budget}
+        )
         assert [c["global_targets_tested"] for c in result["candidates"]] == expected
         assert all(c["global_targets_possible"] == 2 for c in result["candidates"])
         assert result["grain_views"]
-    result = fw.discover_dependencies(df, max_key_size=1, max_grain_views=0)
+    result = fw.discover_dependencies(df, max_key_size=1, limits={"max_grain_views": 0})
     assert all(c["global_targets_tested"] == 2 for c in result["candidates"])
     assert not result["grain_views"]
 
@@ -179,7 +172,7 @@ def overview_of(dependencies):
     }
 
 
-def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
+def test_supported_ranking_reverses_singleton_advantage():
     result = fw.discover_dependencies(ranking_frame(), max_key_size=1).to_dict()
     original_order = [c["columns"] for c in result["candidates"]]
     x, z = result["candidates"][:2]
@@ -192,47 +185,13 @@ def test_supported_ranking_reverses_singleton_advantage_and_legacy_recovers():
     position = {c: i for i, columns in enumerate(order) for c in columns}
     assert position["Z"] < position["X"]
     assert original_order == [c["columns"] for c in result["candidates"]]
-    legacy = json.loads(json.dumps(result))
-    for c in legacy["candidates"]:
-        for k in (
-            "determines_with_repeated_support",
-            "global_targets_tested",
-            "global_targets_possible",
-        ):
-            del c[k]
-    for d in legacy["dependencies"]:
-        for k in (
-            "repeated_rows",
-            "repeat_coverage",
-            "repeat_modal_accuracy",
-            "determinant_evaluated_rows",
-            "target_observed_rows",
-            "target_coverage",
-            "target_missing_excluded_rows",
-        ):
-            del d[k]
-    assert fw.visualization_data(overview_of(legacy))["overview"]["grains"] == projected
-    # One unrecoverable score requires legacy ordering throughout the collection.
-    next(d for d in legacy["dependencies"] if d["determinant"] == ["X"] and d["exact"]).pop(
-        "repeated_groups"
-    )
-    fallback = fw.visualization_data(overview_of(legacy))["overview"]["grains"]
-    fallback_order = [c["columns"] + c["equivalent"] for c in fallback]
-    position = {c: i for i, columns in enumerate(fallback_order) for c in columns}
-    assert position["X"] < position["Z"]
-    assert (
-        next(c for c in fallback if c["columns"] == ["X"])["determines_with_repeated_support"]
-        is None
-    )
 
 
 def test_saved_details_below_threshold_and_disclosure():
     df = sparse_frame()
     for dropna in (True, False):
         result = fw.discover_dependencies(df, dropna=dropna, min_accuracy=1, max_key_size=1)
-        saved = fw.InvestigationResult.from_dict(
-            json.loads(json.dumps(result.to_dict(), allow_nan=False))
-        )
+        saved = fw.Result.from_dict(json.loads(json.dumps(result.to_dict(), allow_nan=False)))
         assert saved.to_dict() == result.to_dict()
         # The full projection keeps every completed test and its support fields,
         # including tests below the finding threshold.
@@ -245,8 +204,3 @@ def test_saved_details_below_threshold_and_disclosure():
             # Missing Y participates as a category, so X no longer determines Y.
             assert (d["exact"], d["evaluated_rows"], d["repeat_modal_accuracy"]) == (False, 4, 0.5)
             assert not any(f["measurements"]["determinant"] == ["X"] for f in saved["findings"])
-    legacy = json.loads(LEGACY.read_text())
-    before = json.dumps(legacy, sort_keys=True)
-    d = dependency(fw.visualization_data(legacy))
-    assert (d["repeated_rows"], d["repeat_coverage"], d["target_coverage"]) == (0, 0, None)
-    assert json.dumps(legacy, sort_keys=True) == before

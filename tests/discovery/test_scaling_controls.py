@@ -44,7 +44,7 @@ def test_key_comparisons_on_equal_size_populations_are_not_shared():
             "t2": [None, None, 7, 7, 7, 7],
         }
     )
-    targets = {t["target"]["value"]: t for t in fw.grain(frame, ["A", "B"], dropna=True)["targets"]}
+    targets = {t["target"]: t for t in fw.grain(frame, ["A", "B"], dropna=True)["targets"]}
     assert targets["t1"]["determining_keys"] == targets["t2"]["determining_keys"] == ["A", "B"]
     assert targets["t1"]["equivalent_determinants"] == [["A", "B"]]
     assert targets["t2"]["equivalent_determinants"] == []
@@ -67,9 +67,12 @@ def fixture():
 @pytest.mark.parametrize("cap", [0, 1, 5])
 def test_explicit_dependency_budgets_report_omissions(cap):
     frame = fixture()
-    full = fw.discover_dependencies(frame, max_candidates=4, max_key_size=1)
+    full = fw.discover_dependencies(frame, limits={"max_candidates": 4}, max_key_size=1)
     bounded = fw.discover_dependencies(
-        frame, max_candidates=4, max_key_size=1, max_dependency_tests=cap, include_grain=False
+        frame,
+        limits={"max_candidates": 4, "max_dependency_tests": cap},
+        max_key_size=1,
+        include_grain=False,
     )
     assert bounded["dependencies"] == full["dependencies"][:cap]
     assert bounded["coverage"]["dependency_tests"] == cap
@@ -77,7 +80,10 @@ def test_explicit_dependency_budgets_report_omissions(cap):
     assert bounded["graph_selection"]["status"] == "not_requested"
     assert bounded["grain_views"] == []
     assert {x["reason"] for x in bounded["graph_selection"]["excluded"]} == {"graph_not_requested"}
-    limited = fw.discover_dependencies(frame, max_candidates=4, max_grain_views=cap)
+    limited = fw.discover_dependencies(
+        frame,
+        limits={"max_candidates": 4, "max_grain_views": cap},
+    )
     assert len(limited["grain_views"]) <= cap
     assert limited["graph_selection"]["views_omitted"] == limited["graph_selection"][
         "views_possible"
@@ -89,9 +95,9 @@ def test_overview_sections_options_and_rendered_omissions():
     overview = fw.explore(
         frame,
         sections=["missingness", "dependencies"],
-        section_options={
+        options={
             "missingness": {"features": ["a"]},
-            "dependencies": {"max_candidates": 1, "include_grain": False},
+            "dependencies": {"limits": {"max_candidates": 1}, "include_grain": False},
         },
     )
     assert overview["sections"]["paths"] == {"status": "not_requested"}
@@ -99,11 +105,12 @@ def test_overview_sections_options_and_rendered_omissions():
     assert len(overview["sections"]["missingness"]["availability"]) == 1
     for render in (fw.render_plaintext, fw.render_html, fw.render_svg):
         assert "Not requested" in render(overview)
-    assert overview["section_selection"]["omitted"] == ["paths", "value_patterns"]
-    with pytest.raises(ValueError, match="section_options"):
-        fw.explore(frame, sections=["paths"], section_options={"dependencies": {}})
+    omitted = [n for n, s in overview["sections"].items() if s["status"] == "not_requested"]
+    assert omitted == ["paths", "value_patterns"]
+    with pytest.raises(ValueError, match="requested sections"):
+        fw.explore(frame, sections=["paths"], options={"dependencies": {}})
     with pytest.raises(ValueError, match="source context"):
-        fw.explore(frame, section_options={"dependencies": {"scope": None}})
+        fw.explore(frame, options={"dependencies": {"scope": None}})
 
 
 @pytest.mark.parametrize(
@@ -122,32 +129,33 @@ def test_direct_selection_matches_complete_analysis_without_replay(kind, monkeyp
             unit="entities",
             entity_presence=kind.split("_")[1],
             by=["context"],
-            example_limit=len(frame),
+            limits={"example_limit": len(frame)},
             **context,
         )
     elif kind == "rows":
         analysis = fw.missingness(
-            frame, entity="key", by=["context"], example_limit=len(frame), **context
+            frame, entity="key", by=["context"], limits={"example_limit": len(frame)}, **context
         )
     elif kind.startswith("dependencies"):
         analysis = fw.discover_dependencies(
             frame,
             min_accuracy=0,
-            max_candidates=8,
+            limits={"max_candidates": 8, "example_limit": len(frame)},
             by=["context"],
             dropna=kind != "dependencies_na",
-            example_limit=len(frame),
             **context,
         )
     else:
-        analysis = fw.value_patterns(frame, by=["context"], example_limit=len(frame), **context)
+        analysis = fw.value_patterns(
+            frame, by=["context"], limits={"example_limit": len(frame)}, **context
+        )
     expected = analysis["findings"]
-    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(analysis.to_dict())))
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict())))
 
     def no_replay(*args, **kwargs):
         pytest.fail("selection replayed the entire analysis")
 
-    monkeypatch.setattr(fw.InvestigationResult, "recompute", no_replay)
+    monkeypatch.setattr(fw.Result, "recompute", no_replay)
     for record in expected:
         for exceptions in (False, True):
             positions = record["exceptions" if exceptions else "examples"]["positions"]
@@ -160,20 +168,54 @@ def test_saved_export_roundtrip_supports_selection():
     frame = pd.concat([fixture()] * 30, ignore_index=True)
     analysis = fw.explore(frame)
     ordinary = json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
-    restored = fw.InvestigationResult.from_dict(ordinary)
+    restored = fw.Result.from_dict(ordinary)
     assert restored.to_dict() == ordinary
-    record = next(f for f in analysis["findings"] if f["pattern"] == "availability")
+    record = next(f for f in analysis.findings if f["pattern"] == "availability")
     assert restored.select(frame, record["id"]) == analysis.select(frame, record["id"])
     foundation = fw.grain(frame, ["key"])
     saved = json.loads(json.dumps(foundation.to_dict(), allow_nan=False))
-    assert fw.ExplorerResult.from_dict(saved).to_dict() == foundation.to_dict()
+    assert fw.Result.from_dict(saved).to_dict() == foundation.to_dict()
 
 
 def test_grain_view_populations_store_bounded_examples():
     frame = pd.DataFrame({"key": np.arange(200) % 20, "value": np.arange(200) % 20 * 2})
-    result = fw.discover_dependencies(frame, max_key_size=1, example_limit=3)
+    result = fw.discover_dependencies(frame, max_key_size=1, limits={"example_limit": 3})
     for view in result["grain_views"]:
         examples = view["population"]["examples"]
         assert examples["positions"] == [0, 1, 2]
         assert examples["total"] == view["population"]["evaluated_rows"] == 200
         assert "positions" not in view["population"]
+
+
+def test_limits_reject_unknown_budgets_and_merge_with_defaults():
+    frame = fixture()
+    with pytest.raises(TypeError, match="max_signature"):
+        fw.missingness(frame, limits={"max_signature": 1})
+    with pytest.raises(ValueError, match="max_pairs"):
+        fw.value_patterns(frame, limits={"max_pairs": -1})
+    # One overridden budget keeps the overview's other defaults.
+    overview = fw.explore(
+        frame,
+        sections=["dependencies"],
+        options={"dependencies": {"limits": {"max_contexts": 3}}},
+    )
+    limits = overview.section("dependencies")["parameters"]["limits"]
+    assert (limits["max_candidates"], limits["max_contexts"]) == (20, 3)
+    # So does a recompute override of one saved budget.
+    saved = fw.missingness(frame, limits={"max_signatures": 1, "example_limit": 0})
+    replay = saved.recompute(frame, limits={"example_limit": 2})
+    assert replay["parameters"]["limits"]["max_signatures"] == 1
+    assert replay["parameters"]["limits"]["example_limit"] == 2
+
+
+def test_profile_validates_section_options_before_work():
+    frame = fixture()
+    with pytest.raises(ValueError, match="dropna"):
+        fw.profile(frame, ["key", "s"], census={"dropna": True})
+    with pytest.raises(TypeError):
+        fw.profile(frame, ["key", "s"], census={"max_pair": 2})
+    with pytest.raises(TypeError):
+        fw.profile(frame, ["key", "s"], pairs={"limits": {"max_cells": 2}})
+    result = fw.profile(frame, ["key", "s"], census={"top_n": 1}, pairs=False)
+    assert result["sections"]["pairs"]["status"] == "not_requested"
+    assert result.section("census")["parameters"]["top_n"] == 1

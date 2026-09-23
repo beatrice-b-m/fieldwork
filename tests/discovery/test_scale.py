@@ -59,12 +59,12 @@ def test_wide_export_overview_surfaces_planted_structure():
     pd.testing.assert_frame_equal(frame, original)
 
     # The planted near-rule is the top lead, and its exceptions are the planted rows.
-    top = overview["findings"][0]
+    top = overview.findings[0]
     assert top["pattern"] == "approximate_dependency"
     assert top["measurements"]["target"] == "region"
     rule = next(
         f
-        for f in overview["findings"]
+        for f in overview.findings
         if f["pattern"] == "approximate_dependency" and f["measurements"]["determinant"] == ["site"]
     )
     assert rule["measurements"]["repair_rows"] == len(exceptions)

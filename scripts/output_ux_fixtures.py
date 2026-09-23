@@ -37,11 +37,13 @@ def generate(output: Path) -> None:
     )
     small = pd.DataFrame({"key": [1, 1, 2, 2], "value": ["a", "a", "b", None]})
     _, laboratory = investigate()
-    availability = fw.missingness(wide, max_pairs=24, max_signatures=8, example_limit=2)
+    availability = fw.missingness(
+        wide,
+        limits={"max_pairs": 24, "max_signatures": 8, "example_limit": 2},
+    )
     dependencies = fw.discover_dependencies(
         wide,
-        max_candidates=4,
-        max_dependency_tests=60,
+        limits={"max_candidates": 4, "max_dependency_tests": 60},
         include_grain=False,
     )
     cases = {
@@ -56,7 +58,11 @@ def generate(output: Path) -> None:
         "long-joint": fw.render_html(fw.joint_counts(awkward, [long, "group"])),
         "deep-census": fw.render_html(fw.census(wide, list(wide.columns)[:6], max_nodes=160)),
         "pairs": fw.render_html(
-            fw.explore(wide, list(wide.columns)[2:18], max_pairs=24, pair_contexts=[{"site": 1}]),
+            fw.profile(
+                wide,
+                list(wide.columns)[2:18],
+                pairs={"pair_contexts": [{"site": 1}], "limits": {"max_pairs": 24}},
+            ),
             section="pairs",
         ),
         "overview": fw.render_html(fw.explore(small)),

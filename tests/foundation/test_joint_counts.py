@@ -21,9 +21,8 @@ def test_joint_counts_context_scope_and_typed_values():
     assert len(full["a"]) == 4
     local = joint_counts(frame, ["a", "b"], context={"site": "N"}, dropna=True)
     assert sum(c["count"] for c in local["cells"]) == 2
-    assert local["scopes"][0]["missing_excluded_rows"] == 2
-    assert local["scopes"][0]["restriction_excluded_rows"] == 1
-    assert local["scopes"][0]["conditional"]
+    assert local["missing_excluded_rows"] == 2
+    assert local["restriction_excluded_rows"] == 1
     json.dumps(local.to_dict(), allow_nan=False)
     assert "observed" in render_svg(local, detail="topology")
 

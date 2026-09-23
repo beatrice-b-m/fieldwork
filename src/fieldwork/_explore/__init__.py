@@ -1,27 +1,19 @@
-"""Feature hierarchy explorer public implementation exports."""
+"""Foundation analyses: levels, census, grain, pairs, joint counts and roles."""
 
 from .census import census, levels
-from .grain import grain
-from .graphics import render_html, render_svg
-from .orchestration import explore
-from .relations import joint_counts
-from .render import render_plaintext
-from .result import ExplorerResult, KeySpec
+from .grain import KeySpec, grain
+from .profile import profile
+from .relations import joint_counts, pairs
 from .roles import SchemaProposal, infer_schema
-from .visual_data import visualization_data
 
 __all__ = [
-    "ExplorerResult",
     "KeySpec",
     "SchemaProposal",
     "census",
-    "explore",
     "grain",
     "infer_schema",
     "joint_counts",
     "levels",
-    "render_html",
-    "render_plaintext",
-    "render_svg",
-    "visualization_data",
+    "pairs",
+    "profile",
 ]

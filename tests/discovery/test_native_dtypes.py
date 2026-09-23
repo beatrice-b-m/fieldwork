@@ -44,7 +44,7 @@ def native_columns():
 
 
 NATIVE = list(native_columns())
-NUMERIC = {"Int64", "int64_pyarrow", "float32"}
+NUMERIC = {"Int64", "int64_pyarrow", "float32", "categorical_int"}
 
 
 def frames(kind):
@@ -92,17 +92,18 @@ def test_native_dtype_value_patterns_match_object_equivalent(kind):
     patterns = analytical(fw.value_patterns(native, by=["key"]))
     baseline = analytical(fw.value_patterns(equivalent, by=["key"]))
 
-    # Numeric summaries require a numeric dtype, so an object column of numbers
-    # has none; every other finding and measurement must agree.
+    # Numeric summaries follow the values, not the dtype, so every finding and
+    # measurement agrees.
+    compared = ("pattern", "features", "measurements", "examples", "exceptions")
+    assert [{k: f[k] for k in compared} for f in patterns["findings"]] == [
+        {k: f[k] for k in compared} for f in baseline["findings"]
+    ]
+
     def summary(finding):
         return (
             finding["pattern"] == "numeric_range" and finding["measurements"]["feature"] == "value"
         )
 
-    compared = ("pattern", "features", "measurements", "examples", "exceptions")
-    assert [{k: f[k] for k in compared} for f in patterns["findings"] if not summary(f)] == [
-        {k: f[k] for k in compared} for f in baseline["findings"]
-    ]
     numeric = [f for f in patterns["findings"] if summary(f)]
     assert len(numeric) == (kind in NUMERIC)
     if numeric:

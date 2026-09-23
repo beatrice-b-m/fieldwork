@@ -1,11 +1,13 @@
 """Compare default discovery JSON across revisions on deterministic semantic cases.
 
 Run this same script with each source checkout on PYTHONPATH and the same dependency
-versions. No progress or new budget options are used, so the baseline can run it.
+versions. No progress options are used, and budgets move under ``limits`` only in
+revisions whose functions take it, so the baseline can run it.
 Outputs are intentionally separate from timing measurements.
 """
 
 import argparse
+import inspect
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -59,6 +61,26 @@ def without_support_extension(value):
     return value
 
 
+_SECTIONS = {
+    "missingness": fw.missingness,
+    "dependencies": fw.discover_dependencies,
+    "paths": fw.suggest_paths,
+    "value_patterns": fw.value_patterns,
+}
+
+
+def budgeted(func, kw):
+    """Options for this revision: budgets nest under ``limits`` where it exists."""
+    kw = dict(kw)
+    if "options" in kw:
+        kw["options"] = {n: budgeted(_SECTIONS[n], o) for n, o in kw["options"].items()}
+    parameters = inspect.signature(func).parameters
+    if "limits" not in parameters:
+        return kw
+    limits = {k: kw.pop(k) for k in list(kw) if k not in parameters}
+    return {**kw, "limits": limits} if limits else kw
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -108,14 +130,18 @@ def main():
                     {"objective": "availability", "max_candidates": 50},
                 ),
                 ("patterns", fw.value_patterns, {"by": ["c0"]}),
-                ("overview", fw.explore, {"discovery": {"max_candidates": 30, "by": ["c0"]}}),
+                (
+                    "overview",
+                    fw.explore,
+                    {"by": ["c0"], "options": {"paths": {"max_candidates": 30}}},
+                ),
             ]:
                 results.append(
                     {
                         "seed": seed,
                         "kind": name,
                         "scoped": bool(context),
-                        "result": func(df, **context, **kw).to_dict(),
+                        "result": func(df, **context, **budgeted(func, kw)).to_dict(),
                     }
                 )
     encoded = json.dumps(results, allow_nan=False, sort_keys=True)

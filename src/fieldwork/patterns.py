@@ -5,26 +5,30 @@ from __future__ import annotations
 import re
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 from itertools import combinations, islice
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
 
 from ._explore._kernels import group_ids, modal_groups
+from ._explore.encoding import encode_series
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
-    InvestigationResult,
     Scope,
     analyzable,
     bounded_rows,
+    budgets,
     columns,
     finding,
-    limit,
     prepare,
     result,
 )
-from .progress import CancellationToken, Progress
+from .result import Result
+from .typing import PatternLimits, Runtime
+
+_LIMITS = {"max_pairs": 100, "max_patterns": 10, "example_limit": 5}
 
 
 @operation("value patterns")
@@ -33,95 +37,43 @@ def value_patterns(
     *,
     features: Iterable[str] | None = None,
     by: Iterable[str] | None = None,
-    missing: Mapping[str, Iterable[Any]] | None = None,
+    limits: PatternLimits | None = None,
     scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    max_pairs: int = 100,
-    max_patterns: int = 10,
-    example_limit: int = 5,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-) -> InvestigationResult:
-    """Summarize populated values and evidence for related column families.
+    **runtime: Unpack[Runtime],
+) -> Result:
+    """Summarize populated values: string formats, numeric ranges and relations.
+
+    A column is numeric when every populated value is a non-boolean number,
+    whatever its dtype. Formats, tolerances and tests are described in
+    docs/algorithms.md.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Discovery requires unique string
-        column names. Duplicate index labels are supported; source selections use
-        integer row positions. Unsupported scalar objects raise TypeError.
+        Source frame, read without mutation.
     features : iterable of str or None, optional
-        Unique column names to analyze, in requested order; default None selects
-        all columns, skipping those with unsupported values (such as lists,
-        dicts or Decimal) and listing them in skipped_features. Restricts
-        analysis, not full-source identity validation.
+        Columns to summarize; default None selects every column, skipping (and
+        listing) columns with unsupported values.
     by : iterable of str or None, optional
-        Joint context columns for within-context constancy; default None. Rows
-        missing any context key are excluded from that analysis; each target also
-        requires a populated value.
-    missing : mapping or None, optional
-        Additional missing sentinels per column; default None. Native missing
-        values are always absent. Numeric sentinels match integer/float values
-        numerically; booleans remain distinct. The source is not modified.
-    scope : Scope or None, optional
-        Source-bound population selection; default None uses all rows. The scope
-        must match the ordered source. Fingerprinting still scans the full frame.
-    table_id : str, optional
-        Nonempty source label; default 'table'. Does not replace the fingerprint.
-    max_pairs : int, optional
-        Nonnegative candidate pair budget in column order; default 100. Zero
-        skips numeric pair relations. Non-numeric pairs still consume this budget.
-    max_patterns : int, optional
-        Nonnegative saved string formats, lengths, and prefixes per summary;
-        default 10. Zero retains summary totals without ranked patterns.
-    example_limit : int, optional
-        Nonnegative maximum saved example/exception source rows per finding side;
-        default 5. Zero retains totals without row examples. This display limit
-        does not restrict the population recovered by select or all_matches.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+        Context columns: each other feature is tested for being constant within
+        each joint context (rows missing a context value are excluded).
+    limits : PatternLimits or None, optional
+        Budgets: pairs tested for constant offsets and ratios (``max_pairs``,
+        100), formats, lengths and prefixes kept per string column
+        (``max_patterns``, 10) and ``example_limit`` (5).
+    scope, missing, table_id
+        Source context shared by every analysis.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
-    InvestigationResult
-        Kind 'value_patterns', with summaries, indexed families, findings, and
-        pair coverage. Numeric findings include finite ranges, observed spacing,
-        and supported constant offsets or ratios.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame or column labels are unsupported, or an explicitly requested
-        column contains unsupported values.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Search and display budgets never sample rows. Evidence records evaluated
-    populations and omissions separately. Source identity covers ordered column
-    labels, index labels, column dtypes and all cell values; changing or
-    reordering them invalidates inspection against saved findings.
-
-    String patterns replace digit runs with '9' and letter runs with 'A'; prefixes
-    use the first three characters. Numeric offsets/ratios use finite populated
-    pairs and numpy.allclose (rtol=1e-5, atol=1e-8); ratios exclude zero divisors.
-    Observed spacing does not prove a generating precision or unit. Indexed names
-    and matching availability suggest families, not interchangeable meanings.
+    Result
+        Kind 'value_patterns': per-column ``summaries``, indexed name
+        ``families``, ``coverage`` and findings (string patterns, numeric ranges,
+        constant offsets and ratios, context constancy, indexed families).
 
     Examples
     --------
@@ -132,12 +84,7 @@ def value_patterns(
     >>> result["summaries"][0]["formats"]
     [['A9', 2]]
     """
-    for name, value in [
-        ("max_pairs", max_pairs),
-        ("max_patterns", max_patterns),
-        ("example_limit", example_limit),
-    ]:
-        limit(name, value)
+    budget = budgets(limits, _LIMITS)
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
@@ -149,108 +96,200 @@ def value_patterns(
         presence_features=selected,
         optional=selected if features is None else (),
     )
+    patterns = _Patterns(frame, positions, present, base, budget["example_limit"])
     selected = analyzable(selected, base)
-    families = defaultdict(list)
     base["summaries"] = []
     with phase("value summaries", len(selected), "columns") as tracker:
         for c in selected:
-            values = frame[c].iloc[np.flatnonzero(present[c])]
-            record = {"feature": c, "populated": len(values), "missing": len(frame) - len(values)}
-            examples = bounded_rows(positions, present[c], example_limit)
-            if (
-                len(values)
-                and pd.api.types.infer_dtype(values.to_numpy(copy=False), skipna=True) == "string"
-            ):
-                ids, uniques = pd.factorize(values, sort=False)
-                counts = np.bincount(ids)
-                formats, lengths, prefixes = Counter(), Counter(), Counter()
-                for i, (v, count) in enumerate(zip(uniques, counts)):
-                    if i % 8192 == 0:
-                        checkpoint()
-                    formats[re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", v))] += int(count)
-                    lengths[len(v)] += int(count)
-                    prefixes[v[:3]] += int(count)
-                # Lists, not most_common() tuples, so live and saved payloads match.
-                record.update(
-                    formats=[list(item) for item in formats.most_common(max_patterns)],
-                    lengths=[list(item) for item in lengths.most_common(max_patterns)],
-                    prefixes=[list(item) for item in prefixes.most_common(max_patterns)],
-                    format_count=len(formats),
-                    omitted_format_rows=sum(n for _, n in formats.most_common()[max_patterns:]),
-                )
-                finding(
-                    base,
-                    "string_patterns",
-                    f"{c}: string formats, lengths and prefixes",
-                    [c],
-                    record,
-                    examples,
-                    example_limit=example_limit,
-                )
-            if pd.api.types.is_numeric_dtype(values.dtype) and not pd.api.types.is_bool_dtype(
-                values.dtype
-            ):
-                numeric = values.to_numpy(dtype=float)
-                finite = np.sort(np.unique(numeric[np.isfinite(numeric)]))
-                differences = np.diff(finite)
-                step = float(differences.min()) if len(differences) else None
-                quantized = (
-                    bool(
-                        np.allclose(
-                            (finite - finite[0]) / step, np.round((finite - finite[0]) / step)
-                        )
-                    )
-                    if step
-                    else None
-                )
-                record.update(
-                    minimum=float(finite[0]) if len(finite) else None,
-                    maximum=float(finite[-1]) if len(finite) else None,
-                    nonfinite=int((~np.isfinite(numeric)).sum()),
-                    observed_step=step,
-                    on_observed_step_grid=quantized,
-                )
-                finding(
-                    base,
-                    "numeric_range",
-                    f"{c}: numeric range and observed spacing",
-                    [c],
-                    record,
-                    examples,
-                    example_limit=example_limit,
-                )
-            base["summaries"].append(record)
-            match = re.match(r"^(.*?)[_\-]?\d+$", c)
-            if match:
-                families[match.group(1)].append(c)
+            base["summaries"].append(_summary(patterns, c, budget["max_patterns"]))
             tracker.advance(detail=c)
-    base["families"] = []
+    base["families"] = _indexed_families(patterns, selected)
+    tested = _numeric_pairs(patterns, selected, budget["max_pairs"])
+    if contexts:
+        _context_constancy(patterns, codes, selected, contexts)
+    base["coverage"] = {
+        "pair_candidates": len(selected) * (len(selected) - 1) // 2,
+        "pairs_evaluated": tested,
+    }
+    base["parameters"] = {
+        "features": selected,
+        "by": contexts,
+        "limits": budget,
+    }
+    return result("value_patterns", base)
+
+
+@dataclass
+class _Patterns:
+    frame: pd.DataFrame
+    positions: np.ndarray
+    present: dict[str, np.ndarray]
+    base: dict[str, Any]
+    example_limit: int
+    numeric: dict[str, np.ndarray | None] = field(default_factory=dict)
+
+    def number(
+        self, c: str, series: pd.Series | None = None, kind: str | None = None
+    ) -> np.ndarray | None:
+        """The column as floats when numeric (see numbers), computed once."""
+        if c not in self.numeric:
+            series = self.frame[c] if series is None else series
+            self.numeric[c] = numbers(series, self.present[c], kind)
+        return self.numeric[c]
+
+    def emit(self, kind, statement, features, metrics, rows, **extra) -> None:
+        finding(
+            self.base,
+            kind,
+            statement,
+            features,
+            metrics,
+            rows,
+            example_limit=self.example_limit,
+            **extra,
+        )
+
+
+def numbers(series: pd.Series, present: np.ndarray, kind: str | None = None) -> np.ndarray | None:
+    """The column as floats (NaN where absent) when every present value is a number.
+
+    Numeric-ness follows the values, not the dtype: an object or categorical
+    column of numbers is numeric, and booleans never are. A column with no
+    present value is numeric when its dtype is. ``kind`` is the present values'
+    ``pandas.api.types.infer_dtype``, when the caller already has it.
+    """
+    dtype = series.dtype
+    native = pd.api.types.is_numeric_dtype(dtype) and not pd.api.types.is_bool_dtype(dtype)
+    if _native_numbers(dtype):
+        output = series.to_numpy(dtype=float, na_value=np.nan)
+    else:
+        if not isinstance(dtype, pd.CategoricalDtype):
+            # Reject strings and other non-numbers without encoding the column.
+            if kind is None:
+                kind = pd.api.types.infer_dtype(series.to_numpy()[present], skipna=True)
+            if kind not in ("integer", "floating", "mixed-integer-float", "empty"):
+                return None
+        values, codes = encode_series(series)
+        used = [values[i] for i in np.unique(codes[present])]
+        if not (all(type(v) in (int, float) for v in used) if used else native):
+            return None
+        table = np.array(
+            [float(v) if type(v) in (int, float) else np.nan for v in values] or [np.nan]
+        )
+        output = table[codes] if len(values) else np.full(len(codes), np.nan)
+    return np.where(present, output, np.nan)
+
+
+def _native_numbers(dtype) -> bool:
+    """A numeric, non-boolean, non-categorical dtype: its values are numbers."""
+    return (
+        pd.api.types.is_numeric_dtype(dtype)
+        and not pd.api.types.is_bool_dtype(dtype)
+        and not isinstance(dtype, pd.CategoricalDtype)
+    )
+
+
+def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
+    present = patterns.present[c]
+    series = patterns.frame[c]
+    values = series.iloc[np.flatnonzero(present)]
+    record = {"feature": c, "populated": len(values), "missing": len(patterns.frame) - len(values)}
+    examples = bounded_rows(patterns.positions, present, patterns.example_limit)
+    kind = pd.api.types.infer_dtype(values.to_numpy(copy=False), skipna=True)
+    if len(values) and kind == "string":
+        record.update(_string_summary(values, max_patterns))
+        patterns.emit(
+            "string_patterns", f"{c}: string formats, lengths and prefixes", [c], record, examples
+        )
+    if _native_numbers(series.dtype):
+        number = values.to_numpy(dtype=float, na_value=np.nan)
+    else:
+        number = patterns.number(c, series, kind)
+        number = None if number is None else number[present]
+    if number is not None:
+        record.update(_numeric_summary(number))
+        patterns.emit(
+            "numeric_range", f"{c}: numeric range and observed spacing", [c], record, examples
+        )
+    return record
+
+
+def _string_summary(values: pd.Series, max_patterns: int) -> dict[str, Any]:
+    ids, uniques = pd.factorize(values, sort=False)
+    counts = np.bincount(ids)
+    formats, lengths, prefixes = Counter(), Counter(), Counter()
+    for i, (value, count) in enumerate(zip(uniques, counts)):
+        if i % 8192 == 0:
+            checkpoint()
+        formats[re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", value))] += int(count)
+        lengths[len(value)] += int(count)
+        prefixes[value[:3]] += int(count)
+    # Lists, not most_common() tuples, so live and saved payloads match.
+    return {
+        "formats": [list(item) for item in formats.most_common(max_patterns)],
+        "lengths": [list(item) for item in lengths.most_common(max_patterns)],
+        "prefixes": [list(item) for item in prefixes.most_common(max_patterns)],
+        "format_count": len(formats),
+        "omitted_format_rows": sum(n for _, n in formats.most_common()[max_patterns:]),
+    }
+
+
+def _numeric_summary(numeric: np.ndarray) -> dict[str, Any]:
+    finite = np.sort(np.unique(numeric[np.isfinite(numeric)]))
+    differences = np.diff(finite)
+    step = float(differences.min()) if len(differences) else None
+    on_grid = None
+    if step:
+        offsets = (finite - finite[0]) / step
+        on_grid = bool(np.allclose(offsets, np.round(offsets)))
+    return {
+        "minimum": float(finite[0]) if len(finite) else None,
+        "maximum": float(finite[-1]) if len(finite) else None,
+        "nonfinite": int((~np.isfinite(numeric)).sum()),
+        "observed_step": step,
+        "on_observed_step_grid": on_grid,
+    }
+
+
+def _indexed_families(patterns: _Patterns, selected: list[str]) -> list[dict[str, Any]]:
+    """Columns sharing a name up to a trailing index, such as dose_1 and dose_2."""
+    families = defaultdict(list)
+    for c in selected:
+        match = re.match(r"^(.*?)[_\-]?\d+$", c)
+        if match:
+            families[match.group(1)].append(c)
+    records = []
     for prefix, group in families.items():
-        if len(group) > 1:
-            evidence = ["indexed_name"]
-            if all(np.array_equal(present[group[0]], present[c]) for c in group[1:]):
-                evidence.append("identical_availability")
-            base["families"].append({"features": group, "prefix": prefix, "evidence": evidence})
-            finding(
-                base,
-                "indexed_family",
-                f"Indexed family: {', '.join(group)}",
-                group,
-                {"evidence": evidence},
-                positions,
-                example_limit=example_limit,
-            )
+        if len(group) < 2:
+            continue
+        evidence = ["indexed_name"]
+        present = patterns.present
+        if all(np.array_equal(present[group[0]], present[c]) for c in group[1:]):
+            evidence.append("identical_availability")
+        records.append({"features": group, "prefix": prefix, "evidence": evidence})
+        patterns.emit(
+            "indexed_family",
+            f"Indexed family: {', '.join(group)}",
+            group,
+            {"evidence": evidence},
+            patterns.positions,
+        )
+    return records
+
+
+def _numeric_pairs(patterns: _Patterns, selected: list[str], max_pairs: int) -> int:
+    """Constant offsets (b - a) and ratios (b / a) between numeric columns."""
     tested = 0
     for a, b in islice(combinations(selected, 2), max_pairs):
         checkpoint()
         tested += 1
-        eligible = present[a] & present[b]
+        eligible = patterns.present[a] & patterns.present[b]
         if not eligible.any():
             continue
-        x, y = frame[a].iloc[np.flatnonzero(eligible)], frame[b].iloc[np.flatnonzero(eligible)]
-        if not (pd.api.types.is_numeric_dtype(x.dtype) and pd.api.types.is_numeric_dtype(y.dtype)):
+        x, y = patterns.number(a), patterns.number(b)
+        if x is None or y is None:
             continue
-        x, y = x.to_numpy(dtype=float), y.to_numpy(dtype=float)
+        x, y = x[eligible], y[eligible]
         finite = np.isfinite(x) & np.isfinite(y)
         x, y = x[finite], y[finite]
         if len(x) < 2:
@@ -261,58 +300,49 @@ def value_patterns(
         ]:
             values = values[mask]
             if len(values) >= 2 and np.all(np.isfinite(values)) and np.allclose(values, values[0]):
-                finding(
-                    base,
+                patterns.emit(
                     f"numeric_{name}",
                     f"{b} has a constant {name} relative to {a}",
                     [a, b],
                     {
                         "value": float(values[0]),
                         "evaluated_rows": len(values),
-                        "excluded_rows": len(frame) - len(values),
+                        "excluded_rows": len(patterns.frame) - len(values),
                         "rtol": 1e-5,
                         "atol": 1e-8,
                     },
-                    positions[eligible][finite][mask],
-                    example_limit=example_limit,
+                    patterns.positions[eligible][finite][mask],
                 )
-    if contexts:
-        valid_rows = np.flatnonzero(np.logical_and.reduce([present[c] for c in contexts]))
-        context_ids = group_ids(codes[c][valid_rows] for c in contexts)
-        with phase("context constancy", len(selected), "columns") as tracker:
-            for c in selected:
-                populated = present[c][valid_rows]
-                valid_contexts = pd.unique(context_ids[populated])
-                _, sizes, _, _, distinct = modal_groups(
-                    context_ids[populated], codes[c][valid_rows[populated]]
-                )
-                constant = np.isin(context_ids, valid_contexts[distinct == 1])
-                nonconstant = np.isin(context_ids, valid_contexts[distinct > 1])
-                nconstant = int(np.count_nonzero(distinct == 1))
-                finding(
-                    base,
-                    "context_constancy",
-                    f"{c}: constancy within {', '.join(contexts)}",
-                    [*contexts, c],
-                    {
-                        "evaluated_groups": len(sizes),
-                        "constant_groups": nconstant,
-                        "constant_group_fraction": nconstant / len(sizes) if len(sizes) else None,
-                    },
-                    bounded_rows(positions[valid_rows], constant, example_limit),
-                    exceptions=bounded_rows(positions[valid_rows], nonconstant, example_limit),
-                    example_limit=example_limit,
-                )
-                tracker.advance(detail=c)
-    base["coverage"] = {
-        "pair_candidates": len(selected) * (len(selected) - 1) // 2,
-        "pairs_evaluated": tested,
-    }
-    base["parameters"] = {
-        "features": selected,
-        "by": contexts,
-        "max_pairs": max_pairs,
-        "max_patterns": max_patterns,
-        "example_limit": example_limit,
-    }
-    return result("value_patterns", base)
+    return tested
+
+
+def _context_constancy(patterns: _Patterns, codes, selected, contexts) -> None:
+    """Whether each feature (other than the contexts) is constant within each context."""
+    present = patterns.present
+    valid_rows = np.flatnonzero(np.logical_and.reduce([present[c] for c in contexts]))
+    context_ids = group_ids(codes[c][valid_rows] for c in contexts)
+    features = [c for c in selected if c not in contexts]
+    positions, limit_ = patterns.positions[valid_rows], patterns.example_limit
+    with phase("context constancy", len(features), "columns") as tracker:
+        for c in features:
+            populated = present[c][valid_rows]
+            valid_contexts = pd.unique(context_ids[populated])
+            _, sizes, _, _, distinct = modal_groups(
+                context_ids[populated], codes[c][valid_rows[populated]]
+            )
+            constant = np.isin(context_ids, valid_contexts[distinct == 1])
+            nonconstant = np.isin(context_ids, valid_contexts[distinct > 1])
+            count = int(np.count_nonzero(distinct == 1))
+            patterns.emit(
+                "context_constancy",
+                f"{c}: constancy within {', '.join(contexts)}",
+                [*contexts, c],
+                {
+                    "evaluated_groups": len(sizes),
+                    "constant_groups": count,
+                    "constant_group_fraction": count / len(sizes) if len(sizes) else None,
+                },
+                bounded_rows(positions, constant, limit_),
+                exceptions=bounded_rows(positions, nonconstant, limit_),
+            )
+            tracker.advance(detail=c)

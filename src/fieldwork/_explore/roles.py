@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Unpack
 
 import pandas as pd
 
 from .._runtime import operation, phase
-from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel, SchemaRole
-from .census import _source
-from .encoding import encode_series, normalize_scalar, validate_frame
-from .result import ExplorerResult, KeySpec
+from ..result import Result
+from ..typing import Runtime, SchemaRole
+from .grain import KeySpec, grain, key_specs
+
+if TYPE_CHECKING:
+    from ..evidence import Scope
 
 
 @dataclass(frozen=True)
@@ -22,8 +23,8 @@ class SchemaProposal:
 
     Parameters
     ----------
-    column : dict[str, Any]
-        Tagged column identity, not a bare column label.
+    column : str
+        Column name (non-string labels are named by str()).
     proposed_role : str
         'id', 'categorical', 'continuous', or 'unknown'.
     reasons : tuple of dict
@@ -35,8 +36,8 @@ class SchemaProposal:
 
     Attributes
     ----------
-    column : dict[str, Any]
-        Tagged column identity.
+    column : str
+        Column name.
     proposed_role : str
         Suggested role; requires user review.
     reasons : tuple[dict[str, Any], ...]
@@ -47,11 +48,11 @@ class SchemaProposal:
     Notes
     -----
     The record is shallowly frozen; nested evidence remains mutable. infer_schema
-    returns an ExplorerResult with serialized proposals, not live instances.
+    returns an Result with serialized proposals, not live instances.
     Suggestions do not modify source values or automatically configure analyses.
     """
 
-    column: dict[str, Any]
+    column: str
     proposed_role: SchemaRole
     reasons: tuple[dict[str, Any], ...]
     fd_evidence: Literal["not_evaluated"] | dict[str, Any] = "not_evaluated"
@@ -76,60 +77,38 @@ class SchemaProposal:
 @operation("schema inference")
 def infer_schema(
     df: pd.DataFrame,
-    candidate_keys: Iterable[ColumnLabel | KeySpec] | None = None,
+    candidate_keys: Iterable[str | KeySpec] | None = None,
     *,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-) -> ExplorerResult:
-    """Suggest reviewable column roles without changing analysis settings.
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
+    **runtime: Unpack[Runtime],
+) -> Result:
+    """Suggest reviewable column roles from cardinality, dtype and name hints.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    candidate_keys : iterable of column labels or KeySpec or None, optional
-        Optional explicit determinants for exact dependency evidence; default None
-        leaves fd_evidence unevaluated. Composite keys require KeySpec.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+        Source frame, read without mutation.
+    candidate_keys : iterable of str or KeySpec or None, optional
+        Keys to test with grain, adding exact dependency evidence to each
+        proposal; default None leaves fd_evidence 'not_evaluated'.
+    scope, missing, table_id
+        Source context shared by every analysis.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
-    ExplorerResult
-        Kind 'schema_proposal', with serialized SchemaProposal records, suggested
-        dimensions/keys, source metadata, and warnings. The result is a mapping,
-        not a list of SchemaProposal instances.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
+    Result
+        Kind 'schema_proposal': one serialized SchemaProposal per column, plus
+        suggested dimensions (categorical) and keys (id).
 
     Notes
     -----
-    Roles ('id', 'categorical', 'continuous', 'unknown') are heuristics based on
-    observed cardinality and dtype. Name hints are evidence rather than overrides.
-    Proposals do not cast values, select dimensions, or establish semantic IDs;
-    review them before passing a schema or keys to other analyses.
+    Roles are heuristics: every value distinct is 'id'; a numeric dtype with more
+    than min(20, rows / 2) values is 'continuous'; at most max(20, 10% of rows)
+    values is 'categorical'; otherwise 'unknown'. Nothing is cast or configured.
 
     Examples
     --------
@@ -139,75 +118,71 @@ def infer_schema(
     >>> proposals["proposals"][0]["proposed_role"]
     'id'
     """
+    from ..evidence import columns, prepare_values
 
-    validate_frame(df)
-    proposals: list[SchemaProposal] = []
-    rows = len(df)
-    with phase("schema columns", len(df.columns), "columns") as tracker:
-        for column in df.columns:
-            series = df[column]
-            cardinality = len(encode_series(series)[0])
-            ratio = cardinality / rows if rows else 0.0
-            name = str(column).lower()
-            reasons = (
-                {"code": "CARDINALITY", "value": cardinality},
-                {"code": "CARDINALITY_RATIO", "value": ratio},
-                {"code": "DTYPE", "value": str(series.dtype)},
-                {"code": "MISSING_ROWS", "value": int(series.isna().sum())},
-            )
-            if rows and cardinality == rows:
-                role = "id"
-            elif pd.api.types.is_numeric_dtype(series.dtype) and cardinality > min(20, rows / 2):
-                role = "continuous"
-            elif cardinality <= max(20, int(rows * 0.1)):
-                role = "categorical"
-            else:
-                role = "unknown"
-            if name.endswith(("id", "_id")):
-                reasons = (*reasons, {"code": "NAME_HINT_ID", "value": True})
-            proposals.append(
-                SchemaProposal(normalize_scalar(column, label=True).to_dict(), role, reasons)
-            )
-            tracker.advance(detail=str(column))
-    if candidate_keys is not None:
-        from .grain import grain
-
-        evidence = grain(df, candidate_keys).payload["dependencies"]
-        by_target: dict[str, list[dict[str, Any]]] = {}
-        for dependency in evidence:
-            by_target.setdefault(str(dependency["target"]), []).append(dependency)
-        proposals = [
-            SchemaProposal(
-                proposal.column,
-                proposal.proposed_role,
-                proposal.reasons,
-                {
-                    "status": "evaluated",
-                    "keys": [
-                        {
-                            "name": dependency["key_name"],
-                            "holds": dependency["holds"],
-                            "evaluated_groups": dependency["evaluated_groups"],
-                        }
-                        for dependency in by_target.get(str(proposal.column), [])
-                    ],
-                },
-            )
-            for proposal in proposals
-        ]
-    return ExplorerResult(
-        "schema_proposal",
-        {
-            "status": "empty" if rows == 0 else "computed",
-            "source": _source(df),
-            "proposals": [proposal.to_dict() for proposal in proposals],
-            "suggested_dimensions": [
-                proposal.column for proposal in proposals if proposal.proposed_role == "categorical"
-            ],
-            "suggested_keys": [
-                proposal.column for proposal in proposals if proposal.proposed_role == "id"
-            ],
-            "candidate_keys_received": candidate_keys is not None,
-            "warnings": [],
-        },
+    names = columns(df)
+    frame, _, encoded, base = prepare_values(
+        df, names, scope=scope, missing=missing, table_id=table_id
     )
+    rows = len(frame)
+    proposals = []
+    with phase("schema columns", len(names), "columns") as tracker:
+        for column in names:
+            values, codes = encoded[column]
+            proposals.append(_proposal(column, frame[column].dtype, values, codes, rows))
+            tracker.advance(detail=column)
+    if candidate_keys is not None:
+        evidence = grain(
+            df, candidate_keys, scope=scope, missing=missing, table_id=table_id
+        ).payload["dependencies"]
+        for proposal in proposals:
+            tests = [d for d in evidence if d["target"] == proposal["column"]]
+            proposal["fd_evidence"] = {
+                "status": "evaluated",
+                "keys": [
+                    {
+                        "name": d["key_name"],
+                        "holds": d["holds"],
+                        "evaluated_groups": d["evaluated_groups"],
+                    }
+                    for d in tests
+                ],
+            }
+    base["parameters"] = {
+        "candidate_keys": None
+        if candidate_keys is None
+        else [
+            {"name": s.name, "columns": list(s.columns)} for s in key_specs(frame, candidate_keys)
+        ]
+    }
+    base.update(
+        proposals=proposals,
+        suggested_dimensions=[
+            p["column"] for p in proposals if p["proposed_role"] == "categorical"
+        ],
+        suggested_keys=[p["column"] for p in proposals if p["proposed_role"] == "id"],
+        warnings=[],
+    )
+    return Result("schema_proposal", base)
+
+
+def _proposal(column: str, dtype: Any, values: list[Any], codes: Any, rows: int) -> dict:
+    cardinality = len(values)
+    missing_rows = int((codes == len(values) - 1).sum()) if values and values[-1] is None else 0
+    reasons: tuple[dict[str, Any], ...] = (
+        {"code": "CARDINALITY", "value": cardinality},
+        {"code": "CARDINALITY_RATIO", "value": cardinality / rows if rows else 0.0},
+        {"code": "DTYPE", "value": str(dtype)},
+        {"code": "MISSING_ROWS", "value": missing_rows},
+    )
+    if rows and cardinality == rows:
+        role = "id"
+    elif pd.api.types.is_numeric_dtype(dtype) and cardinality > min(20, rows / 2):
+        role = "continuous"
+    elif cardinality <= max(20, int(rows * 0.1)):
+        role = "categorical"
+    else:
+        role = "unknown"
+    if column.lower().endswith(("id", "_id")):
+        reasons = (*reasons, {"code": "NAME_HINT_ID", "value": True})
+    return SchemaProposal(column, role, reasons).to_dict()

@@ -58,7 +58,7 @@ def test_packed_signature_counts_and_ties_beyond_one_byte():
     present = rng.integers(0, 2, (90, 19)).astype(bool)
     present[40:50] = present[:10]
     frame = pd.DataFrame(np.where(present, 1.0, np.nan), columns=[f"c{i}" for i in range(19)])
-    analysis = fw.missingness(frame, max_signatures=200)
+    analysis = fw.missingness(frame, limits={"max_signatures": 200})
     expected = sorted(Counter(map(tuple, present)).items(), key=lambda x: (-x[1], x[0]))
     for record, (mask, count) in zip(analysis["signatures"], expected):
         assert record["present"] == [c for c, populated in zip(frame.columns, mask) if populated]

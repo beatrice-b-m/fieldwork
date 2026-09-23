@@ -1,5 +1,6 @@
 """Regression journeys across discovery, inspection, scope and saved presentation."""
 
+import html
 import json
 
 import pandas as pd
@@ -12,31 +13,28 @@ def test_recommendation_census_preserves_context_and_original_population():
     df = pd.DataFrame({"site": ["A", "A", "B", "B"], "value": [1, -999, 2, 3]}, index=[0] * 4)
     scope = fw.Scope.from_positions(df, [0, 1, 2], name="selected")
     paths = fw.suggest_paths(df, scope=scope, missing={"value": [-999]}, start_with=["value"])
-    paths = fw.InvestigationResult.from_dict(json.loads(json.dumps(paths.to_dict())))
+    paths = fw.Result.from_dict(json.loads(json.dumps(paths.to_dict())))
     tree = paths.best.census(df, dropna=True)
     assert tree["source"]["rows"] == 4
-    assert tree["scopes"][0]["input_rows"] == 4
-    assert tree["scopes"][0]["evaluated_rows"] == 2
-    assert tree["scopes"][0]["missing_excluded_rows"] == 1
-    assert tree["scopes"][0]["restriction_excluded_rows"] == 1
+    assert tree["scope"]["input_rows"] == 4
+    assert tree["tree"]["evaluated_rows"] == 2
+    assert tree["tree"]["missing_excluded_rows"] == 1
+    assert tree["scope"]["restriction_excluded_rows"] == 1
     preview = paths["paths"][0]["preview"]
-    assert preview["scopes"][0]["input_rows"] == 4
-    assert preview["scopes"][0]["evaluated_rows"] == 3
-    assert {"type": "missing"} in [v["value"] for v in preview["level_dictionary"]]
+    assert preview["scope"]["input_rows"] == 4
+    assert preview["tree"]["evaluated_rows"] == 3
+    assert None in [node["value"] for node in preview["tree"]["nodes"]]
     assert paths.best.census(df)["tree"] == preview["tree"]
     with pytest.raises(ValueError, match="differs"):
         paths.best.census(df.iloc[::-1])
     with pytest.raises(TypeError, match="unexpected keyword argument.*missing"):
         paths.best.census(df, missing={})
-    explicit = fw.explore(
-        df, ["value"], discovery={"scope": scope, "missing": {"value": [-999]}}, dropna=True
-    )
+    explicit = fw.profile(df, ["value"], scope=scope, missing={"value": [-999]}, dropna=True)
     for name in ("levels", "census", "pairs"):
-        for population in explicit["sections"][name]["scopes"]:
-            assert population["input_rows"] == 4
-            assert population["restriction_excluded_rows"] == 1
-    with pytest.raises(ValueError, match="search options"):
-        fw.explore(df, ["site"], discovery={"objective": "compact"})
+        assert explicit["sections"][name]["scope"]["input_rows"] == 4
+        assert explicit["sections"][name]["scope"]["restriction_excluded_rows"] == 1
+    with pytest.raises(TypeError, match="unexpected keyword"):
+        fw.profile(df, ["site"], objective="compact")
 
 
 def test_sparse_candidates_keep_compatible_grain_views():
@@ -51,7 +49,7 @@ def test_sparse_candidates_keep_compatible_grain_views():
     )
     analysis = fw.discover_dependencies(df, max_key_size=1)
     assert "exact_grain" not in analysis
-    assert analysis["grain_views"][0]["grain"]["graph"]["scope"]["evaluated_rows"] == 4
+    assert analysis["grain_views"][0]["grain"]["graph"]["evaluated_rows"] == 4
     assert analysis["graph_selection"]["excluded"] == [
         {
             "candidate_id": "key4",
@@ -61,10 +59,7 @@ def test_sparse_candidates_keep_compatible_grain_views():
     ]
     assert len(analysis["grain_views"]) == 3
     for view in analysis["grain_views"]:
-        assert (
-            view["grain"]["graph"]["scope"]["evaluated_rows"]
-            == view["population"]["evaluated_rows"]
-        )
+        assert view["grain"]["graph"]["evaluated_rows"] == view["population"]["evaluated_rows"]
     assert any(
         d["exact"]
         for d in analysis["dependencies"]
@@ -73,8 +68,8 @@ def test_sparse_candidates_keep_compatible_grain_views():
     assert all(c["graph_views"] for c in analysis["candidates"] if c["columns"] != ["never"])
     scoped = fw.discover_dependencies(df, scope=fw.Scope.from_positions(df, [0, 1]), max_key_size=1)
     primary = scoped["grain_views"][0]["grain"]
-    assert primary["graph"]["scope"]["input_rows"] == 4
-    assert primary["graph"]["scope"]["restriction_excluded_rows"] == 2
+    assert primary["scope"]["input_rows"] == 4
+    assert primary["scope"]["restriction_excluded_rows"] == 2
 
 
 def test_typed_contexts_survive_saved_presentations():
@@ -92,13 +87,15 @@ def test_typed_contexts_survive_saved_presentations():
         fw.render_html(saved),
         fw.render_html(saved, detail="topology"),
     ):
-        assert "(integer)" in rendered and "(string)" in rendered
+        # The integer and the string context print distinctly.
+        text = html.unescape(rendered)
+        assert "site = 1" in text and "site = '1'" in text
     rows = [
         r
         for r in fw.visualization_data(saved, detail="topology")["findings"]
         if r["structure"].get("context")
     ]
-    assert {r["structure"]["context"]["site"]["type"] for r in rows} == {"integer", "string"}
+    assert {type(r["structure"]["context"]["site"]) for r in rows} == {int, str}
     assert all("measurements" not in r and "examples" not in r for r in rows)
 
 
@@ -126,10 +123,10 @@ def test_candidate_roles_and_priority():
 
 def test_signature_to_complete_scope_and_saved_overview_inspection():
     df = pd.DataFrame({"a": [1, 2, 3, None], "b": [None, None, None, 4]}, index=[0] * 4)
-    analysis = fw.missingness(df, example_limit=1)
+    analysis = fw.missingness(df, limits={"example_limit": 1})
     signature = next(s for s in analysis["signatures"] if s["present"] == ["a"])
     assert len(analysis.inspect(df, signature["finding_id"])) == 1
-    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(analysis.to_dict())))
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict())))
     scope = saved.select(df, signature["finding_id"], name="a only")
     assert scope.positions == (0, 1, 2)
     assert scope.parent == "input"
@@ -138,7 +135,7 @@ def test_signature_to_complete_scope_and_saved_overview_inspection():
     with pytest.raises(ValueError, match="differs"):
         saved.select(df.iloc[::-1], signature["finding_id"])
     overview = fw.explore(df)
-    record = next(f for f in overview["findings"] if f["pattern"] == "availability_signature")
+    record = next(f for f in overview.findings if f["pattern"] == "availability_signature")
     assert len(overview.select(df, record["id"]).positions) == 3
     statement = next(f for f in saved["findings"] if f["id"] == signature["finding_id"])
     assert all(
@@ -150,12 +147,13 @@ def test_context_and_entity_findings_select_full_source_rows():
     df = pd.DataFrame(
         {"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]}, index=[0] * 3
     )
-    analysis = fw.missingness(df, features=["x"], by=["site"], entity="entity", example_limit=0)
+    analysis = fw.missingness(
+        df, features=["x"], by=["site"], entity="entity", limits={"example_limit": 0}
+    )
     context = next(
         f
         for f in analysis["findings"]
-        if f["pattern"] == "context_availability"
-        and f["structure"]["context"]["site"]["value"] == "A"
+        if f["pattern"] == "context_availability" and f["structure"]["context"]["site"] == "A"
     )
     assert analysis.select(df, context["id"], exceptions=True).positions == (1,)
     entity = next(
@@ -274,12 +272,12 @@ def test_connected_feature_relationships_preserve_evidence_types():
 
 def test_overview_entity_context_configuration_and_selection():
     df = pd.DataFrame({"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]})
-    overview = fw.explore(df, discovery={"by": ["site"], "entity": "entity", "unit": "entities"})
+    overview = fw.explore(df, by=["site"], entity="entity", unit="entities")
     assert overview["sections"]["missingness"]["analysis_unit"]["denominator"] == 2
     assert overview["sections"]["dependencies"]["coverage"]["contexts_evaluated"] == 2
     signature = next(
         f
-        for f in overview["findings"]
+        for f in overview.findings
         if f["pattern"] == "availability_signature" and "x" in f["structure"]["present"]
     )
     assert overview.select(df, signature["id"]).positions == (0, 1)
@@ -291,7 +289,7 @@ def test_path_empty_exception_selection_and_entity_presentation_units():
     path = next(f for f in paths["findings"] if f["pattern"] == "census_path")
     assert paths.select(df, path["id"], exceptions=True).positions == ()
     assert paths.inspect(df, path["id"], exceptions=True, all_matches=True).empty
-    overview = fw.explore(df, discovery={"entity": "e", "unit": "entities"})
+    overview = fw.explore(df, entity="e", unit="entities")
     data = fw.visualization_data(overview)
     # Signatures count the two entities, not the three rows.
     assert data["analysis_unit"]["counting_unit"] == "entities"
@@ -302,10 +300,10 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
     df = pd.DataFrame(
         {"site": ["A", "A", "B"], "e": [1, 1, None], "x": [1, None, 2]}, index=[0] * 3
     )
-    analysis = fw.missingness(df, by=["site"], entity="e", features=["x"], example_limit=0)
-    saved = fw.InvestigationResult.from_dict(
-        json.loads(json.dumps(analysis.to_dict(), allow_nan=False))
+    analysis = fw.missingness(
+        df, by=["site"], entity="e", features=["x"], limits={"example_limit": 0}
     )
+    saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict(), allow_nan=False)))
     context_id = saved["contexts"][0]["finding_id"]
     assert saved.select(df, context_id).positions == (0, 1)
     entity = next(f for f in saved["findings"] if f["pattern"] == "entity_summary")
@@ -330,7 +328,7 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
         "entity_keys": ["e"],
         "presence_aggregation": aggregation,
     }
-    for result in (fw.missingness(df, **config), fw.explore(df, discovery=config)):
+    for result in (fw.missingness(df, **config), fw.explore(df, **config)):
         saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
         topology = fw.visualization_data(saved, detail="topology")
         family = next(f for f in topology["findings"] if f["pattern"] == "availability_family")
@@ -355,10 +353,10 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
 
 def test_dependency_support_survives_overview_network_and_graph_handoffs():
     df = pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None], "Z": range(4)})
-    overview = fw.InvestigationResult.from_dict(
+    overview = fw.Result.from_dict(
         json.loads(json.dumps(fw.explore(df).to_dict(), allow_nan=False))
     )
-    dependencies = fw.InvestigationResult.from_dict(overview["sections"]["dependencies"])
+    dependencies = fw.Result.from_dict(overview["sections"]["dependencies"])
     records = {(tuple(d["determinant"]), d["target"]): d for d in dependencies["dependencies"]}
     assert records[(("X",), "Y")]["exact"]
     assert records[(("Y",), "Z")]["exact"]
@@ -367,9 +365,7 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     broad = dependencies["grain_views"][0]
     assert broad["population"]["evaluated_rows"] == 4
     assert broad["candidate_ids"] == ["key0", "key2"]
-    assignment = next(
-        a for a in broad["grain"]["graph"]["assignments"] if a["target"]["value"] == "Y"
-    )
+    assignment = next(a for a in broad["grain"]["graph"]["assignments"] if a["target"] == "Y")
     assert assignment["nodes"] == []
     assert assignment["reason"] == "different_target_population"
     narrow = dependencies["grain_views"][1]
@@ -387,13 +383,13 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     )
     finding_id = next(
         f["id"]
-        for f in overview["findings"]
+        for f in overview.findings
         if f["pattern"] == "exact_dependency"
         and f["measurements"]["determinant"] == ["X"]
         and f["measurements"]["target"] == "Y"
     )
     assert overview.select(df, finding_id).positions == (0, 2)
-    finding = next(f for f in overview["findings"] if f["id"] == finding_id)
+    finding = next(f for f in overview.findings if f["id"] == finding_id)
     assert finding["measurements"]["target_coverage"] == 0.5
     assert finding["measurements"]["repeat_modal_accuracy"] is None
 
@@ -406,7 +402,4 @@ def test_incompatible_grain_views_remain_separate():
     )
     for view in overlapping["grain_views"]:
         assert not {"key1", "key2"}.issubset(view["candidate_ids"])
-        assert (
-            view["population"]["evaluated_rows"]
-            == view["grain"]["graph"]["scope"]["evaluated_rows"]
-        )
+        assert view["population"]["evaluated_rows"] == view["grain"]["graph"]["evaluated_rows"]

@@ -1,87 +1,52 @@
-"""Validation and canonical, typed scalar identities for the explorer."""
+"""Column labels, native value codes, and the plain JSON form of emitted values.
+
+Analyses work on ``pd.factorize`` codes. A column's dictionary lists its distinct
+values as Python scalars in canonical order (booleans, integers, floats, strings,
+dates, naive datetimes, aware datetimes as UTC instants, timedeltas), with missing
+values collapsed into one final ``None`` entry. Code order is therefore value
+order, whatever the row order or dtype.
+
+Identity rules: native missing spellings (None, NaN, NaT, pd.NA) are one missing
+value; booleans, numbers and strings never match each other; integers and floats
+stay distinct (``1`` and ``1.0`` are different levels of an object column);
+aware datetimes compare as instants. Only values that are emitted are converted
+to JSON: numbers stay numbers, infinities become ``"inf"``/``"-inf"``, temporal
+values become ISO text (timedeltas use pandas' own text, which it parses back).
+"""
 
 from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-TYPE_ORDER = {
-    "boolean": 0,
-    "integer": 1,
-    "float": 2,
-    "string": 3,
-    "date": 4,
-    "datetime_naive": 5,
-    "datetime_aware": 6,
-    "timedelta": 7,
-    "tuple": 8,
-    "missing": 9,
-}
+MISSING = None
+
+# Object columns whose inferred kind cannot mix booleans, integers and floats can
+# be factorized directly; pandas would otherwise merge True, 1 and 1.0.
+_SORTABLE = {"string", "integer", "floating", "boolean", "empty"}
+_TEMPORAL = {"datetime", "datetime64", "date", "timedelta", "timedelta64"}
 
 
-@dataclass(frozen=True)
-class ScalarIdentity:
-    """Hashable identity that does not inherit Python's mixed-number equality."""
-
-    kind: str
-    value: Any = None
-    metadata: tuple[tuple[str, str], ...] = ()
-
-    def sort_key(self) -> tuple[Any, ...]:
-        if self.kind == "float":
-            if self.value == "-inf":
-                value = (0, 0)
-            elif self.value == "inf":
-                value = (2, 0)
-            elif self.value == "nan":
-                value = (3, 0)
-            else:
-                value = (1, float.fromhex(self.value))
-        elif self.kind in {"integer", "timedelta"}:
-            value = int(self.value)
-        elif self.kind == "tuple":
-            value = tuple(item.sort_key() for item in self.value)
-        else:
-            value = self.value
-        return (TYPE_ORDER[self.kind], value, self.metadata)
-
-    def to_dict(self) -> dict[str, Any]:
-        out: dict[str, Any] = {"type": self.kind}
-        if self.kind != "missing":
-            if self.kind == "tuple":
-                out["value"] = [item.to_dict() for item in self.value]
-            else:
-                out["value"] = self.value
-        out.update(dict(self.metadata))
-        return out
-
-
-MISSING = ScalarIdentity("missing")
-
-
-@dataclass(frozen=True)
 class MissingCode:
     """Missing-code metadata when an FD kernel only needs equivalence classes.
 
     Grain never displays cell values, so discovery can reuse integer groups
-    without retaining or rebuilding every high-cardinality scalar dictionary.
+    without retaining or rebuilding every high-cardinality dictionary.
     """
 
-    code: int | None
+    def __init__(self, code: int | None):
+        self.code = code
 
 
-def missing_code(values):
+def missing_code(values: list[Any] | MissingCode) -> int | None:
     if isinstance(values, MissingCode):
         return values.code
-    # Canonical dictionaries sort MISSING last. Avoid a linear dictionary scan
-    # for each candidate/target pair on continuous or unique-ID columns.
-    return len(values) - 1 if values and values[-1] == MISSING else None
+    return len(values) - 1 if values and values[-1] is None else None
 
 
 def _is_missing(value: Any) -> bool:
@@ -94,108 +59,156 @@ def _is_missing(value: Any) -> bool:
     return isinstance(result, (bool, np.bool_)) and bool(result)
 
 
-def normalize_scalar(value: Any, *, label: bool = False) -> ScalarIdentity:
-    """Return the v0 canonical identity for a supported scalar."""
+def python_value(value: Any) -> Any:
+    """Canonical Python scalar for a cell, or None when it is missing.
 
-    if label:
-        if isinstance(value, tuple):
-            return ScalarIdentity(
-                "tuple", tuple(normalize_scalar(item, label=True) for item in value)
-            )
-        if isinstance(value, str):
-            return ScalarIdentity("string", value)
-        if isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_)):
-            return ScalarIdentity("integer", str(int(value)))
-        raise TypeError(
-            f"Unsupported column label {value!r} of type {type(value).__name__}; "
-            "use strings, integers, or recursively tuple-valued labels"
-        )
+    Raises TypeError for unsupported cells such as lists, dicts or Decimal.
+    """
+    kind = type(value)
+    if kind is str or kind is int or kind is bool:
+        return value
+    if kind is float:
+        return None if math.isnan(value) else value + 0.0  # -0.0 and 0.0 are one value
     if _is_missing(value):
-        return MISSING
+        return None
     if isinstance(value, (bool, np.bool_)):
-        return ScalarIdentity("boolean", bool(value))
-    if isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_)):
-        return ScalarIdentity("integer", str(int(value)))
+        return bool(value)
+    if isinstance(value, (int, np.integer)):
+        return int(value)
     if isinstance(value, (float, np.floating)):
-        number = float(value)
-        if math.isnan(number):
-            return MISSING
-        if math.isinf(number):
-            return ScalarIdentity("float", "inf" if number > 0 else "-inf")
-        if number == 0:
-            number = 0.0
-        return ScalarIdentity("float", number.hex())
+        return float(value) + 0.0  # -0.0 and 0.0 are one value
     if isinstance(value, str):
-        return ScalarIdentity("string", value)
-    if isinstance(value, pd.Timestamp):
-        if value.tzinfo is not None:
-            utc = value.tz_convert("UTC")
-            return ScalarIdentity(
-                "datetime_aware",
-                utc.isoformat(),
-                (("resolution", "nanosecond"),),
-            )
-        return ScalarIdentity("datetime_naive", value.isoformat(), (("resolution", "nanosecond"),))
-    if isinstance(value, np.datetime64):
-        return normalize_scalar(pd.Timestamp(value))
-    if isinstance(value, datetime):
-        if value.tzinfo is not None:
-            utc = value.astimezone(UTC)
-            return ScalarIdentity(
-                "datetime_aware",
-                utc.isoformat(),
-                (("resolution", "nanosecond"),),
-            )
-        return ScalarIdentity("datetime_naive", value.isoformat(), (("resolution", "nanosecond"),))
+        return value
+    if isinstance(value, (datetime, np.datetime64)):
+        stamp = pd.Timestamp(value)
+        return stamp.tz_convert("UTC") if stamp.tzinfo is not None else stamp
     if isinstance(value, date):
-        return ScalarIdentity("date", value.isoformat())
-    if isinstance(value, pd.Timedelta):
-        return ScalarIdentity("timedelta", str(value.value), (("resolution", "nanosecond"),))
-    if isinstance(value, np.timedelta64):
-        return normalize_scalar(pd.Timedelta(value))
-    if isinstance(value, timedelta):
-        microseconds = (value.days * 86400 + value.seconds) * 1_000_000 + value.microseconds
-        return ScalarIdentity(
-            "timedelta", str(microseconds * 1_000), (("resolution", "nanosecond"),)
-        )
-    raise TypeError(
-        f"Unsupported {'column label' if label else 'value'} {value!r} "
-        f"of type {type(value).__name__}"
+        return value
+    if isinstance(value, (timedelta, np.timedelta64)):
+        return pd.Timedelta(value)
+    raise TypeError(f"Unsupported value {value!r} of type {type(value).__name__}")
+
+
+def value_key(value: Any) -> tuple[int, Any]:
+    """Identity and canonical sort key of a Python value from python_value."""
+    if isinstance(value, bool):
+        return (0, value)
+    if isinstance(value, int):
+        return (1, value)
+    if isinstance(value, float):
+        return (2, value)
+    if isinstance(value, str):
+        return (3, value)
+    if isinstance(value, pd.Timestamp):
+        return (6 if value.tzinfo is not None else 5, value)
+    if isinstance(value, date):
+        return (4, value)
+    return (7, value)
+
+
+def json_value(value: Any) -> Any:
+    """Plain JSON form of a Python value from python_value."""
+    if value is None or isinstance(value, (bool, int, str)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else ("inf" if value > 0 else "-inf")
+    if isinstance(value, (pd.Timestamp, date)):
+        return value.isoformat()
+    return str(value)
+
+
+def cell(frame: pd.DataFrame, column: str, row: int, present: bool = True) -> Any:
+    """JSON value of one source cell; absent cells (including sentinels) are None."""
+    return json_value(python_value(frame[column].iloc[row])) if present else None
+
+
+def same_json(left: Any, right: Any) -> bool:
+    """Equality of exported values that keeps True, 1 and 1.0 apart."""
+    return type(left) is type(right) and left == right
+
+
+def code_of(values: list[Any], value: Any) -> int | None:
+    """Dictionary code of a value, or None when it is not observed.
+
+    Values match by exported form, so a saved value (a timestamp saved as ISO
+    text, say) finds the code of the original cell.
+    """
+    wanted = json_value(python_value(value))
+    if wanted is None:
+        return missing_code(values)
+    return next(
+        (i for i, v in enumerate(values) if v is not None and same_json(json_value(v), wanted)),
+        None,
     )
 
 
-def display_scalar(value: ScalarIdentity, missing_label: str = "<NA>") -> str:
-    """Display typed values without conflating strings with numbers or missingness."""
+_LOOKALIKES = {"true", "false", "none", "null", "na", "n/a", "nan", "nat", "<na>"}
 
-    if value.kind == "missing":
+
+def _ambiguous(text: str) -> bool:
+    """Whether a string could be read as a number, boolean or missing value."""
+    if not text or text != text.strip() or text[0] in "'\"" or text.lower() in _LOOKALIKES:
+        return True
+    try:
+        float(text)
+    except ValueError:
+        return False
+    return True
+
+
+def display(value: Any, missing_label: str = "<NA>") -> str:
+    """Readable text for an exported value.
+
+    Strings are quoted only when they could be mistaken for a number, boolean or
+    missing value, so ``1``, ``1.0``, ``'1'`` and ``True`` stay distinguishable.
+    """
+    if value is None:
         return missing_label
-    if value.kind == "string":
-        label = repr(value.value)
-    elif value.kind == "integer":
-        label = value.value
-    elif value.kind == "float":
-        label = value.value if value.value in {"inf", "-inf"} else repr(float.fromhex(value.value))
-    elif value.kind == "boolean":
-        label = "True" if value.value else "False"
-    elif value.kind == "tuple":
-        items = ", ".join(display_scalar(v, missing_label) for v in value.value)
-        label = "(" + items + ("," if len(value.value) == 1 else "") + ")"
-    elif value.kind == "timedelta":
-        nanoseconds = int(value.value)
-        label = ("-" if nanoseconds < 0 else "") + str(pd.Timedelta(abs(nanoseconds), unit="ns"))
+    if isinstance(value, str):
+        label = repr(value) if _ambiguous(value) or value == missing_label else value
     else:
-        label = str(value.value)
-    return f"{value.kind}({label})" if label == missing_label else label
+        label = repr(value) if isinstance(value, float) else str(value)
+    return f"value({label})" if label == missing_label else label
 
 
-def validate_frame(df: pd.DataFrame) -> None:
+def json_order(value: Any) -> tuple[int, Any]:
+    """Canonical order of exported values, for structure-only presentations."""
+    if value is None:
+        return (9, 0)
+    if isinstance(value, bool):
+        return (0, value)
+    if isinstance(value, int):
+        return (1, value)
+    if isinstance(value, float):
+        return (2, value)
+    return (3, str(value))
+
+
+def labelled(df: pd.DataFrame) -> pd.DataFrame:
+    """The frame with columns named by str(label); names must stay unique.
+
+    Non-string labels (for example integers from a headerless CSV) are analyzed
+    and reported under their string form. The source is never modified.
+    """
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Expected a pandas DataFrame")
-    if df.columns.has_duplicates:
-        duplicates = [repr(c) for c in df.columns[df.columns.duplicated()].tolist()]
+    names = [c if isinstance(c, str) else str(c) for c in df.columns]
+    if len(set(names)) != len(names):
+        duplicates = sorted({n for n in names if names.count(n) > 1})
         raise ValueError(f"Duplicate column labels are not supported: {duplicates}")
-    for column in df.columns:
-        normalize_scalar(column, label=True)
+    if all(isinstance(c, str) for c in df.columns):
+        return df
+    from .._runtime import current_session
+
+    session = current_session()
+    cached = session.labelled.get(id(df)) if session else None
+    if cached is not None and cached[0] is df:
+        return cached[1]
+    output = df.copy(deep=False)
+    output.columns = names
+    if session:
+        session.labelled[id(df)] = (df, output)
+    return output
 
 
 def resolve_columns(
@@ -204,64 +217,102 @@ def resolve_columns(
     *,
     argument: str,
     default_all: bool = False,
-) -> tuple[Any, ...]:
-    validate_frame(df)
+) -> tuple[str, ...]:
+    """Requested columns of a labelled frame, named by str(label)."""
     if columns is None:
         if default_all:
-            return tuple(df.columns.tolist())
+            return tuple(df.columns)
         raise ValueError(f"{argument} is required")
-    selected = tuple(columns)
+    selected = tuple(c if isinstance(c, str) else str(c) for c in columns)
     if not selected:
         raise ValueError(f"{argument} must contain at least one column")
-    tokens = [normalize_scalar(c, label=True) for c in selected]
-    if len(set(tokens)) != len(tokens):
+    if len(set(selected)) != len(selected):
         raise ValueError(f"{argument} contains repeated columns")
-    available = {normalize_scalar(c, label=True): c for c in df.columns}
-    unknown = [c for c, token in zip(selected, tokens) if token not in available]
+    unknown = [c for c in selected if c not in df.columns]
     if unknown:
         raise KeyError(
             f"Unknown columns in {argument}: {unknown!r}; available columns: "
             f"{df.columns.tolist()!r}"
         )
-    return tuple(available[token] for token in tokens)
+    return selected
 
 
-def encode_series(series: pd.Series) -> tuple[list[ScalarIdentity], np.ndarray]:
-    """Encode a series with deterministic dictionary ordering."""
+def _canonical(codes: np.ndarray, uniques: list[Any]) -> tuple[list[Any], np.ndarray]:
+    """Sort a first-observed dictionary canonically and append the missing value."""
+    keyed = [(value_key(v), i) for i, v in enumerate(uniques)]
+    order = [i for _, i in sorted(keyed, key=lambda item: item[0])]
+    remap = np.empty(len(order) + 1, dtype=np.int64)
+    remap[order] = np.arange(len(order))
+    remap[len(order)] = -1  # code -1 (missing) stays missing
+    return _with_missing([uniques[i] for i in order], remap[codes])
 
-    inferred = pd.api.types.infer_dtype(series.array, skipna=True)
-    if inferred == "unknown-array":
-        # Some pandas versions do not inspect object NumpyExtensionArray values.
-        # Inspect their array, not an assumed dtype: mixed bool/int/float values
-        # must still take the typed fallback below.
-        inferred = pd.api.types.infer_dtype(series.to_numpy(copy=False), skipna=True)
-    homogeneous = {
-        "empty",
-        "string",
-        "bytes",
-        "boolean",
-        "integer",
-        "floating",
-        "datetime",
-        "datetime64",
-        "date",
-        "timedelta",
-        "timedelta64",
-    }
-    if inferred in homogeneous and inferred != "bytes":
-        raw_codes, uniques = pd.factorize(series, sort=False, use_na_sentinel=False)
-        unique_tokens = [normalize_scalar(value) for value in uniques]
-        values = sorted(set(unique_tokens), key=ScalarIdentity.sort_key)
-        canonical = {value: index for index, value in enumerate(values)}
-        remap = np.fromiter((canonical[value] for value in unique_tokens), dtype=np.int64)
-        if raw_codes.size:
-            return values, remap[raw_codes]
-        return values, np.empty(0, dtype=np.int64)
-    normalized = [normalize_scalar(value) for value in series.array]
-    values = sorted(set(normalized), key=ScalarIdentity.sort_key)
-    lookup = {value: i for i, value in enumerate(values)}
-    codes = np.fromiter((lookup[value] for value in normalized), dtype=np.int64)
+
+def _with_missing(values: list[Any], codes: np.ndarray) -> tuple[list[Any], np.ndarray]:
+    codes = np.asarray(codes, dtype=np.int64)
+    missing = codes < 0
+    if missing.any():
+        codes = np.where(missing, len(values), codes)
+        values = [*values, None]
     return values, codes
+
+
+def _python_values(uniques: Any) -> list[Any]:
+    """Python scalars for factorized uniques, vectorized for numeric and temporal dtypes."""
+    if isinstance(uniques, pd.DatetimeIndex) and uniques.tz is not None:
+        return list(uniques.tz_convert("UTC"))
+    if isinstance(uniques, (pd.DatetimeIndex, pd.TimedeltaIndex)):
+        return list(uniques)
+    dtype = getattr(uniques, "dtype", None)
+    if isinstance(dtype, np.dtype) and dtype.kind in "biuf":
+        array = np.asarray(uniques)
+        return (array + 0.0 if dtype.kind == "f" else array).tolist()
+    return [python_value(v) for v in uniques]
+
+
+def _object_kind(series: pd.Series) -> str:
+    return pd.api.types.infer_dtype(series.to_numpy(dtype=object, copy=False), skipna=True)
+
+
+def encode_series(series: pd.Series) -> tuple[list[Any], np.ndarray]:
+    """Dictionary of canonical values and one int64 code per row."""
+    dtype = series.dtype
+    if isinstance(dtype, pd.CategoricalDtype):
+        if not len(dtype.categories):
+            return _with_missing([], np.full(len(series), -1, dtype=np.int64))
+        categories, category_codes = encode_series(pd.Series(dtype.categories))
+        cat_codes = series.cat.codes.to_numpy()
+        codes = np.where(cat_codes >= 0, category_codes[np.maximum(cat_codes, 0)], -1)
+        used = np.unique(codes[codes >= 0])
+        remap = np.full(len(categories) + 1, -1, dtype=np.int64)
+        remap[used] = np.arange(len(used))  # unobserved categories are not levels
+        return _with_missing([categories[i] for i in used], remap[codes])
+    kind = _object_kind(series) if dtype == object else None
+    if kind is None or kind in _SORTABLE:
+        codes, uniques = pd.factorize(series, sort=True)
+        return _with_missing(_python_values(uniques), codes)
+    if kind in _TEMPORAL:
+        codes, uniques = pd.factorize(series, sort=False)
+        return _canonical(codes, _python_values(uniques))
+    values = [python_value(v) for v in series.array]
+    lookup: dict[tuple[int, Any], int] = {}
+    uniques: list[Any] = []
+    codes = np.empty(len(values), dtype=np.int64)
+    for row, value in enumerate(values):
+        if value is None:
+            codes[row] = -1
+            continue
+        key = value_key(value)
+        code = lookup.get(key)
+        if code is None:
+            code = lookup[key] = len(uniques)
+            uniques.append(value)
+        codes[row] = code
+    return _canonical(codes, uniques)
+
+
+def encode_column(df: pd.DataFrame, column: str) -> tuple[list[Any], np.ndarray]:
+    """Encode one column of a frame; see encode_series."""
+    return encode_series(df[column])
 
 
 def validate_limit(name: str, value: int | None, *, zero: bool = True) -> None:
@@ -273,17 +324,21 @@ def validate_limit(name: str, value: int | None, *, zero: bool = True) -> None:
         raise ValueError(f"{name} must be {qualifier} integer or None")
 
 
-def validate_schema(df: pd.DataFrame, schema: dict[Any, str] | None) -> None:
+def validate_schema(df: pd.DataFrame, schema: dict[Any, str] | None) -> dict[str, str]:
+    """Advisory roles keyed by column name."""
     if schema is None:
-        return
+        return {}
     if not isinstance(schema, dict):
         raise TypeError("schema must be a column-to-role mapping")
-    available = {normalize_scalar(column, label=True) for column in df.columns}
     allowed = {"id", "categorical", "continuous", "unknown"}
+    roles = {}
     for column, role in schema.items():
-        if normalize_scalar(column, label=True) not in available:
+        name = column if isinstance(column, str) else str(column)
+        if name not in df.columns:
             raise KeyError(f"Unknown schema column {column!r}")
         if role not in allowed:
             raise ValueError(
                 f"Unsupported schema role {role!r}; expected one of {sorted(allowed)!r}"
             )
+        roles[name] = role
+    return roles

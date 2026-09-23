@@ -4,7 +4,7 @@
 uv sync --locked
 uv run pytest
 uv run pyright --warnings
-uv run ruff check src tests scripts examples
+uv run ruff check src tests scripts examples benchmarks
 uv run ruff format --check src tests scripts examples
 uv run python examples/investigation.py
 uv run python scripts/generate_assets.py --check
@@ -15,6 +15,19 @@ The project uses the [uv build backend](https://docs.astral.sh/uv/concepts/build
 with a `src` layout. The package metadata caps supported Python at `<3.15`; CI tests
 3.11, 3.12, 3.13 and 3.14. pandas 2.2+ permits Python 3.11; uv selects compatible
 versions for each interpreter. pandas 3.x requires Python 3.11 or newer.
+
+## Principles
+
+- Prefer deleting code to adding configuration; every option needs a real analyst
+  use case.
+- Keep the guarantees an analyst relies on: analyses never mutate the source,
+  budgets never silently change the analyzed population, and every finding can be
+  traced back to its source rows ([contracts](contracts.md)).
+- Tests assert analytical behavior (counts, relationships, populations,
+  selection) or valuable contracts (round trips, source-mismatch rejection), not
+  prose, CSS or docstring layout.
+- Regenerate the assets (`scripts/generate_assets.py`) and the notebook outputs
+  (`scripts/execute_notebook.py`) whenever output changes, and look at the images.
 
 ## Test suite
 
@@ -113,15 +126,18 @@ incremental analysis memory. Timeouts include startup and fixture construction.
 Use `--repeats 3` for multiple measurements, `--fixture dense` or `--fixture mixed`
 to vary data characteristics, and `--rows 300000` for a larger case. The default
 sparse fixture uses 70% missingness and eight populated values per column.
+Because each operation runs in a subprocess, patching fieldwork in the calling
+process has no effect on the measurement; to compare implementations, run the
+script from two source trees (`PYTHONPATH=<tree>/src`).
 `--fixture structured` includes unique IDs, repeated entities/contexts, and nested
 missingness masks. `--progress` records callback counts and inclusive phase
 durations (nested phases overlap; do not sum them).
 
 For comparable overview components, its `dependencies` workload uses 20
 single-column candidates and `patterns` uses 20 pairs. `--candidates` changes
-standalone dependency/path budgets; for `explore` it changes path search only,
-matching the backward-compatible `discovery` configuration. New `section_options`
-can configure dependency work independently in application code. `--features` restricts analytical features but
+standalone dependency/path budgets; for `explore` it changes path search only
+(`options={"paths": {...}}`). Per-section `options` can configure dependency work
+independently in application code. `--features` restricts analytical features but
 does not project the source frame. `--profile /tmp/overview.prof` supports one
 operation/repeat with cProfile; keep these diagnostic timings separate from
 unprofiled measurements. The harness uses Unix `resource` RSS reporting (macOS
@@ -177,14 +193,13 @@ documentation site can offer the exact example alongside its SVG/HTML/JSON expor
 
 ## Performance regression workflow
 
-[Current performance controls](performance.md) document runtime APIs and cache
-bounds; [implementation measurements](performance-results.md) record representative
+[Current performance controls](performance.md) document runtime APIs and what is
+reused within a call; [implementation measurements](performance-results.md) record representative
 before/after runs. `tests/discovery/test_performance_contracts.py`, `test_runtime.py`,
 and `test_scaling_controls.py` check fingerprint change detection, vectorized group
 oracles, scoped/entity selections, population-exact graph comparisons, progress
 ordering, cancellation, callback errors, session cleanup, omitted work and
-saved-export round trips. ETA arithmetic, cache sizes and internal call sequences
-are deliberately not tested.
+saved-export round trips. Internal call sequences are deliberately not tested.
 
 For a revision-to-revision default-output check, run the same parity script with
 both source trees and identical pandas/NumPy versions:

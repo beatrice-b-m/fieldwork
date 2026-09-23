@@ -1,24 +1,22 @@
 """Explore unfamiliar pandas tables through patterns and inspectable evidence.
 
-Use ``explore(df)`` for an automatic overview, or call ``missingness``,
-``discover_dependencies``, ``suggest_paths``, and ``value_patterns`` separately.
-``explore(df, dimensions)`` composes explicit foundation analyses; ``levels``,
-``census``, ``grain``, ``pairs``, and ``joint_counts`` expose their individual tools.
-Analyses do not mutate the source. Search/display budgets report omissions;
-only explicit scopes, missing exclusions, and census preselection restrict rows.
+``explore(df)`` surveys a table and ranks leads across four sections, which are
+also available alone: ``missingness``, ``discover_dependencies``,
+``suggest_paths`` and ``value_patterns``. ``profile(df, dimensions)`` combines
+``levels``, ``census``, ``grain`` and ``pairs`` for chosen columns; ``joint_counts``
+and ``infer_schema`` complete the individual tools.
 
-Discovery results support ``to_frame``, verified ``inspect``/``select``, and
-source-bound recomputation. Use ``Recipe`` for new deliveries. Renderers consume
-saved evidence and return strings, while ``to_dict`` exports analytical data.
-All dataframe analyses accept progress, cancel, and timeout runtime controls.
-Import reusable option dictionary types from ``fieldwork.typing``. Only this
-module's __all__, the public members/returned Path interface, and the exported
-types in fieldwork.typing form the documented API; underscore modules and
-unexported implementation helpers are private.
+Every analysis returns a ``Result``, reads the source without mutating it, and
+accepts the same ``scope``, ``missing`` and ``table_id`` context and runtime
+controls. Search and display budgets report omissions; only scopes, missing
+exclusions and census pre-selection restrict rows. Results support ``to_frame``,
+verified ``inspect``/``select`` and ``recompute``; ``Recipe`` reapplies settings to
+new deliveries. Renderers consume saved evidence and return strings. The public API
+is this module's ``__all__``, the members of those objects, ``Path``, and the types
+in ``fieldwork.typing``.
 """
 
 from ._explore import (
-    ExplorerResult,
     KeySpec,
     SchemaProposal,
     census,
@@ -26,28 +24,29 @@ from ._explore import (
     infer_schema,
     joint_counts,
     levels,
+    pairs,
+    profile,
 )
-from ._explore.relations import pairs
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import InvestigationResult, Scope
-from .navigation import PathResult, suggest_paths
+from .evidence import Scope
+from .navigation import suggest_paths
+from .overview import explore
 from .patterns import value_patterns
 from .presentation import render_html, render_plaintext, render_svg, visualization_data
 from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
-from .workflow import Recipe, compare, explore
+from .result import Result
+from .workflow import Recipe, compare
 
 __version__ = "0.2.1"
 __all__ = [
     "AnalysisCancelled",
     "CancellationToken",
-    "ExplorerResult",
-    "InvestigationResult",
     "KeySpec",
-    "PathResult",
     "ProgressDisplay",
     "ProgressEvent",
     "Recipe",
+    "Result",
     "SchemaProposal",
     "Scope",
     "census",
@@ -60,6 +59,7 @@ __all__ = [
     "levels",
     "missingness",
     "pairs",
+    "profile",
     "render_html",
     "render_plaintext",
     "render_svg",

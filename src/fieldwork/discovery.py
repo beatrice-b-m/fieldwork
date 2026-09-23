@@ -3,33 +3,41 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 from itertools import combinations, islice
 from math import comb
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
 
-from ._explore import KeySpec
 from ._explore._kernels import FDCache, first_indices, group_ids, modal_groups
-from ._explore.encoding import MissingCode, normalize_scalar
-from ._explore.grain import _grain
+from ._explore.encoding import cell
+from ._explore.grain import Encoded, KeySpec, evaluate
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
-    InvestigationResult,
     Scope,
     analyzable,
     bounded_rows,
+    budgets,
     columns,
     context_statement,
-    contextual_result,
     finding,
     limit,
     prepare,
     result,
     selection,
 )
-from .progress import CancellationToken, Progress
+from .result import Result
+from .typing import DependencyLimits, Runtime
+
+_LIMITS = {
+    "max_candidates": 100,
+    "max_contexts": 32,
+    "max_dependency_tests": None,
+    "max_grain_views": None,
+    "example_limit": 5,
+}
 
 
 @operation("dependencies")
@@ -38,138 +46,56 @@ def discover_dependencies(
     *,
     features: Iterable[str] | None = None,
     max_key_size: int = 2,
-    max_candidates: int = 100,
     min_accuracy: float = 0.95,
     by: Iterable[str] | None = None,
-    max_contexts: int = 32,
     dropna: bool = True,
+    include_grain: bool = True,
+    limits: DependencyLimits | None = None,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    example_limit: int = 5,
-    include_grain: bool = True,
-    max_grain_views: int | None = None,
-    max_dependency_tests: int | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-) -> InvestigationResult:
-    """Find observed exact and approximate dependencies over bounded candidates.
+    **runtime: Unpack[Runtime],
+) -> Result:
+    """Find observed exact and approximate functional dependencies among columns.
+
+    Each candidate determinant is tested against every other column. Dependencies
+    describe this delivery, not a guarantee; populations and repeated support are
+    defined in docs/algorithms.md.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Discovery requires unique string
-        column names. Duplicate index labels are supported; source selections use
-        integer row positions. Unsupported scalar objects raise TypeError.
+        Source frame, read without mutation.
     features : iterable of str or None, optional
-        Unique column names to analyze, in requested order; default None selects
-        all columns, skipping those with unsupported values (such as lists,
-        dicts or Decimal) and listing them in skipped_features. Restricts
-        analysis, not full-source identity validation.
+        Columns to use as determinants and targets; default None selects every
+        column, skipping (and listing) columns with unsupported values.
     max_key_size : int, optional
-        Positive maximum determinant size; default 2. Candidate combinations are
-        visited in increasing size, then requested column order.
-    max_candidates : int, optional
-        Nonnegative maximum number of determinants; default 100. Zero searches
-        none. Candidate summaries are computed even when the test budget is zero.
+        Largest determinant; default 2.
     min_accuracy : float, optional
-        Minimum reported modal repair accuracy in [0, 1]; default 0.95. Accuracy
-        is the sum of modal target counts per determinant group divided by
-        evaluated rows. This threshold filters reports, not test work.
+        Minimum modal repair accuracy reported as a finding; default 0.95. Every
+        completed test is kept in ``dependencies``.
     by : iterable of str or None, optional
-        Additional joint context analyses besides the global population; default
-        None. Missing context values are categories.
-    max_contexts : int, optional
-        Nonnegative context-group budget in addition to global analysis; default
-        32. Zero keeps only global analysis.
+        Context columns; tests are repeated within each joint context value.
     dropna : bool, optional
-        Default True uses complete cases for each determinant/target test. False
-        treats native and declared missing values as one category. Different
-        tests may therefore have different populations.
-    scope : Scope or None, optional
-        Source-bound population selection; default None uses all rows. The scope
-        must match the ordered source. Fingerprinting still scans the full frame.
-    missing : mapping or None, optional
-        Additional missing sentinels per column; default None. Native missing
-        values are always absent. Numeric sentinels match integer/float values
-        numerically; booleans remain distinct. The source is not modified.
-    table_id : str, optional
-        Nonempty source label; default 'table'. Does not replace the fingerprint.
-    example_limit : int, optional
-        Nonnegative maximum saved example/exception source rows per finding side;
-        default 5. Zero retains totals without row examples. This display limit
-        does not restrict the population recovered by select or all_matches.
+        True (default) tests each pair on rows where determinant and target are
+        present; False treats missing values (and sentinels) as a category.
     include_grain : bool, optional
-        Build exact foundation grain views when True (default). False skips graph
-        work while retaining dependency tests and candidate summaries.
-    max_grain_views : int or None, optional
-        Nonnegative maximum supported-population graph views; default None permits
-        all. Zero builds none. Independent of max_dependency_tests.
-    max_dependency_tests : int or None, optional
-        Nonnegative candidate/target/context test budget; default None tests all
-        within other budgets. Zero skips tests. Does not cap foundation graph work.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+        Build grain graphs of the candidates; default True.
+    limits : DependencyLimits or None, optional
+        Budgets: ``max_candidates`` (100), ``max_contexts`` (32),
+        ``max_dependency_tests`` and ``max_grain_views`` (unbounded) and
+        ``example_limit`` (5). Omitted work is reported in ``coverage``.
+    missing, scope, table_id
+        Source context shared by every analysis.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
-    InvestigationResult
-        Kind 'dependencies', with candidates, dependencies, conditional evidence,
-        grain views, findings, and coverage recording omitted tests/views. The
-        dependencies table retains every completed test, including those below
-        min_accuracy. Candidate determines lists global exact targets;
-        determines_with_repeated_support includes only those with repeated groups
-        in that target's evaluated population. global_targets_tested/possible
-        count completed/selected non-key global targets, independently of graphs.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame or column labels are unsupported, or an explicitly requested
-        column contains unsupported values.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Search and display budgets never sample rows. Evidence records evaluated
-    populations and omissions separately. Source identity covers ordered column
-    labels, index labels, column dtypes and all cell values; changing or
-    reordering them invalidates inspection against saved findings.
-
-    A functional dependency here is observed evidence, not a guarantee about
-    future deliveries or causality. Singleton determinant groups satisfy exact
-    mappings trivially. Untested relationships are not negative evidence.
-
-    For each context, determinant_evaluated_rows counts complete determinant
-    cases when dropna=True, otherwise all context rows (Q). target_observed_rows
-    counts rows of Q with an observed target (O), and target_coverage is O/Q.
-    evaluated_rows (E) is O when dropna=True, otherwise Q;
-    target_missing_excluded_rows is Q-E. missing_excluded_rows still counts all
-    exclusions from the context. With dropna=False, observed target coverage can
-    be below one even though missing values participate in consistency tests.
-
-    repeated_rows (R) counts rows in determinant groups of size at least two
-    within E. repeat_coverage is R/E; repeat_modal_accuracy is 1-repair_rows/R.
-    Undefined fractions are None (JSON null). Candidate repeated_rows instead
-    describes the determinant population, before target exclusions. Measurements
-    are row-counted and row-weighted, without resampling or entity aggregation.
-    Repeated support describes observed consistency, not statistical reliability
-    or a meaningful entity interpretation.
+    Result
+        Kind 'dependencies': ``candidates`` (with the targets each determines
+        exactly), ``dependencies`` (every completed test), ``grain_views``,
+        ``coverage`` and findings.
 
     Examples
     --------
@@ -177,23 +103,15 @@ def discover_dependencies(
     >>> import fieldwork as fw
     >>> df = pd.DataFrame({"site": ["A", "A", "B"], "region": ["N", "N", "S"]})
     >>> result = fw.discover_dependencies(df, max_key_size=1, include_grain=False)
-    >>> result.kind
-    'dependencies'
+    >>> result["candidates"][0]["determines"]
+    ['region']
     """
     limit("max_key_size", max_key_size, minimum=1)
-    limit("max_candidates", max_candidates)
-    limit("max_contexts", max_contexts)
-    limit("example_limit", example_limit)
+    budget = budgets(limits, _LIMITS)
     if not 0 <= min_accuracy <= 1:
         raise ValueError("min_accuracy must be between zero and one")
     if not isinstance(include_grain, bool):
         raise TypeError("include_grain must be boolean")
-    for name, value in (
-        ("max_grain_views", max_grain_views),
-        ("max_dependency_tests", max_dependency_tests),
-    ):
-        if value is not None:
-            limit(name, value)
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
@@ -204,274 +122,333 @@ def discover_dependencies(
         features=[*selected, *contexts],
         optional=selected if features is None else (),
     )
-    selected = analyzable(selected, base)
-    # With dropna=False, native missing and declared sentinels share one category.
-    codes = {
-        c: values if present[c].all() else np.where(present[c], values, -1)
-        for c, values in codes.items()
-    }
+    search = _Search(
+        frame,
+        positions,
+        # With dropna=False, native missing and declared sentinels share one category.
+        {c: v if present[c].all() else np.where(present[c], v, -1) for c, v in codes.items()},
+        present,
+        base,
+        analyzable(selected, base),
+        dropna,
+        min_accuracy,
+        budget["example_limit"],
+    )
     candidates = list(
         islice(
             (
                 key
-                for size in range(1, min(max_key_size, len(selected)) + 1)
-                for key in combinations(selected, size)
+                for size in range(1, min(max_key_size, len(search.selected)) + 1)
+                for key in combinations(search.selected, size)
             ),
-            max_candidates,
+            budget["max_candidates"],
         )
     )
-    partitions = [(None, np.arange(len(frame)))]
-    context_ids = group_ids(codes[c] for c in contexts)
-    context_count = int(context_ids.max()) + 1 if len(context_ids) else 0
-    if contexts:
-        for group in range(min(context_count, max_contexts)):
-            rows = np.flatnonzero(context_ids == group)
-            partitions.append(
-                (
-                    {
-                        c: normalize_scalar(
-                            frame[c].iloc[rows[0]] if present[c][rows[0]] else None
-                        ).to_dict()
-                        for c in contexts
-                    },
-                    np.array(rows, dtype=np.int64),
-                )
-            )
-    base["candidates"], base["dependencies"] = [], []
-    candidate_masks = []
-    graph_cache = FDCache()
-    tests = 0
-    possible_tests = sum(len(selected) - len(key) for key in candidates) * len(partitions)
-    total_tests = (
-        min(possible_tests, max_dependency_tests)
-        if max_dependency_tests is not None
-        else possible_tests
+    partitions, context_count = _partitions(search, contexts, budget["max_contexts"])
+    possible = sum(len(search.selected) - len(key) for key in candidates) * len(partitions)
+    max_tests = budget["max_dependency_tests"]
+    search.budget = possible if max_tests is None else min(possible, max_tests)
+    masks = _test_candidates(search, candidates, partitions)
+    anchors = _anchors(masks)
+    views = _grain_views(
+        search, candidates, masks, anchors[: budget["max_grain_views"]] if include_grain else []
     )
-    with phase("dependency tests", total_tests, "tests") as tracker:
-        for key in candidates:
-            key_mask = np.ones(len(frame), dtype=bool)
-            if dropna:
-                for c in key:
-                    key_mask &= present[c]
-            candidate_masks.append(key_mask)
-            key_ids = group_ids(codes[c] for c in key)
-            _, key_groups = np.unique(key_ids[key_mask], return_counts=True)
-            candidate = {
-                "columns": list(key),
-                "evaluated_rows": int(key_mask.sum()),
-                "missing_excluded_rows": int((~key_mask).sum()),
-                "groups": len(key_groups),
-                "unique": bool(len(key_groups)) and bool(np.all(key_groups == 1)),
-                "uniqueness": len(key_groups) / int(key_mask.sum()) if key_mask.any() else None,
-                "repeated_groups": int(np.count_nonzero(key_groups > 1)),
-                "repeated_rows": int(key_groups[key_groups > 1].sum()),
-                "determines": [],
-                "determines_with_repeated_support": [],
-                "global_targets_tested": 0,
-                "global_targets_possible": len(selected) - len(key),
-            }
-            base["candidates"].append(candidate)
-            for context, population in partitions:
-                determinant_eligible = population[key_mask[population]]
-                q = len(determinant_eligible)
-                for target in selected:
-                    if tests >= total_tests:
-                        break
-                    checkpoint()
-                    if target in key:
-                        continue
-                    tests += 1
-                    observed = present[target][determinant_eligible]
-                    observed_rows = int(observed.sum())
-                    eligible = determinant_eligible[observed] if dropna else determinant_eligible
-                    grouped, sizes, modes, maxima, distinct = modal_groups(
-                        key_ids[eligible], codes[target][eligible]
-                    )
-                    violating_mask = distinct > 1
-                    violating = int(violating_mask.sum())
-                    repair = int((sizes - maxima).sum())
-                    repeated = int(np.count_nonzero(sizes > 1))
-                    repeated_rows = int(sizes[sizes > 1].sum())
-                    affected = int(sizes[violating_mask].sum())
-                    good = codes[target][eligible] == modes[grouped]
-                    exception_groups = []
-                    for group in first_indices(violating_mask, example_limit):
-                        rows = eligible[first_indices(grouped == group, max(1, example_limit))]
-                        exception_groups.append(
-                            {
-                                "key_values": {
-                                    c: normalize_scalar(
-                                        frame[c].iloc[rows[0]] if present[c][rows[0]] else None
-                                    ).to_dict()
-                                    for c in key
-                                },
-                                "rows": int(sizes[group]),
-                                "distinct_targets": int(distinct[group]),
-                                "positions": positions[rows[:example_limit]].tolist(),
-                                "omitted_rows": max(0, int(sizes[group]) - example_limit),
-                            }
-                        )
-                    n = len(eligible)
-                    accuracy = 1 - repair / n if n else None
-                    record = {
-                        "determinant": list(key),
-                        "target": target,
-                        "context": context,
-                        "exact": violating == 0 if n else None,
-                        "modal_accuracy": accuracy,
-                        "repair_rows": repair,
-                        "evaluated_rows": n,
-                        "determinant_evaluated_rows": q,
-                        "target_observed_rows": observed_rows,
-                        "target_coverage": observed_rows / q if q else None,
-                        "target_missing_excluded_rows": q - n,
-                        "repeated_rows": repeated_rows,
-                        "repeat_coverage": repeated_rows / n if n else None,
-                        "repeat_modal_accuracy": 1 - repair / repeated_rows
-                        if repeated_rows
-                        else None,
-                        "missing_excluded_rows": len(population) - n,
-                        "evaluated_groups": len(sizes),
-                        "violating_groups": violating,
-                        "affected_rows": affected,
-                        "group_violation_rate": violating / len(sizes) if len(sizes) else None,
-                        "repeated_groups": repeated,
-                        "exception_groups": exception_groups,
-                        "omitted_exception_groups": max(0, violating - len(exception_groups)),
-                    }
-                    if context is None:
-                        graph_cache.global_records[(key, target, dropna)] = {
-                            "evaluated_groups": len(sizes),
-                            "violating_groups": violating,
-                            "affected_rows": affected,
-                            "singleton_groups": int(np.count_nonzero(sizes == 1)),
-                            "evaluated_rows": n,
-                        }
-                    base["dependencies"].append(record)
-                    if context is None:
-                        candidate["global_targets_tested"] += 1
-                        if record["exact"]:
-                            candidate["determines"].append(target)
-                            if repeated:
-                                candidate["determines_with_repeated_support"].append(target)
-                    if accuracy is not None and accuracy >= min_accuracy:
-                        finding(
-                            base,
-                            "exact_dependency" if record["exact"] else "approximate_dependency",
-                            f"{', '.join(key)} determines {target}"
-                            + (" within " + context_statement(context) if context else ""),
-                            list(dict.fromkeys([*key, target, *(context or {})])),
-                            record,
-                            bounded_rows(positions[eligible], good, example_limit),
-                            exceptions=bounded_rows(positions[eligible], ~good, example_limit),
-                            example_limit=example_limit,
-                            structure={"context": context} if context is not None else {},
-                            selector={
-                                "operation": "dependency",
-                                "determinant": list(key),
-                                "target": target,
-                                "context": context,
-                                "dropna": dropna,
-                            },
-                        )
-                    tracker.advance(detail=f"{', '.join(key)} → {target}")
-    graph_frame = frame[selected] if include_grain and max_grain_views != 0 else None
-    graph_codes = (
-        {c: (MissingCode(-1 if not present[c].all() else None), codes[c]) for c in selected}
-        if include_grain
-        else {}
-    )
-    # Each supported candidate supplies a population anchor. Candidates with a
-    # superset of those rows can be compared on that anchor without shrinking it.
-    anchors = {}
-    for i, mask in enumerate(candidate_masks):
-        if mask.any():
-            anchors.setdefault(np.packbits(mask).tobytes(), (i, mask))
-    views = []
-    ordered_anchors = sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0]))
-    chosen_anchors = ordered_anchors[:max_grain_views] if include_grain else []
-    with phase("grain views", len(chosen_anchors), "views") as tracker:
-        for anchor, mask in chosen_anchors:
-            members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
-            analysis = _grain(
-                graph_frame,
-                [KeySpec(f"key{i}", candidates[i]) for i in members],
-                dropna=dropna,
-                _encoded=graph_codes,
-                _cache=graph_cache,
-            )
-            views.append(
-                {
-                    "id": f"g{len(views)}",
-                    "candidate_ids": [f"key{i}" for i in members],
-                    "population": {
-                        "input_rows": len(df),
-                        "scope_rows": len(frame),
-                        "evaluated_rows": int(mask.sum()),
-                        "restriction_excluded_rows": len(df) - len(frame),
-                        "missing_excluded_rows": int((~mask).sum()),
-                        # The anchor's complete cases define the population, so
-                        # only bounded examples are stored, not every position.
-                        "anchor_candidate_id": f"key{anchor}",
-                        "examples": selection(positions[mask], int(mask.sum()), example_limit),
-                        "rule": "complete_cases_of_candidate_components"
-                        if dropna
-                        else "missing_as_category",
-                    },
-                    "grain": contextual_result(analysis, df, base).to_dict(),
-                }
-            )
-            tracker.advance()
     base["grain_views"] = views
-    base["graph_selection"] = {
-        "strategy": "candidate_population_anchors_with_superset_candidates",
-        "primary_view": views[0]["id"] if views else None,
-        "excluded": [],
-    }
-    for i, candidate in enumerate(base["candidates"]):
-        candidate["id"] = f"key{i}"
-        candidate["graph_views"] = [v["id"] for v in views if f"key{i}" in v["candidate_ids"]]
-        if not candidate["graph_views"]:
-            base["graph_selection"]["excluded"].append(
-                {
-                    "candidate_id": f"key{i}",
-                    "columns": candidate["columns"],
-                    "reason": "no_evaluated_support"
-                    if not candidate["evaluated_rows"]
-                    else ("graph_not_requested" if not include_grain else "graph_view_budget"),
-                }
-            )
+    base["graph_selection"] = _graph_selection(base["candidates"], views, include_grain)
+    n = len(search.selected)
     base["coverage"] = {
-        "candidate_space": sum(
-            comb(len(selected), k) for k in range(1, min(max_key_size, len(selected)) + 1)
-        ),
+        "candidate_space": sum(comb(n, k) for k in range(1, min(max_key_size, n) + 1)),
         "candidates_evaluated": len(candidates),
-        "dependency_tests": tests,
+        "dependency_tests": search.tests,
         "contexts_total": context_count,
         "contexts_evaluated": len(partitions) - 1,
         "search_order": "determinant_size_then_input_column_order",
     }
     base["parameters"] = {
-        "features": selected,
+        "features": search.selected,
         "max_key_size": max_key_size,
-        "max_candidates": max_candidates,
         "min_accuracy": min_accuracy,
         "by": contexts,
-        "max_contexts": max_contexts,
         "dropna": dropna,
-        "example_limit": example_limit,
+        "include_grain": include_grain,
+        "limits": budget,
     }
-    if not include_grain or max_grain_views is not None:
-        base["parameters"].update(include_grain=include_grain, max_grain_views=max_grain_views)
+    if not include_grain or budget["max_grain_views"] is not None:
         base["graph_selection"].update(
             status="computed" if include_grain else "not_requested",
-            views_possible=len(ordered_anchors),
-            views_omitted=len(ordered_anchors) - len(views),
+            views_possible=len(anchors),
+            views_omitted=len(anchors) - len(views),
         )
-    if max_dependency_tests is not None:
-        base["parameters"]["max_dependency_tests"] = max_dependency_tests
+    if max_tests is not None:
         base["coverage"].update(
-            dependency_tests_possible=possible_tests,
-            dependency_tests_omitted=possible_tests - tests,
+            dependency_tests_possible=possible, dependency_tests_omitted=possible - search.tests
         )
     return result("dependencies", base)
+
+
+@dataclass
+class _Search:
+    """One dependency search: prepared rows, settings, and the test budget."""
+
+    frame: pd.DataFrame
+    positions: np.ndarray
+    codes: dict[str, np.ndarray]
+    present: dict[str, np.ndarray]
+    base: dict[str, Any]
+    selected: list[str]
+    dropna: bool
+    min_accuracy: float
+    example_limit: int
+    budget: int = 0
+    tests: int = 0
+    cache: FDCache = field(default_factory=FDCache)
+
+    def cell(self, column: str, row: int) -> Any:
+        return cell(self.frame, column, row, self.present[column][row])
+
+
+def _partitions(search: _Search, contexts: list[str], max_contexts: int):
+    """The global population, then each joint context (missing is a category)."""
+    partitions = [(None, np.arange(len(search.frame)))]
+    context_ids = group_ids(search.codes[c] for c in contexts)
+    count = int(context_ids.max()) + 1 if len(context_ids) else 0
+    for group in range(min(count, max_contexts) if contexts else 0):
+        rows = np.flatnonzero(context_ids == group)
+        partitions.append(({c: search.cell(c, rows[0]) for c in contexts}, rows.astype(np.int64)))
+    return partitions, count
+
+
+def _test_candidates(search: _Search, candidates, partitions) -> list[np.ndarray]:
+    """Summarize each candidate and test it against every target in every population.
+
+    Returns each candidate's complete-case mask.
+    """
+    search.base["candidates"], search.base["dependencies"] = [], []
+    masks = []
+    with phase("dependency tests", search.budget, "tests") as tracker:
+        for key in candidates:
+            key_mask = np.ones(len(search.frame), dtype=bool)
+            for c in key if search.dropna else ():
+                key_mask &= search.present[c]
+            masks.append(key_mask)
+            key_ids = group_ids(search.codes[c] for c in key)
+            candidate = _candidate(search, key, key_mask, key_ids)
+            search.base["candidates"].append(candidate)
+            for context, population in partitions:
+                eligible = population[key_mask[population]]
+                for target in search.selected:
+                    if search.tests >= search.budget:
+                        break
+                    checkpoint()
+                    if target in key:
+                        continue
+                    search.tests += 1
+                    record = _test(search, key, key_ids, target, context, population, eligible)
+                    if context is None:
+                        _record_global(candidate, record, target)
+                    tracker.advance(detail=f"{', '.join(key)} → {target}")
+    return masks
+
+
+def _candidate(search: _Search, key, key_mask, key_ids) -> dict[str, Any]:
+    _, groups = np.unique(key_ids[key_mask], return_counts=True)
+    evaluated = int(key_mask.sum())
+    return {
+        "columns": list(key),
+        "evaluated_rows": evaluated,
+        "missing_excluded_rows": int((~key_mask).sum()),
+        "groups": len(groups),
+        "unique": bool(len(groups)) and bool(np.all(groups == 1)),
+        "uniqueness": len(groups) / evaluated if evaluated else None,
+        "repeated_groups": int(np.count_nonzero(groups > 1)),
+        "repeated_rows": int(groups[groups > 1].sum()),
+        "determines": [],
+        "determines_with_repeated_support": [],
+        "global_targets_tested": 0,
+        "global_targets_possible": len(search.selected) - len(key),
+    }
+
+
+def _record_global(candidate: dict[str, Any], record: dict[str, Any], target: str) -> None:
+    """Only global exactness enters a candidate's determined targets."""
+    candidate["global_targets_tested"] += 1
+    if record["exact"]:
+        candidate["determines"].append(target)
+        if record["repeated_groups"]:
+            candidate["determines_with_repeated_support"].append(target)
+
+
+def _test(search: _Search, key, key_ids, target, context, population, determinant_eligible):
+    """One key -> target test in one population; a finding when accurate enough."""
+    observed = search.present[target][determinant_eligible]
+    eligible = determinant_eligible[observed] if search.dropna else determinant_eligible
+    targets = search.codes[target][eligible]
+    grouped, sizes, modes, maxima, distinct = modal_groups(key_ids[eligible], targets)
+    violating = distinct > 1
+    repair = int((sizes - maxima).sum())
+    repeated_rows = int(sizes[sizes > 1].sum())
+    n, q = len(eligible), len(determinant_eligible)
+    exceptions = _exception_groups(search, key, eligible, grouped, sizes, distinct)
+    record = {
+        "determinant": list(key),
+        "target": target,
+        "context": context,
+        "exact": not violating.any() if n else None,
+        "modal_accuracy": 1 - repair / n if n else None,
+        "repair_rows": repair,
+        "evaluated_rows": n,
+        "determinant_evaluated_rows": q,
+        "target_observed_rows": int(observed.sum()),
+        "target_coverage": int(observed.sum()) / q if q else None,
+        "target_missing_excluded_rows": q - n,
+        "repeated_rows": repeated_rows,
+        "repeat_coverage": repeated_rows / n if n else None,
+        "repeat_modal_accuracy": 1 - repair / repeated_rows if repeated_rows else None,
+        "missing_excluded_rows": len(population) - n,
+        "evaluated_groups": len(sizes),
+        "violating_groups": int(violating.sum()),
+        "affected_rows": int(sizes[violating].sum()),
+        "group_violation_rate": int(violating.sum()) / len(sizes) if len(sizes) else None,
+        "repeated_groups": int(np.count_nonzero(sizes > 1)),
+        "exception_groups": exceptions,
+        "omitted_exception_groups": max(0, int(violating.sum()) - len(exceptions)),
+    }
+    if context is None:
+        # Grain views reuse global tests instead of regrouping.
+        search.cache.put(
+            (key, target, search.dropna),
+            None,
+            {
+                "evaluated_groups": len(sizes),
+                "violating_groups": record["violating_groups"],
+                "affected_rows": record["affected_rows"],
+                "singleton_groups": int(np.count_nonzero(sizes == 1)),
+                "evaluated_rows": n,
+            },
+            global_population=True,
+        )
+    search.base["dependencies"].append(record)
+    accuracy = record["modal_accuracy"]
+    if accuracy is not None and accuracy >= search.min_accuracy:
+        _finding(search, record, eligible, targets == modes[grouped])
+    return record
+
+
+def _exception_groups(search: _Search, key, eligible, grouped, sizes, distinct) -> list[dict]:
+    """The first violating groups, with bounded source positions."""
+    limit, groups = search.example_limit, []
+    for group in first_indices(distinct > 1, limit):
+        rows = eligible[first_indices(grouped == group, max(1, limit))]
+        groups.append(
+            {
+                "key_values": {c: search.cell(c, rows[0]) for c in key},
+                "rows": int(sizes[group]),
+                "distinct_targets": int(distinct[group]),
+                "positions": search.positions[rows[:limit]].tolist(),
+                "omitted_rows": max(0, int(sizes[group]) - limit),
+            }
+        )
+    return groups
+
+
+def _finding(search: _Search, record, eligible, good) -> None:
+    key, target, context = record["determinant"], record["target"], record["context"]
+    positions, limit = search.positions[eligible], search.example_limit
+    finding(
+        search.base,
+        "exact_dependency" if record["exact"] else "approximate_dependency",
+        f"{', '.join(key)} determines {target}"
+        + (" within " + context_statement(context) if context else ""),
+        list(dict.fromkeys([*key, target, *(context or {})])),
+        # The finding samples its own exceptions; the test keeps its groups once.
+        {k: v for k, v in record.items() if "exception_groups" not in k},
+        bounded_rows(positions, good, limit),
+        exceptions=bounded_rows(positions, ~good, limit),
+        example_limit=limit,
+        structure={"context": context} if context is not None else {},
+        selector={
+            "operation": "dependency",
+            "determinant": list(key),
+            "target": target,
+            "context": context,
+            "dropna": search.dropna,
+        },
+    )
+
+
+def _anchors(masks: list[np.ndarray]) -> list[tuple[int, np.ndarray]]:
+    """One population per distinct supported candidate mask, largest first.
+
+    Candidates whose complete cases include an anchor's rows can be compared on
+    that anchor without shrinking it.
+    """
+    anchors = {}
+    for i, mask in enumerate(masks):
+        if mask.any():
+            anchors.setdefault(np.packbits(mask).tobytes(), (i, mask))
+    return sorted(anchors.values(), key=lambda item: (-int(item[1].sum()), item[0]))
+
+
+def _grain_views(search: _Search, candidates, masks, anchors) -> list[dict[str, Any]]:
+    encoded = Encoded(
+        {c: search.codes[c] for c in search.selected},
+        {c: None if search.present[c].all() else -1 for c in search.selected},
+        search.cache,
+    )
+    views = []
+    with phase("grain views", len(anchors), "views") as tracker:
+        for anchor, mask in anchors:
+            members = [i for i, eligible in enumerate(masks) if np.all(eligible[mask])]
+            specs = tuple(KeySpec(f"key{i}", candidates[i]) for i in members)
+            view = {k: search.base[k] for k in ("status", "source", "scope", "missing_convention")}
+            view["parameters"] = {
+                "candidate_keys": [{"name": s.name, "columns": list(s.columns)} for s in specs],
+                "dropna": search.dropna,
+            }
+            size = len(search.frame)
+            view.update(
+                evaluate(size, search.selected, specs, dropna=search.dropna, encoded=encoded)
+            )
+            rows = int(mask.sum())
+            views.append(
+                {
+                    "id": f"g{len(views)}",
+                    "candidate_ids": [f"key{i}" for i in members],
+                    "population": {
+                        "evaluated_rows": rows,
+                        "missing_excluded_rows": size - rows,
+                        # The anchor's complete cases define the population, so
+                        # only bounded examples are stored, not every position.
+                        "anchor_candidate_id": f"key{anchor}",
+                        "examples": selection(search.positions[mask], rows, search.example_limit),
+                        "rule": "complete_cases_of_candidate_components"
+                        if search.dropna
+                        else "missing_as_category",
+                    },
+                    "grain": Result("grain", view).to_dict(),
+                }
+            )
+            tracker.advance()
+    return views
+
+
+def _graph_selection(candidates, views, include_grain) -> dict[str, Any]:
+    selection_record = {
+        "strategy": "candidate_population_anchors_with_superset_candidates",
+        "primary_view": views[0]["id"] if views else None,
+        "excluded": [],
+    }
+    for i, candidate in enumerate(candidates):
+        candidate["id"] = f"key{i}"
+        candidate["graph_views"] = [v["id"] for v in views if f"key{i}" in v["candidate_ids"]]
+        if candidate["graph_views"]:
+            continue
+        reason = "graph_view_budget" if include_grain else "graph_not_requested"
+        selection_record["excluded"].append(
+            {
+                "candidate_id": f"key{i}",
+                "columns": candidate["columns"],
+                "reason": reason if candidate["evaluated_rows"] else "no_evaluated_support",
+            }
+        )
+    return selection_record

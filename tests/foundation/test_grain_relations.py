@@ -4,7 +4,7 @@ import math
 
 import pandas as pd
 
-from fieldwork import KeySpec, explore, grain, infer_schema
+from fieldwork import KeySpec, grain, infer_schema, profile
 
 
 def test_fd_support_and_violations() -> None:
@@ -27,18 +27,20 @@ def test_empty_fd_is_undefined() -> None:
 def test_schema_proposal_marks_requested_fd_probe_as_evaluated() -> None:
     frame = pd.DataFrame({"id": [1, 2], "target": ["a", "b"]})
     proposal = infer_schema(frame, candidate_keys=["id"])
-    target = next(item for item in proposal["proposals"] if item["column"]["value"] == "target")
+    target = next(item for item in proposal["proposals"] if item["column"] == "target")
     assert target["fd_evidence"]["status"] == "evaluated"
     assert target["fd_evidence"]["keys"][0]["holds"] is True
 
 
 def test_pairs_relation_cramers_and_absence() -> None:
     frame = pd.DataFrame({"a": ["x", "x", "y"], "b": [1, 2, 2]})
-    pair = explore(
+    pair = profile(
         frame,
         ["a", "b"],
-        include_absence=True,
-        reference_domains={"a": ["x", "y", "z"], "b": [1, 2, 3]},
+        pairs={
+            "include_absence": True,
+            "reference_domains": {"a": ["x", "y", "z"], "b": [1, 2, 3]},
+        },
     )["sections"]["pairs"]["pairs"][0]
     assert pair["relation"] == "n:m"
     assert pair["cramers_v"] is not None and math.isfinite(pair["cramers_v"])
@@ -49,20 +51,20 @@ def test_pairs_relation_cramers_and_absence() -> None:
 
 def test_top_n_both_requires_pre_and_records_conditional_grain() -> None:
     frame = pd.DataFrame({"id": [1, 2, 3], "a": ["x", "x", "y"], "b": [1, 2, 2]})
-    result = explore(
+    result = profile(
         frame,
         ["a", "b"],
         candidate_keys=[KeySpec("id", ("id",))],
-        top_n=1,
-        top_n_mode="pre",
+        census={"top_n": 1, "top_n_mode": "pre"},
         top_n_applies_to="both",
     )
     # top_n=1 keeps a='x' and b=2, so only row 1 enters both census and grain.
-    cohort = result["sections"]["census"]["scopes"][0]
-    graph = result["sections"]["grain"]["graph"]["scope"]
+    cohort = result["sections"]["census"]["tree"]
+    grain_scope = result["sections"]["grain"]["scope"]
+    graph = result["sections"]["grain"]["graph"]
     assert (cohort["evaluated_rows"], cohort["restriction_excluded_rows"]) == (1, 2)
-    assert (graph["evaluated_rows"], graph["restriction_excluded_rows"]) == (1, 2)
-    assert graph["conditional"] and cohort["scope_id"] in graph["lineage"]
+    assert (graph["evaluated_rows"], grain_scope["restriction_excluded_rows"]) == (1, 2)
+    assert grain_scope["name"] == "census top_n cohort"
 
 
 def test_equivalent_and_incomparable_determinants_are_distinguished() -> None:

@@ -7,11 +7,11 @@ import pandas as pd
 import pytest
 
 from fieldwork import (
-    ExplorerResult,
+    Result,
     census,
-    explore,
     infer_schema,
     levels,
+    profile,
     render_plaintext,
     visualization_data,
 )
@@ -37,9 +37,8 @@ def test_census_text_lists_every_node_in_tree_order():
     )
     dimensions = [f"{d}=" for d in frame.columns]
     result = census(frame, list(frame.columns))
-    resolved = result.to_dict(resolve_references=True)["tree"]["nodes"]
     children = {}
-    for node in resolved:
+    for node in result["tree"]["nodes"]:
         children.setdefault(node["parent_id"], []).append(node)
 
     def preorder(parent):
@@ -47,7 +46,7 @@ def test_census_text_lists_every_node_in_tree_order():
             yield node
             yield from preorder(node["node_id"])
 
-    expected = [node["label"] for node in preorder("root")]
+    expected = [f"{node['column']}={node['value']}" for node in preorder("root")]
     lines = node_lines(render_plaintext(result, width=88), dimensions)
     # Each subtree follows its parent contiguously; repeated labels stay separate.
     assert [line.split(":")[0] for line in lines] == expected
@@ -85,7 +84,9 @@ def test_pair_text_names_columns_and_contexts_not_internal_ids():
     frame = pd.DataFrame(
         {"alpha": ["x", "x", "x", "y"], "beta": [1, 2, 1, 1], "site": ["N", "N", "S", "S"]}
     )
-    result = explore(frame, ["alpha", "beta"], pair_contexts=[{"site": "N"}, {"site": "S"}])
+    result = profile(
+        frame, ["alpha", "beta"], pairs={"pair_contexts": [{"site": "N"}, {"site": "S"}]}
+    )
     text = render_plaintext(result["sections"]["pairs"], width=100)
     contexts = visualization_data(result, section="pairs")["contexts"]
     assert all(context["label"] in text for context in contexts[1:])  # after the global one
@@ -97,7 +98,7 @@ def test_warning_codes_and_unrequested_sections_are_visible():
     frame = pd.DataFrame({"id": [1, 2], "a": pd.Series(["x", 1], dtype=object)})
     assert "EXPLICIT_ROLE_SELECTION" in render_plaintext(levels(frame, ["id"], schema={"id": "id"}))
     assert "MIXED_LEVEL_TYPES" in render_plaintext(levels(frame, ["a"]))
-    text = render_plaintext(explore(frame, ["a"], include_pairs=False))
+    text = render_plaintext(profile(frame, ["a"], pairs=False))
     assert text.count("not_requested") == 2  # grain and pairs
 
 
@@ -117,7 +118,7 @@ def test_line_budget_marks_only_actual_truncation():
 def test_unicode_is_displayed_by_default_within_cell_width(
     monkeypatch: pytest.MonkeyPatch, wcwidth_installed: bool
 ) -> None:
-    from fieldwork._explore import render
+    from fieldwork._present import common as render
 
     render._width_function.cache_clear()
     if not wcwidth_installed:
@@ -132,7 +133,7 @@ def test_unicode_is_displayed_by_default_within_cell_width(
 
 
 def test_render_does_not_require_result_serialization() -> None:
-    class NoSerialization(ExplorerResult):
+    class NoSerialization(Result):
         def to_dict(self):
             raise AssertionError("renderer must consume payload directly")
 
@@ -145,8 +146,8 @@ def test_render_does_not_require_result_serialization() -> None:
 def test_topology_orders_levels_canonically_not_by_count():
     frame = pd.DataFrame({"site": ["Z", "Z", "Z", "A"], "kind": ["x", "y", "x", "x"]})
     for result in (levels(frame, ["site"]), census(frame, ["site", "kind"])):
-        full = node_lines(render_plaintext(result), ["site=", "'"])
-        topology = node_lines(render_plaintext(result, detail="topology"), ["site=", "'"])
+        full = node_lines(render_plaintext(result), ["site=", "Z", "A"])
+        topology = node_lines(render_plaintext(result, detail="topology"), ["site=", "Z", "A"])
         assert "Z" in full[0]  # full detail ranks by count
         assert "A" in topology[0]
 

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter, OrderedDict
-from collections.abc import Iterable
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -115,7 +114,7 @@ class FDCache:
 
     def get(self, key, mask):
         full = self.global_records.get(key)
-        # _fd_record always intersects a restriction with this pair's global
+        # check_dependency always intersects a restriction with this test's full
         # eligibility. Equal counts of nested populations mean equal membership.
         if full is not None and full["evaluated_rows"] == int(mask.sum()):
             return full
@@ -136,12 +135,6 @@ class FDCache:
         while len(self.subsets) > 512 or self.bytes > 16 * 1024 * 1024:
             removed, _ = self.subsets.popitem(last=False)
             self.bytes -= len(removed[1])
-
-
-class EncodedColumns(dict):
-    def __init__(self, values, cache=None):
-        super().__init__(values)
-        self.fd_cache = cache if cache is not None else FDCache()
 
 
 def first_indices(mask, limit):
@@ -171,7 +164,11 @@ def dense_counts(codes: np.ndarray, rows: np.ndarray) -> dict[int, int]:
 def exact_pair_ids(
     parents: np.ndarray, levels: np.ndarray, *, packing_limit: int | None = None
 ) -> tuple[np.ndarray, list[tuple[int, int]]]:
-    """Dense IDs for exact integer pairs, with an overflow-safe tuple fallback."""
+    """Dense IDs for exact integer pairs, with an overflow-safe tuple fallback.
+
+    IDs follow the sorted order of the distinct pairs on both paths, so callers
+    see the same numbering whether or not the pairs could be packed.
+    """
 
     if parents.shape != levels.shape:
         raise ValueError("parent and level arrays must have the same shape")
@@ -203,15 +200,3 @@ def exact_pair_ids(
     for new_id, pair in enumerate(ordered):
         remap[lookup[pair]] = new_id
     return remap[inverse], ordered
-
-
-def python_prefix_counts(rows: Iterable[tuple[object, ...]]) -> list[Counter]:
-    """Readable reference kernel used by differential tests."""
-
-    counters: list[Counter] = []
-    for row in rows:
-        for depth in range(1, len(row) + 1):
-            if len(counters) < depth:
-                counters.append(Counter())
-            counters[depth - 1][row[:depth]] += 1
-    return counters

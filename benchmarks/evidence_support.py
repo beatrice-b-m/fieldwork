@@ -55,25 +55,29 @@ def cases():
         },
         index=[0] * 5,
     )
-    yield "conditional_composite", contextual, {"max_candidates": 6, "max_key_size": 2, "by": ["C"]}
+    yield (
+        "conditional_composite",
+        contextual,
+        {"limits": {"max_candidates": 6}, "max_key_size": 2, "by": ["C"]},
+    )
     yield "scoped", contextual, {"scope": fw.Scope.from_positions(contextual, [0, 1, 3, 4])}
-    yield "zero_tests", sparse, {"max_dependency_tests": 0}
-    yield "partial_tests", contextual, {"max_candidates": 3, "max_dependency_tests": 2}
+    yield "zero_tests", sparse, {"limits": {"max_dependency_tests": 0}}
+    yield "partial_tests", contextual, {"limits": {"max_candidates": 3, "max_dependency_tests": 2}}
     yield (
         "permuted_partial_tests",
         contextual[["Y", "C", "X"]],
-        {"max_candidates": 3, "max_dependency_tests": 2},
+        {"limits": {"max_candidates": 3, "max_dependency_tests": 2}},
     )
     yield (
         "overlapping_grains",
         pd.DataFrame({"X": [1, 1, 2, 2], "Y": [1, 1, None, None], "Z": [None, None, 2, 2]}),
-        {"max_candidates": 3},
+        {"limits": {"max_candidates": 3}},
     )
 
     yield "missing_determinant", sparse.assign(X=None), {}
     yield "sentinel_excluded", sparse.fillna("absent"), {"missing": {"Y": ["absent"]}}
-    yield "independent_graph_budget", sparse, {"max_grain_views": 0}
-    yield "incompatible_transitivity", sparse.assign(Z=range(4)), {"max_candidates": 3}
+    yield "independent_graph_budget", sparse, {"limits": {"max_grain_views": 0}}
+    yield "incompatible_transitivity", sparse.assign(Z=range(4)), {"limits": {"max_candidates": 3}}
     yield (
         "ranking_reversal",
         pd.DataFrame(
@@ -84,7 +88,7 @@ def cases():
                 **{f"Y{i}": [10, None, 20, None, 30, None, 40, None] for i in range(3)},
             }
         ),
-        {"max_candidates": 6},
+        {"limits": {"max_candidates": 6}},
     )
     yield (
         "rare_complete_context",
@@ -98,7 +102,8 @@ def cases():
 def report(source_commit=None):
     records = []
     for name, frame, overrides in cases():
-        options = {"max_key_size": 1, "max_candidates": 1, **overrides}
+        limits = {"max_candidates": 1, **overrides.get("limits", {})}
+        options = {"max_key_size": 1, **overrides, "limits": limits}
         result = fw.discover_dependencies(frame, **options)
         overview = {
             "kind": "overview",

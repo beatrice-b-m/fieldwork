@@ -21,7 +21,7 @@ summaries. Completion of one phase does not imply completion of the overview.
 The default remains silent.
 
 All public dataframe analyses accept keyword-only `progress`, `cancel`, and
-`timeout`, including explicit-dimension `explore`, foundation tools (`levels`,
+`timeout` (typed once as `fieldwork.typing.Runtime`), including `profile`, foundation tools (`levels`,
 `census`, `grain`, `pairs`, `joint_counts`, `infer_schema`), `Recipe.run`,
 `Path.census`, source inspection/selection/recomputation, and scope creation and
 refinement. Rendering uses saved results and does not run dataframe analysis.
@@ -37,7 +37,7 @@ analysis = fw.discover_dependencies(df, progress=report)
 
 Callbacks receive immutable `ProgressEvent` objects with `operation`, `phase`,
 `phase_id`, `parent_id`, `completed`, nullable `total`, `unit`, `elapsed_seconds`,
-`phase_elapsed_seconds`, nullable `estimated_remaining_seconds`, nullable `detail`,
+`phase_elapsed_seconds`, nullable `detail`,
 and `status`. IDs identify nested phase instances within one call. Status is
 `started`, `running`, `completed`, `cancelled`, or `failed`. The operation names
 are descriptive; use IDs and parent IDs to track nested work.
@@ -48,12 +48,9 @@ quick and do not mutate the dataframe during analysis. An exception raised by a
 callback stops the analysis and propagates unchanged; a broken callback is not
 called again during cleanup.
 
-The displayed ETA estimates **only the current phase**, after at least four
-rate samples, half a second of observation, and sufficiently stable throughput.
-It disappears when throughput varies or the latest sample is stale. It is not a
-guaranteed duration or a whole-overview ETA. Phases with unknown work totals show
-elapsed time and available counters. Mixed column sizes and high-cardinality
-work can remain unpredictable even after an initially stable estimate.
+The built-in display shows the current phase, a completion bar and percentage
+when the phase's total is known, elapsed time and the current detail. There is
+no time estimate.
 
 ## Cancel or bound elapsed time
 
@@ -81,13 +78,12 @@ controls when calling `Recipe.run`.
 overview = fw.explore(
     df,
     sections=["missingness", "dependencies"],
-    section_options={
+    options={
         "missingness": {"features": ["site", "visit", "value"]},
         "dependencies": {
             "max_key_size": 1,
-            "max_candidates": 5,
-            "max_dependency_tests": 100,
             "include_grain": False,
+            "limits": {"max_candidates": 5, "max_dependency_tests": 100},
         },
     },
     progress=True,
@@ -96,25 +92,30 @@ overview = fw.explore(
 
 The four overview sections are `missingness`, `dependencies`, `paths`, and
 `value_patterns`. Omitted sections are explicitly `not_requested`; text, HTML,
-and SVG presentations identify them. `section_options` accepts each requested
-operation's analytical options, such as `features`, `max_pairs`, or
-`max_candidates`. Shared source settings (`scope`, `missing`, `table_id`) and
-runtime controls stay on the overview. Section selection applies only when
-explicit dimensions are omitted.
+and SVG presentations identify them. `options` accepts each requested
+operation's analytical options, such as `features` or `max_key_size`, and its
+work budgets under `limits`. A section's `limits` merge with the overview's
+defaults key by key. Shared source settings (`scope`, `missing`, `table_id`) and
+runtime controls stay on the overview.
 
-Existing `discovery` configuration retains its meaning: search settings such as
-`max_candidates` affect paths, while shared features/context/entity settings flow
-to their relevant sections. Use `section_options["dependencies"]` to override
-the overview's default 20 single-column dependency candidates. Separate calls to
+Shared parameters (`features`, `by`, entity settings) flow to their relevant
+sections; path search settings belong in `options["paths"]`. Use
+`options["dependencies"]` to override the overview's default single-column keys
+and 20 candidates (`{"max_key_size": 2, "limits": {"max_candidates": 50}}`). Separate calls to
 `discover_dependencies` still default to 100 candidates and maximum key size two.
 
-Dependency options available both directly and in `section_options`:
+Every analysis with search or output budgets takes them in one `limits`
+mapping (`fieldwork.typing.PathLimits`, `MissingnessLimits`, `DependencyLimits`,
+`PatternLimits`, `PairLimits`); omitted budgets keep their defaults, unknown
+names raise `TypeError`, and results record the effective budgets in
+`parameters["limits"]`. Dependency work controls, directly or in
+`options["dependencies"]`:
 
 | Option | Effect |
 | --- | --- |
 | `include_grain=False` | Skip foundation grain graphs; retain dependency tests and candidate summaries. |
-| `max_grain_views=n` | Build at most n distinct supported population views in their usual order. |
-| `max_dependency_tests=n` | Cap discovery candidate/target/context tests in their usual order. |
+| `limits={"max_grain_views": n}` | Build at most n distinct supported population views in their usual order. |
+| `limits={"max_dependency_tests": n}` | Cap discovery candidate/target/context tests in their usual order. |
 
 These options default to the previous complete work within the existing search
 budgets. Graph metadata records possible/omitted views and reasons for excluded
@@ -122,13 +123,14 @@ candidates. Test coverage records possible/omitted tests. A test budget does not
 cap foundation graph computations; combine it with `include_grain=False` or a
 graph-view budget to control both. An untested relation is not negative evidence.
 Candidate summaries are still computed up to `max_candidates`, including when
-`max_dependency_tests=0`.
+`max_dependency_tests` is 0.
 `min_accuracy` and example/display limits primarily control output, not test work.
 
 ## What is reused and what still costs time
 
 One public call owns a private context. Nested overview components share its
-source fingerprint, scoped frame, selected value encodings, and presence masks.
+source fingerprint, string column labels, scoped frame, column codes and presence
+masks.
 The context is discarded after success, failure, or cancellation. A later call
 revalidates the source, including mutations. There is no persistent dataframe
 cache or public session to invalidate manually.
@@ -148,13 +150,15 @@ once and weight their frequencies. Bounded examples avoid allocating every match
 `select` evaluates a finding's saved predicate directly rather than replaying
 unrelated graphs and summaries; source identity is still validated.
 
-Graph metrics are reused only for identical eligible populations. Retained graph
-masks are packed and interned. The subset-metric cache is capped at 512 entries
-and 16 MiB of packed mask keys; the path-prefix array cache is capped at 32 MiB.
-The shared preparation dictionary cache is capped at 100,000 total identities;
-larger dictionaries are released after encoding. Grain reuses integer groups and missing
-codes without retaining cell dictionaries.
-These are cache budgets, not whole-operation memory limits. Input frames, encoded
+A dependency test's counts are reused by grain views on the same population:
+full-population counts always, and view-population counts up to 512 entries and
+16 MiB of packed mask keys (about a third of the structured 300,000-row discovery
+time). Retained graph masks are packed and interned. Grain reuses integer groups
+and missing codes without retaining cell dictionaries. Path search caches prefix
+groupings up to 32 MiB (about 10% of path search on 500,000 rows). Once encoding
+became `pandas.factorize`, the bounded cache of value dictionaries no longer
+changed measured runtime and was removed. These caches are not memory budgets
+for a whole operation. Input frames, encoded
 columns, output graphs, and source-position lists can still be large. Work grows
 with rows, selected features, candidate/target tests, distinct context groups,
 and graph views. Unique IDs, continuous values, long strings, and mixed scalar

@@ -97,9 +97,7 @@ def test_runtime_validation(options):
 
 
 def test_terminal_and_notebook_display_escape_and_update(monkeypatch):
-    event = fw.ProgressEvent(
-        "op", "<work>", 0, None, 3, 10, "items", 2, 1, 4, "\x1b\n<x>", "running"
-    )
+    event = fw.ProgressEvent("op", "<work>", 0, None, 3, 10, "items", 2, 1, "\x1b\n<x>", "running")
     stream = io.StringIO()
     fw.ProgressDisplay(stream, notebook=False)(event)
     assert stream.getvalue() and "\x1b" not in stream.getvalue()
@@ -143,7 +141,7 @@ def test_retained_session_releases_cached_frames_on_exit(fail):
         session = _runtime.current_session()
         retained.append(session)
         evidence.prepare(sample())
-        assert session.prepared and session.encodings and session.fingerprints
+        assert session.prepared and session.fingerprints
         if fail:
             raise ValueError("test failure")
 
@@ -153,9 +151,8 @@ def test_retained_session_releases_cached_frames_on_exit(fail):
     else:
         run()
     assert not retained[0].prepared
-    assert not retained[0].encodings
+    assert not retained[0].labelled
     assert not retained[0].fingerprints
-    assert retained[0].dictionary_tokens == 0
 
 
 def test_falsey_callable_progress_is_still_called():

@@ -44,7 +44,7 @@ remain distinct evidence. Follow one relationship to `overview.inspect(df, id)`.
 ```python
 availability = fw.missingness(
     df, features=["image_1", "image_2"], by=["site"],
-    entity="exam_id", missing={"image_2": [-999]}, example_limit=3,
+    entity="exam_id", missing={"image_2": [-999]}, limits={"example_limit": 3},
 )
 signature = next(s for s in availability["signatures"] if "image_2" in s["absent"])
 examples = availability.inspect(df, signature["finding_id"])
@@ -55,8 +55,9 @@ all_rows = availability.inspect(df, signature["finding_id"], all_matches=True)
 Examples are bounded source rows. The selected scope contains every matching row,
 including duplicate index labels. It is bound to the ordered source values; changes
 to that source require a new analysis. `scope.refine(df, positions, name=...)`
-restricts it further. Context findings retain typed predicates such as
-`site = 'North' (string)` in text, HTML and topology. Entity pattern findings can
+restricts it further. Context findings retain their predicates, such as
+`site = North`, in text, HTML and topology; a string that could be read as a
+number is quoted (`site = '1'` versus `site = 1`). Entity pattern findings can
 select all rows belonging to entities with some, all, one, any or no populated rows.
 
 ## Refine, compare and navigate
@@ -108,7 +109,7 @@ entity's selection includes all its scoped source rows.
 For 100 matching rows from one entity and one exception from another, conditional
 presence is 100/101 with row units and 1/2 with entity units. A context analysis
 aggregates each entity within that context. Comparisons require compatible units
-and aggregation. `explore(df, discovery={"entity": "exam_id", "unit": "entities"})`
+and aggregation. `explore(df, entity="exam_id", unit="entities")`
 uses entity availability alongside row-based path and dependency evidence.
 
 ## Save and reapply
@@ -117,7 +118,7 @@ uses entity availability alongside row-based path and dependency evidence.
 import json
 
 saved = json.loads(json.dumps(availability.to_dict(), allow_nan=False))
-restored = fw.InvestigationResult.from_dict(saved)
+restored = fw.Result.from_dict(saved)
 html = fw.render_html(restored)  # Works without a source dataframe.
 restored.select(df, signature["finding_id"])
 
@@ -136,14 +137,18 @@ This also works for a configured automatic overview:
 ```python
 overview_recipe = fw.Recipe(
     "explore",
-    {"discovery": {"max_candidates": 10, "entity": "exam_id", "unit": "entities"}},
+    {
+        "entity": "exam_id",
+        "unit": "entities",
+        "options": {"dependencies": {"limits": {"max_candidates": 10}}},
+    },
 )
 selected_overview = overview_recipe.run(df, scope=scope)
 ```
 
 The run uses the selected population in every section and retains the recipe's
 search and entity settings. Common run overrides (`scope`, `missing`, `table_id`,
-`features`) take precedence over their configured `discovery` values.
+`features`) take precedence over their saved values.
 Saved path results restore `best.census` as well. Topology exports retain feature
 labels, relation types and context predicates while suppressing measurements,
 source positions and population identifiers. Related-table discovery remains deferred.
