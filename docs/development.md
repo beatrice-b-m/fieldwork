@@ -85,8 +85,7 @@ to vary data characteristics, and `--rows 300000` for a larger case. The default
 sparse fixture uses 70% missingness and eight populated values per column.
 `--fixture structured` includes unique IDs, repeated entities/contexts, and nested
 missingness masks. `--progress` records callback counts and inclusive phase
-durations (nested phases overlap; do not sum them). `--compact` measures the
-optional shared-container JSON envelope, separately from analysis.
+durations (nested phases overlap; do not sum them).
 
 For comparable overview components, its `dependencies` workload uses 20
 single-column candidates and `patterns` uses 20 pairs. `--candidates` changes
@@ -151,9 +150,9 @@ documentation site can offer the exact example alongside its SVG/HTML/JSON expor
 [Current performance controls](performance.md) document runtime APIs and cache
 bounds; [implementation measurements](performance-results.md) record representative
 before/after runs. `tests/discovery/test_performance_contracts.py`, `test_runtime.py`,
-and `test_scaling_controls.py` check canonical fingerprint bytes, vectorized group
+and `test_scaling_controls.py` check fingerprint change detection, vectorized group
 oracles, scoped/entity selections, cache populations/lifetimes/bounds, cancellation,
-callback errors, ETA/throttling, omitted work and compact round-trips.
+callback errors, ETA/throttling, omitted work and saved-export round trips.
 
 For a revision-to-revision default-output check, run the same parity script with
 both source trees and identical pandas/NumPy versions:

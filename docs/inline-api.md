@@ -21,8 +21,8 @@ Specify the population behind counts and fractions, missing conventions, source
 identity requirements, and mutation/serialization behavior. Distinguish bounded
 search, truncated displays, missing exclusions, and explicit cohort selection.
 A budget boundary is not a negative finding. Entity findings can select source
-rows where the feature itself is absent. Compact serialization retains all
-measurements; topology projections are not anonymization. Keep these descriptions
+rows where the feature itself is absent. Exports retain all measurements;
+topology projections are not anonymization. Keep these descriptions
 consistent with [evidence contracts](contracts.md) and
 [runtime controls](performance.md).
 

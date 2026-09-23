@@ -107,8 +107,8 @@ not establish a precise overhead percentage. Each produced 208 events
 including phase boundaries. Raw results include inclusive phase durations;
 nested durations overlap and must not be summed.
 
-The same runs exported compact JSON: 24,219,506 bytes versus 25,447,388 ordinary
-bytes, a 4.8% reduction. Median compact serialization was
+The same runs exported compact JSON (an envelope removed after 0.1.2):
+24,219,506 bytes versus 25,447,388 ordinary bytes, a 4.8% reduction. Median compact serialization was
 0.473 s. Compact export is optional, preserves all evidence,
 and does not change analytical work or solve input-memory costs.
 
@@ -149,8 +149,8 @@ independent benchmarks.
 # Vary cardinality and data types:
 .venv/bin/python benchmarks/scaling.py --rows 300000 --columns 150 --fixture mixed --operations explore --repeats 3 --timeout 180 --output /tmp/mixed-300k.json
 .venv/bin/python benchmarks/scaling.py --rows 300000 --columns 150 --fixture structured --operations explore --repeats 3 --timeout 180 --output /tmp/structured-300k.json
-# Collect inclusive phase times and measure optional compact serialization:
-.venv/bin/python benchmarks/scaling.py --rows 300000 --columns 150 --operations explore --progress --compact --repeats 3 --timeout 180 --output /tmp/progress-compact.json
+# Collect inclusive phase times (the historical run also passed --compact, removed after 0.1.2):
+.venv/bin/python benchmarks/scaling.py --rows 300000 --columns 150 --operations explore --progress --repeats 3 --timeout 180 --output /tmp/progress.json
 ```
 
 [Raw JSON measurements](performance-results/) include fixture definitions,

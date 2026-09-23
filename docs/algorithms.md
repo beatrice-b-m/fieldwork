@@ -104,8 +104,8 @@ candidate guarantees their common complete-case population is exactly that mask;
 the foundation checks every combined relationship on it, reusing exact metrics
 only for identical eligible populations.
 Views are ordered by descending population, then candidate enumeration order.
-`exact_grain` is the first view; `grain_views` retains every view, candidate IDs
-and population accounting. A view's population is the complete cases of its
+`grain_views[0]` is the primary view; `grain_views` retains every view, candidate
+IDs and population accounting. A view's population is the complete cases of its
 `anchor_candidate_id` within the scope (or the whole scope with `dropna=False`), so
 it stores bounded `examples` rather than every source position. No relation is composed across views.
 All candidates remain in `candidates`, with view membership; unsupported candidates

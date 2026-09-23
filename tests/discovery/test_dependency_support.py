@@ -232,7 +232,7 @@ def test_saved_details_below_threshold_and_disclosure():
     for dropna in (True, False):
         result = fw.discover_dependencies(df, dropna=dropna, min_accuracy=1, max_key_size=1)
         saved = fw.InvestigationResult.from_dict(
-            json.loads(json.dumps(result.to_dict(compact=True), allow_nan=False))
+            json.loads(json.dumps(result.to_dict(), allow_nan=False))
         )
         assert saved.to_dict() == result.to_dict()
         projection = fw.visualization_data(saved)

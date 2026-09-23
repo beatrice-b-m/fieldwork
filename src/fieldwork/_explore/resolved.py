@@ -1,4 +1,4 @@
-"""Self-contained analytical exports without changing compact reference identities."""
+"""Self-contained analytical exports without changing local reference identities."""
 
 from __future__ import annotations
 

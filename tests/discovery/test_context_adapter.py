@@ -62,7 +62,7 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
             assert section["source"]["rows"] == len(df)
     else:
         result = fw.discover_dependencies(df, max_key_size=1, **context)
-        grain = result["exact_grain"]
+        grain = result["grain_views"][0]["grain"]
     assert grain["source"]["table_id"] == "delivery"
     assert grain["source"]["rows"] == len(df)
     assert len(grain["graph"]["edges"]) == 1

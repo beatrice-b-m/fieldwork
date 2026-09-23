@@ -56,3 +56,9 @@ between releases without migration.
   `anchor_candidate_id` instead of every row position (`population.positions`),
   which dominated export size on large frames. The anchor's complete cases define
   the view population.
+- **Breaking:** the optional compact export (`to_dict(compact=True)` and the
+  `fieldwork.compact` envelope accepted by `from_dict`) is removed, along with
+  the `--compact` benchmark flag. It mostly deduplicated containers the export
+  repeated itself; dependency results no longer store `exact_grain`, a second
+  copy of `grain_views[0]["grain"]` (about 1.1 MB of a 4.8 MB overview of the
+  bundled laboratory table).

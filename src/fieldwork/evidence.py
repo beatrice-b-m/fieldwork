@@ -309,7 +309,7 @@ class InvestigationResult(ExplorerResult):
     mutable. Findings contain representative positions, not source rows. inspect,
     select, and recompute require the identical ordered source. Use Recipe to
     reapply parameters to a new delivery. Methods inherited from ExplorerResult
-    provide mapping access and ordinary/resolved/compact exports.
+    provide mapping access and ordinary/resolved exports.
 
     Examples
     --------
@@ -690,8 +690,8 @@ class InvestigationResult(ExplorerResult):
         Parameters
         ----------
         data : mapping
-            Ordinary discovery schema 1.0 export or a fieldwork.compact envelope
-            containing one. JSON-decoded data is accepted.
+            Discovery schema 1.0 export from to_dict. JSON-decoded data is
+            accepted.
 
         Returns
         -------
@@ -702,7 +702,7 @@ class InvestigationResult(ExplorerResult):
         Raises
         ------
         ValueError
-            The schema/envelope version or compact reference graph is unsupported.
+            The schema version is unsupported.
         KeyError
             Required saved fields are missing.
 
@@ -712,9 +712,6 @@ class InvestigationResult(ExplorerResult):
         when inspecting, selecting, recomputing, or handing a path to census. This is
         not a full validator of every nested evidence field.
         """
-        from ._serialization import expand_result
-
-        data = expand_result(data)
         if data.get("schema_version") != "1.0":
             raise ValueError("Unsupported investigation schema version")
         result_class = cls

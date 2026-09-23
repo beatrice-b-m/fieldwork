@@ -35,7 +35,6 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `_explore/visual_data.py`, `render.py`, `graphics.py` | Foundation projections and renderers |
 | `evidence.py`, `_selection.py` | Discovery results, scopes, fingerprints, targeted source selection |
 | `_runtime.py`, `progress.py` | Call-scoped reuse, progress events/display, cancellation |
-| `_serialization.py` | Optional versioned shared-container JSON envelopes |
 | `availability.py` | Presence signatures, families, implications, entity summaries |
 | `discovery.py` | Supplied search bounds, exact/approximate/conditional FDs |
 | `navigation.py` | Deterministic beam search and objective-specific prefix costs |

@@ -263,9 +263,8 @@ def visualization_data(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested
@@ -559,9 +558,8 @@ def render_plaintext(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     width : int, optional
         Positive maximum plaintext line width; default 100. Long lines are clipped.
     max_lines : int, optional
@@ -750,9 +748,8 @@ def render_svg(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested
@@ -950,9 +947,8 @@ def render_html(
     Parameters
     ----------
     result : ExplorerResult or mapping
-        Saved analytical result or its ordinary dictionary export. Rendering does
-        not need the source dataframe and does not recompute analyses. Restore a
-        compact envelope with from_dict before rendering.
+        Saved analytical result or its dictionary export. Rendering does not need
+        the source dataframe and does not recompute analyses.
     section : str or None, optional
         Analytical section to render; default None. Foundation explore defaults
         to grain; discovery overviews default to the combined overview. Unrequested

@@ -68,18 +68,14 @@ class ExplorerResult(Mapping[str, Any]):
     schema_version: str = SCHEMA_VERSION
     stability: str = "unstable"
 
-    def to_dict(self, *, resolve_references: bool = False, compact: bool = False) -> dict[str, Any]:
-        """Export analytical evidence as ordinary, resolved, or compact JSON data.
+    def to_dict(self, *, resolve_references: bool = False) -> dict[str, Any]:
+        """Export analytical evidence as ordinary or resolved JSON data.
 
         Parameters
         ----------
         resolve_references : bool, optional
             Default False keeps local IDs. True adds labels and typed values beside
             references in an independent resolved copy; IDs remain intact.
-        compact : bool, optional
-            Default False returns the ordinary evidence mapping. True wraps the
-            export in a versioned fieldwork.compact envelope sharing repeated
-            containers through references. Can be combined with resolve_references.
 
         Returns
         -------
@@ -89,10 +85,10 @@ class ExplorerResult(Mapping[str, Any]):
 
         Notes
         -----
-        All modes retain quantitative evidence. Compact encoding is not disclosure
-        filtering and may enlarge tiny exports; use visualization_data(detail='topology')
-        for a structural projection. Restore with the corresponding result class's
-        from_dict method. JSON serialization converts tuples to lists.
+        Both modes retain quantitative evidence; use
+        visualization_data(detail='topology') for a structural projection. Restore
+        with the corresponding result class's from_dict method. JSON serialization
+        converts tuples to lists.
 
         Examples
         --------
@@ -100,7 +96,7 @@ class ExplorerResult(Mapping[str, Any]):
         >>> import pandas as pd
         >>> import fieldwork as fw
         >>> result = fw.levels(pd.DataFrame({'x': [1, 1]}))
-        >>> data = json.loads(json.dumps(result.to_dict(compact=True), allow_nan=False))
+        >>> data = json.loads(json.dumps(result.to_dict(), allow_nan=False))
         >>> fw.ExplorerResult.from_dict(data).kind
         'levels'
         """
@@ -114,21 +110,17 @@ class ExplorerResult(Mapping[str, Any]):
             from .resolved import resolve_result
 
             data = resolve_result(data)
-        if compact:
-            from .._serialization import compact_result
-
-            return compact_result(data)
         return data
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        """Restore foundation evidence from an ordinary or compact export.
+        """Restore foundation evidence from a to_dict export.
 
         Parameters
         ----------
         data : mapping
-            Foundation schema 0.3 export or fieldwork.compact envelope containing one.
-            JSON-decoded input is accepted. Discovery schema 1.0 uses InvestigationResult.
+            Foundation schema 0.3 export. JSON-decoded input is accepted.
+            Discovery schema 1.0 uses InvestigationResult.
 
         Returns
         -------
@@ -139,7 +131,7 @@ class ExplorerResult(Mapping[str, Any]):
         Raises
         ------
         ValueError
-            The schema/envelope version or compact reference graph is unsupported.
+            The schema version is unsupported.
         KeyError
             Required export fields are missing.
 
@@ -148,9 +140,6 @@ class ExplorerResult(Mapping[str, Any]):
         This restores saved evidence rather than verifying it against source data.
         It does not validate every nested analytical record or migrate old schemas.
         """
-        from .._serialization import expand_result
-
-        data = expand_result(data)
         if data.get("schema_version") != SCHEMA_VERSION:
             raise ValueError("Unsupported foundation schema version")
         return cls(

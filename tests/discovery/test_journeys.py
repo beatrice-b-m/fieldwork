@@ -50,7 +50,8 @@ def test_sparse_candidates_keep_compatible_grain_views():
         }
     )
     analysis = fw.discover_dependencies(df, max_key_size=1)
-    assert analysis["exact_grain"]["graph"]["scope"]["evaluated_rows"] == 4
+    assert "exact_grain" not in analysis
+    assert analysis["grain_views"][0]["grain"]["graph"]["scope"]["evaluated_rows"] == 4
     assert analysis["graph_selection"]["excluded"] == [
         {
             "candidate_id": "key4",
@@ -71,8 +72,9 @@ def test_sparse_candidates_keep_compatible_grain_views():
     )
     assert all(c["graph_views"] for c in analysis["candidates"] if c["columns"] != ["never"])
     scoped = fw.discover_dependencies(df, scope=fw.Scope.from_positions(df, [0, 1]), max_key_size=1)
-    assert scoped["exact_grain"]["graph"]["scope"]["input_rows"] == 4
-    assert scoped["exact_grain"]["graph"]["scope"]["restriction_excluded_rows"] == 2
+    primary = scoped["grain_views"][0]["grain"]
+    assert primary["graph"]["scope"]["input_rows"] == 4
+    assert primary["graph"]["scope"]["restriction_excluded_rows"] == 2
 
 
 def test_typed_contexts_survive_saved_presentations():
@@ -372,7 +374,7 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
 def test_dependency_support_survives_overview_network_and_graph_handoffs():
     df = pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None], "Z": range(4)})
     overview = fw.InvestigationResult.from_dict(
-        json.loads(json.dumps(fw.explore(df).to_dict(compact=True), allow_nan=False))
+        json.loads(json.dumps(fw.explore(df).to_dict(), allow_nan=False))
     )
     dependencies = fw.InvestigationResult.from_dict(overview["sections"]["dependencies"])
     records = {(tuple(d["determinant"]), d["target"]): d for d in dependencies["dependencies"]}

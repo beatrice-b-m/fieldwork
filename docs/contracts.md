@@ -159,17 +159,12 @@ absent. Examples and exception totals always count source rows, separately from
 unit support. Comparisons require compatible units and entity aggregation; recipes
 persist these settings. HTML renders named evidence tables and source selections.
 
-## Runtime controls and optional envelopes
+## Runtime controls
 
 [Performance controls](performance.md) specify progress event ordering, phase ETA,
 cooperative cancellation, call-scoped cache lifetimes, independent overview sections,
 and dependency/graph budgets. Defaults preserve the analytical payload. Explicit
 omissions carry coverage or `not_requested` status and remain visible in presentations.
-
-`to_dict(compact=True)` returns a versioned `fieldwork.compact` envelope preserving
-all evidence through shared-container references. Both result classes accept their
-ordinary and compact exports in `from_dict`; ordinary schemas 0.3/1.0 are unchanged.
-Compact exports do not apply topology disclosure filtering.
 
 ## Editor-visible Python API
 
@@ -189,8 +184,8 @@ Counts are nonnegative Python integers; undefined ratios serialize as JSON null.
 Candidate global test counters and supported-exact lists disclose evaluated work,
 not completeness. Graph budgets remain independent. Source identity, selection,
 exception repair rows, finding IDs and analytical candidate enumeration are unchanged.
-`to_frame('dependencies')` includes tests below the finding threshold; compact and
-ordinary exports retain these fields. No new public parameters, exports, foundation
+`to_frame('dependencies')` includes tests below the finding threshold; exports
+retain these fields. No new public parameters, exports, foundation
 schema, or result type hierarchy are introduced.
 
 Full presentations adapt saved schema-1.0 records without a source or mutation.
@@ -199,7 +194,7 @@ recovers repeat rows, and repair rows recover repeat-only accuracy. Global recor
 recover supported-exact lists. Missing determinant eligibility never becomes
 invented target coverage: legacy coverage is displayed as unavailable. If even one
 candidate's supported-exact ranking input cannot be recovered, the entire collection
-retains legacy ranking. The adapter does not change ordinary or compact exports.
+retains legacy ranking. The adapter does not change exports.
 
 Full text/HTML/SVG explanations distinguish observed exactness, observed target
 coverage and repeat-only consistency, and disclose missing-category evaluation.

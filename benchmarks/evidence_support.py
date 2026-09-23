@@ -142,7 +142,7 @@ def report(source_commit=None):
                 ],
                 "graph_sha256": hashlib.sha256(
                     json.dumps(
-                        {k: result[k] for k in ("grain_views", "exact_grain", "graph_selection")},
+                        {k: result[k] for k in ("grain_views", "graph_selection")},
                         sort_keys=True,
                         allow_nan=False,
                     ).encode()

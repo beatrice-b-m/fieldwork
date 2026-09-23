@@ -423,7 +423,6 @@ def discover_dependencies(
             )
             tracker.advance()
     base["grain_views"] = views
-    base["exact_grain"] = views[0]["grain"] if views else None
     base["graph_selection"] = {
         "strategy": "candidate_population_anchors_with_superset_candidates",
         "primary_view": views[0]["id"] if views else None,
