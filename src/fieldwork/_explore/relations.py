@@ -156,18 +156,16 @@ def pairs(
     dropna : bool, optional
         True excludes rows missing either column (or a context column) from each
         pair; default False keeps missing values as a category.
-    include_absence : bool, optional
-        Also count and sample value combinations never observed; default False.
-    reference_domains : mapping or None, optional
-        Declared value domains by column for absence; default observed values.
+    include_absence, reference_domains : optional
+        Also count and sample value combinations never observed (default False),
+        drawn from declared value domains by column (default observed values).
     pair_contexts : iterable of mappings or None, optional
         Extra analyses restricted to exact column values, such as
         ``{"site": "North"}``; context columns must not be in the pair.
     limits : PairLimits or None, optional
-        Budgets: pairs (``max_pairs``, default 15), contexts including the
-        global one (``max_contexts``, 32) and sampled absent cells
-        (``max_absence_cells``, 1000). None is unbounded. Omitted work is
-        reported, never treated as a negative finding.
+        Budgets, None unbounded: pairs (``max_pairs``, default 15), contexts
+        including the global one (``max_contexts``, 32) and sampled absent cells
+        (``max_absence_cells``, 1000). Omitted work is reported.
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]

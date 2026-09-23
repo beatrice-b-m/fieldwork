@@ -99,9 +99,8 @@ def profile(
     -------
     Result
         Kind 'profile': ``sections`` holding the levels, census, grain and pairs
-        results (unrequested ones with status 'not_requested'), and the levels
-        and census warnings. A pre-selection is shared as a Scope named
-        "census top_n cohort".
+        results (unrequested ones with status 'not_requested') and the levels
+        and census warnings. See docs/contracts.md for the pre-selection cohort.
 
     Examples
     --------

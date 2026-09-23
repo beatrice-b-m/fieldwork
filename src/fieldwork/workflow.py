@@ -22,50 +22,33 @@ from .result import Result
 
 @dataclass(frozen=True)
 class Recipe:
-    """Store reusable, strict-JSON parameters for an allowlisted operation.
+    """Saved parameters of one analysis, to reapply to new deliveries.
+
+    Construction checks that parameters are strict JSON (tuples load back as
+    lists); each operation validates its own arguments when the recipe runs.
 
     Parameters
     ----------
     operation : str
-        One of 'missingness', 'dependencies', 'paths', 'value_patterns', 'explore',
-        'profile', 'census', 'grain', 'levels', 'pairs', 'joint_counts' or
-        'infer_schema'.
-        Use 'dependencies' for discover_dependencies and 'paths' for suggest_paths.
+        One of the names in Recipe.operations(): 'missingness', 'dependencies'
+        (discover_dependencies), 'paths' (suggest_paths), 'value_patterns',
+        'explore', 'profile', 'census', 'grain', 'levels', 'pairs',
+        'joint_counts' or 'infer_schema'.
     parameters : dict[str, Any], optional
-        Operation keyword arguments; default is a new empty dictionary. Must be
-        strict JSON. Source-bound scope and progress/cancel/timeout controls
-        belong in run overrides, not persisted parameters.
+        The operation's keyword arguments; default empty. A scope and runtime
+        controls are not saved: pass them to run.
     notes : str, optional
-        Free-text notes; default empty string.
+        Free-text notes; default empty.
     version : str, optional
-        Recipe format version; default and only supported value is '1.0'.
-
-    Attributes
-    ----------
-    operation : str
-        Allowlisted operation identifier.
-    parameters : dict[str, Any]
-        Saved options. Nested parameters are mutable despite the frozen record.
-    notes : str
-        User notes retained in saved JSON.
-    version : str
-        Recipe format version, independent of evidence/package versions.
+        Recipe format version; '1.0' (default) is the only one.
 
     Raises
     ------
     ValueError
-        Version/operation is unsupported, runtime controls/scope are persisted,
-        or parameters contain nonfinite JSON numbers.
+        The version or operation is unsupported, parameters include a scope or
+        runtime control, or contain nonfinite numbers.
     TypeError
-        Parameters contain values not serializable as JSON, such as KeySpec,
-        Scope, timestamps, or callbacks.
-
-    Notes
-    -----
-    Recipes reapply parameters to new deliveries; evidence and scopes retain old
-    source identities. Construction validates serializability, not every operation
-    argument. Operation-specific validation occurs at run time. JSON decoding
-    converts tuples to lists. Runtime overrides do not mutate saved parameters.
+        Parameters are not JSON serializable (a KeySpec, Scope or timestamp).
 
     Examples
     --------
@@ -96,14 +79,7 @@ class Recipe:
 
     @staticmethod
     def operations() -> dict[str, Callable[..., Result]]:
-        """Return the supported recipe operation registry.
-
-        Returns
-        -------
-        dict[str, Callable[..., Result]]
-            New mapping from persisted operation names to public callables. Editing
-            this returned dictionary does not register or replace operations.
-        """
+        """A new mapping from recipe operation names to the public analyses."""
         from ._explore import census, grain, infer_schema, joint_counts, levels, pairs, profile
         from .overview import explore
 
@@ -128,54 +104,27 @@ class Recipe:
         df: pd.DataFrame,
         **overrides: Any,
     ) -> Result:
-        """Apply saved parameters to a delivery, with explicit overrides.
+        """Run the operation on a delivery with the saved parameters.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            Delivery to analyze; may differ from prior recipe runs. Supply any Scope
-            override created from this delivery.
+            Delivery to analyze; any Scope override must come from this frame.
         **overrides : Any
-            Operation-specific keyword overrides, such as scope or example_limit, and
-            the progress, cancel and timeout controls of fieldwork.typing.Runtime.
-            Explicit keys replace saved parameters without modifying the recipe. For
-            automatic explore, scope/missing/table_id/features replace corresponding
-            discovery entries while preserving other discovery settings.
+            Keyword arguments replacing saved parameters for this run only (such
+            as ``scope``), and the runtime controls of fieldwork.typing.Runtime.
 
         Returns
         -------
         Result
-            Result of the named operation. Discovery operations return
-            Result; paths returns Result. The concrete type depends
-            on the recipe's runtime operation and, for explore, its dimensions.
-
-        Raises
-        ------
-        KeyError
-            A requested column is unknown.
-        ValueError
-            Columns, limits, thresholds, constraints, or source scope are invalid.
-        TypeError
-            The frame, column labels, or scalar values are unsupported.
-        AnalysisCancelled
-            Cancellation or the cooperative timeout stops analysis.
-
-        Notes
-        -----
-        Runtime controls are never saved into evidence or recipe parameters. Nested
-        analyses share this call's cancellation/progress context. Invalid or unsupported
-        operation arguments are rejected by the selected operation.
+            The operation's result. The operation rejects invalid arguments.
         """
         return self.operations()[self.operation](df, **{**self.parameters, **overrides})
 
     def to_dict(self) -> dict[str, Any]:
-        """Export the recipe configuration as ordinary JSON-compatible fields.
+        """The recipe as JSON-compatible fields: version, operation, parameters, notes.
 
-        Returns
-        -------
-        dict[str, Any]
-            Version, operation, parameters, and notes. The top-level mapping is new;
-            the parameters dictionary remains shared with the recipe.
+        The parameters dictionary is shared with the recipe, not copied.
         """
         return {
             "version": self.version,
@@ -185,83 +134,42 @@ class Recipe:
         }
 
     def save(self, path: str | PathLike[str]) -> None:
-        """Write the recipe as indented strict JSON.
-
-        Parameters
-        ----------
-        path : str or os.PathLike[str]
-            Destination file. Existing contents are overwritten; parent directories
-            are not created.
-
-        Returns
-        -------
-        None
-            Writes the complete recipe followed by a newline.
-
-        Raises
-        ------
-        OSError
-            The destination cannot be written.
-        TypeError or ValueError
-            Mutated parameters are no longer strict-JSON serializable.
-        """
+        """Write the recipe as indented strict JSON, overwriting ``path``."""
         Path(path).write_text(json.dumps(self.to_dict(), indent=2, allow_nan=False) + "\n")
 
     @classmethod
     def load(cls, path: str | PathLike[str]) -> Recipe:
-        """Read and validate a saved recipe JSON file.
-
-        Parameters
-        ----------
-        path : str or os.PathLike[str]
-            Existing recipe JSON file to read.
-
-        Returns
-        -------
-        Recipe
-            Restored recipe with validated version, operation, and strict JSON options.
+        """Read and validate a recipe saved by save.
 
         Raises
         ------
-        OSError
-            The file cannot be read.
         ValueError
-            JSON is malformed or the recipe version/operation/parameters are invalid.
-        TypeError
-            Required constructor fields are absent or extra fields are supplied.
+            The JSON is malformed or its version, operation or parameters are invalid.
         """
         return cls(**json.loads(Path(path).read_text()))
 
 
 def compare(before: Result, after: Result) -> Result:
-    """Compare populated fractions by feature across two availability results.
+    """Compare populated fractions by feature across two missingness results.
 
     Parameters
     ----------
-    before : Result
-        Earlier missingness result. Features align by name, not position.
-    after : Result
-        Later missingness result with compatible counting unit, entity keys, and
-        aggregation. Source deliveries and scopes may differ.
+    before, after : Result
+        Missingness results with the same counting unit, entity keys and
+        aggregation; their sources and scopes may differ. Features align by name.
 
     Returns
     -------
     Result
-        Kind 'comparison', with changes, findings, and both source identities,
-        conventions, scopes, and analysis units. populated_fraction_delta is
-        after minus before; absent features or empty denominators yield None.
+        Kind 'comparison': per-feature ``changes`` with
+        ``populated_fraction_delta`` (after minus before, as a fraction; None for
+        a feature missing from one side or an empty denominator), findings, and
+        both results' sources, scopes and conventions.
 
     Raises
     ------
     ValueError
-        Either result is not missingness, or counting units/entity aggregation
-        differ.
-
-    Notes
-    -----
-    Delta is a fraction (0.25 means 25 percentage points), not relative percent
-    change. A comparison preserves evidence about both populations; it does not
-    establish that their selection or missing conventions are equivalent.
+        Either result is not missingness, or their counting units differ.
 
     Examples
     --------

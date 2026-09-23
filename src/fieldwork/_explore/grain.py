@@ -29,14 +29,7 @@ class KeySpec:
     name : str
         Nonempty name, unique among the candidates of one call.
     columns : tuple of str
-        Nonempty determinant columns (non-string labels are named by str()).
-
-    Attributes
-    ----------
-    name : str
-        Candidate identifier used in evidence.
-    columns : tuple of str
-        Ordered determinant components; the record is frozen.
+        Nonempty ordered determinant columns (non-string labels are named by str()).
 
     Raises
     ------
@@ -227,15 +220,10 @@ def grain(
     -------
     Result
         Kind 'grain': one exact test per key and non-key column (``dependencies``),
-        per-column placement summaries (``targets``), and ``graph``, a common-
-        population graph whose nodes are keys (equivalent keys merged), whose
-        edges run from coarser to finer groupings, and which places each column
-        at the coarsest keys that determine it.
-
-    Notes
-    -----
-    Exactness describes the observed delivery only. Singleton groups satisfy a
-    test trivially; repeated and violating groups are reported separately.
+        per-column placement summaries (``targets``), and ``graph``, which merges
+        equivalent keys, links coarser to finer keys and places each column at
+        the coarsest keys determining it. Exactness describes this delivery only;
+        see docs/algorithms.md for singleton and repeated support.
 
     Examples
     --------

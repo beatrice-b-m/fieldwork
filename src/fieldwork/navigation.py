@@ -31,28 +31,17 @@ from .typing import PathLimits, Runtime, SchemaRole
 
 
 class Path:
-    """An ordered census recommendation retaining its source analysis context.
+    """An ordered census recommendation that keeps its source analysis context.
+
+    Obtain one from ``Result.best`` or ``Result.path`` rather than constructing it.
 
     Parameters
     ----------
     dimensions : iterable of str
-        Recommended ordered columns, normalized to a tuple.
+        Recommended ordered columns, stored as a tuple.
     context : mapping
-        Saved path-result payload containing source, scope, and missing
-        conventions. Obtain Path from Result.best or Result.path instead
-        of assembling this context manually.
-
-    Attributes
-    ----------
-    dimensions : tuple[str, ...]
-        Ordered recommended columns. This tuple alone does not carry source
-        context; call census on this Path to retain it.
-
-    Notes
-    -----
-    The context references saved evidence; it is not a copy of the source frame.
-    The census handoff verifies the original source and preserves its scope and
-    sentinels. To change population or delivery, rerun suggest_paths.
+        The saved paths payload (source, scope and missing conventions); a
+        reference to saved evidence, not a copy of the source frame.
     """
 
     dimensions: tuple[str, ...]
@@ -79,67 +68,39 @@ class Path:
         schema: dict[str, SchemaRole] | None = None,
         **runtime: Unpack[Runtime],
     ) -> Result:
-        """Evaluate this recommendation with its original scope and missing conventions.
+        """Census of these dimensions under the saved scope and missing conventions.
+
+        Works on a restored (JSON) result too. Scope, missing conventions, table ID
+        and dimensions come from the recommendation and cannot be passed; rerun
+        suggest_paths to change them.
 
         Parameters
         ----------
         df : pandas.DataFrame
-            Original ordered source frame; labels, index, and values must match the
-            saved fingerprint. Duplicate index labels are supported.
-        top_n : int or None, optional
-            Positive number of leading levels; default None keeps all eligible levels.
-            With pre mode this selects a cohort; with post mode it only limits output.
-        top_n_mode : {'pre', 'post'}, optional
-            Default 'post' counts the full eligible population before limiting output.
-            'pre' restricts rows to selected levels before counting, records exclusions,
-            and can warn about low retention.
-        top_n_per_parent : bool, optional
-            Default False chooses leading levels globally for each dimension. True
-            chooses them separately within each parent prefix.
-        min_retained_fraction : float, optional
-            Retention warning threshold in [0, 1]; default 0.01. Does not reject or
-            change the selected population.
-        max_depth : int or None, optional
-            Positive number of active dimensions; default None uses all dimensions.
-        max_levels : int or None, optional
-            Nonnegative displayed child-level limit per parent; default 100. None is
-            unbounded; zero omits all child levels. Omitted mass remains reported.
-        max_nodes : int or None, optional
-            Nonnegative total non-root node budget; default 10000. None is unbounded;
-            zero keeps only the root and omission evidence.
-        min_count : int, optional
-            Nonnegative minimum displayed count; default 1. Does not filter input rows.
+            The original ordered source; it must match the saved fingerprint.
+        top_n, top_n_mode, top_n_per_parent, min_retained_fraction : optional
+            Leading levels (default None: all), 'post' (default, limits output) or
+            'pre' (selects a cohort), per parent (default False), and the
+            retention warning threshold (default 0.01); see census.
+        max_depth, max_levels, max_nodes, min_count : optional
+            Active dimensions (default all), displayed children per parent (100),
+            displayed nodes (10000) and minimum displayed count (1); see census.
         dropna : bool, optional
-            Default False includes missing values as levels. True excludes rows
-            missing any active dimension before census counting.
+            Exclude rows missing an active dimension; default False.
         schema : dict or None, optional
-            Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
-            Default None. Roles annotate evidence and warnings; they do not cast values.
+            Advisory roles by column; default None.
         **runtime : Unpack[Runtime]
             Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
         Result
-            Census for the recommended ordered dimensions with original-source scope
-            accounting. Display/cohort options use ordinary census defaults.
+            Kind 'census' for the recommended ordered dimensions.
 
         Raises
         ------
         ValueError
-            The source differs or census options are invalid.
-        TypeError
-            Unsupported options, including scope, missing, table_id, or dimensions,
-            are supplied. Context cannot be overridden through a recommendation.
-        AnalysisCancelled
-            Cancellation or the cooperative timeout stops analysis.
-
-        Notes
-        -----
-        The handoff preserves context after JSON restoration. Display limits can be
-        changed; explicit census preselection can further restrict the evaluated
-        cohort and records the additional exclusion. Rerun discovery to change source
-        scope or missing conventions.
+            ``df`` is not the saved source.
         """
         if fingerprint(df) != self._context["source"]["dataset_id"]:
             raise ValueError("Source dataset differs; reapply a path recipe for a new delivery")
@@ -189,10 +150,8 @@ def suggest_paths(
 ) -> Result:
     """Recommend orders of dimensions for a census, from observed prefix structure.
 
-    A beam search over column sequences scores each prefix: the number of groups
-    it creates, groups beyond the display budget, steps that add no groups,
-    equivalent columns used together, and objective-specific penalties. Scores
-    are heuristic costs (see docs/algorithms.md), not probabilities.
+    Scores are heuristic costs of each prefix's groups (see docs/algorithms.md),
+    not probabilities.
 
     Parameters
     ----------
@@ -224,10 +183,8 @@ def suggest_paths(
     Returns
     -------
     Result
-        Kind 'paths': ranked ``paths`` with measurements, reasons and a census
-        preview, ``aliases`` (equivalent columns), ``nesting`` (coarse, fine)
-        pairs and ``coverage``. ``best.census(df)`` evaluates the top path with
-        the saved source context.
+        Kind 'paths': ranked ``paths`` (measurements, reasons, census preview),
+        ``aliases``, ``nesting`` pairs and ``coverage``; ``best`` is the top Path.
 
     Examples
     --------

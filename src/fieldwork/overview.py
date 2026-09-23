@@ -65,8 +65,7 @@ def explore(
         Source frame, read without mutation.
     features : iterable of str or None, optional
         Columns every section analyzes; default None selects every column,
-        skipping (and listing in ``skipped_features``) columns with unsupported
-        values such as lists or Decimal.
+        skipping (and listing) columns with unsupported values.
     by : iterable of str or None, optional
         Context columns for availability, dependencies and value patterns.
     entity, unit, entity_presence : optional
@@ -76,12 +75,10 @@ def explore(
         Sections to run, from 'missingness', 'dependencies', 'paths' and
         'value_patterns'; default None runs all four.
     options : SectionOptions or None, optional
-        Per-section options overriding the overview's defaults, for example
-        ``{"paths": {"objective": "compact"}, "dependencies": {"max_key_size": 2}}``.
-        Only requested sections may be configured; source context and runtime
-        controls cannot be. By default dependencies use single-column keys and
-        20 candidates, and value patterns 20 pairs; a section's ``limits`` merge
-        with these defaults key by key.
+        Per-section options for requested sections, such as
+        ``{"dependencies": {"max_key_size": 2}}``; not source context or runtime
+        controls. Defaults: single-column keys and 20 dependency candidates, 20
+        value-pattern pairs; a section's ``limits`` merge with them key by key.
     scope, missing, table_id
         Source context shared by every analysis and section.
     **runtime : Unpack[Runtime]
@@ -90,10 +87,9 @@ def explore(
     Returns
     -------
     Result
-        Kind 'overview': the section results under ``sections``, ``leads``
-        ranking their findings (resolved by ``Result.findings``, IDs ``f0``,
-        ``f1``, ... in rank order), and a ``feature_network`` linking features
-        through that evidence. Unrequested sections have status 'not_requested'.
+        Kind 'overview': section results under ``sections`` (unrequested ones
+        'not_requested'), ranked ``leads`` (resolved by ``Result.findings``, IDs
+        ``f0``, ``f1``, ...) and a ``feature_network``.
 
     Examples
     --------

@@ -58,10 +58,9 @@ def discover_dependencies(
 ) -> Result:
     """Find observed exact and approximate functional dependencies among columns.
 
-    Candidate determinants (single columns, then pairs, ... up to max_key_size)
-    are tested against every other column: exact when each determinant group has
-    one target value, approximate when the modal value per group reaches
-    min_accuracy.
+    Each candidate determinant is tested against every other column. Dependencies
+    describe this delivery, not a guarantee; populations and repeated support are
+    defined in docs/algorithms.md.
 
     Parameters
     ----------
@@ -73,9 +72,8 @@ def discover_dependencies(
     max_key_size : int, optional
         Largest determinant; default 2.
     min_accuracy : float, optional
-        Report tests whose modal repair accuracy (share of rows keeping their
-        group's most common target) is at least this; default 0.95. Every
-        completed test is kept in ``dependencies`` regardless.
+        Minimum modal repair accuracy reported as a finding; default 0.95. Every
+        completed test is kept in ``dependencies``.
     by : iterable of str or None, optional
         Context columns; tests are repeated within each joint context value.
     dropna : bool, optional
@@ -84,11 +82,9 @@ def discover_dependencies(
     include_grain : bool, optional
         Build grain graphs of the candidates; default True.
     limits : DependencyLimits or None, optional
-        Budgets: determinants tested (``max_candidates``, default 100, in size
-        then column order), contexts (``max_contexts``, 32), tests
-        (``max_dependency_tests``) and grain views (``max_grain_views``, both
-        unbounded by default), and saved example rows per test
-        (``example_limit``, 5). Omitted work is reported in ``coverage``.
+        Budgets: ``max_candidates`` (100), ``max_contexts`` (32),
+        ``max_dependency_tests`` and ``max_grain_views`` (unbounded) and
+        ``example_limit`` (5). Omitted work is reported in ``coverage``.
     missing, scope, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -97,16 +93,9 @@ def discover_dependencies(
     Returns
     -------
     Result
-        Kind 'dependencies': ``candidates`` (group structure and the targets each
-        determines exactly), ``dependencies`` (every completed test with its
-        populations, repeated support and exception groups), ``grain_views``,
-        ``coverage`` and findings. See docs/algorithms.md for the populations
-        (determinant-eligible, target-observed, evaluated, repeated rows).
-
-    Notes
-    -----
-    Observed dependencies describe this delivery, not a guarantee. Singleton
-    groups satisfy exactness trivially, so repeated support is reported apart.
+        Kind 'dependencies': ``candidates`` (with the targets each determines
+        exactly), ``dependencies`` (every completed test), ``grain_views``,
+        ``coverage`` and findings.
 
     Examples
     --------

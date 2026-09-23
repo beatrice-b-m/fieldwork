@@ -90,21 +90,19 @@ def render_plaintext(
     ----------
     result : Result or mapping
         A result or its to_dict export.
-    width, max_lines : int, optional
-        Positive line width (default 100) and line count (default 200); longer
-        lines are clipped and a final marker replaces the last line when more
-        output exists.
-    max_nodes : int, optional
-        Nonnegative per-list display budget (findings, candidates, tests, census
-        nodes); default 1000. It never changes the saved evidence.
+    width, max_lines, max_nodes : int, optional
+        Positive line width (default 100; longer lines are clipped) and line
+        count (default 200; a final marker shows more output exists), and the
+        nonnegative per-list display budget for findings, candidates, tests and
+        census nodes (default 1000).
     detail : {'full', 'topology'}, optional
         As in visualization_data.
     missing_label : str, optional
         Text shown for missing values; default "<NA>".
     unicode_mode : {'display', 'safe'}, optional
-        'display' (default) keeps Unicode and measures width with wcwidth when
-        installed; 'safe' escapes non-ASCII. Control and bidirectional override
-        characters are escaped in both modes.
+        'display' (default) keeps Unicode (width measured with wcwidth when
+        installed); 'safe' escapes non-ASCII. Control and bidirectional override
+        characters are always escaped.
 
     Returns
     -------
@@ -172,11 +170,6 @@ def render_svg(
     str
         SVG markup with no external resources.
 
-    Raises
-    ------
-    ValueError
-        The view, section, detail or limit is invalid.
-
     Examples
     --------
     >>> import pandas as pd
@@ -217,11 +210,6 @@ def render_html(
     str
         One HTML document with embedded styles, figures and a single script.
         Controls filter the view; they never rerun analyses or read source rows.
-
-    Raises
-    ------
-    ValueError
-        The section, detail or limit is invalid.
 
     Examples
     --------

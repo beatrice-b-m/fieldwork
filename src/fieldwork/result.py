@@ -62,25 +62,16 @@ class Result(Mapping[str, Any]):
         'schema_proposal', 'profile', 'missingness', 'dependencies', 'paths',
         'value_patterns', 'overview' or 'comparison'.
     payload : dict, optional
-        Evidence fields; default empty. Analyses and from_dict construct results.
-
-    Attributes
-    ----------
-    kind : str
-        Producing analysis.
-    payload : dict[str, Any]
-        JSON-compatible evidence: source identity, analyzed scope, parameters,
-        and kind-specific records. Nested containers are mutable.
-    schema_version : str
-        Export format version, '2.0' for every kind.
+        JSON-compatible evidence (source identity, scope, parameters and
+        kind-specific records); default empty. Analyses and from_dict build it.
 
     Notes
     -----
-    Indexing reads payload keys (``result["scope"]``). ``findings`` lists ranked
-    evidence with bounded example positions; ``inspect``, ``select`` and
-    ``recompute`` verify the identical ordered source before reading rows.
-    Composite results (overview, profile) hold their parts in ``sections``; use
-    ``section(name)`` to browse one as a Result.
+    Indexing reads payload keys (``result["scope"]``); ``schema_version`` is the
+    export format, '2.0'. Methods that read source rows (inspect, select,
+    recompute) first verify the identical ordered source. Overviews and profiles
+    hold their parts in ``sections``; ``section(name)`` returns one as a Result.
+    See docs/contracts.md for the payload fields.
 
     Examples
     --------
@@ -101,10 +92,8 @@ class Result(Mapping[str, Any]):
         Returns
         -------
         dict[str, Any]
-            ``schema_version``, ``kind`` and the payload fields. The top-level
-            dictionary is new; nested containers are shared with the result.
-            Values are plain JSON: None for missing, infinities as "inf"/"-inf",
-            and temporal values as ISO text.
+            ``schema_version``, ``kind`` and the payload fields, in a new top-level
+            dictionary whose nested containers are shared with the result.
         """
         return {"schema_version": self.schema_version, "kind": self.kind, **self.payload}
 
@@ -115,13 +104,12 @@ class Result(Mapping[str, Any]):
         Parameters
         ----------
         data : mapping
-            A to_dict export, JSON-decoded or not. Nested containers are reused.
+            A to_dict export, JSON-decoded or not; nested containers are reused.
 
         Returns
         -------
         Result
-            The saved evidence. No source is needed or verified until a method
-            reads source rows.
+            The saved evidence; no source frame is needed.
 
         Raises
         ------
@@ -305,10 +293,8 @@ class Result(Mapping[str, Any]):
         ------
         ValueError
             The source differs, or a saved selector cannot resolve its population.
-        KeyError
-            The finding ID is unknown.
-        IndexError
-            The finding position is out of range.
+        KeyError, IndexError
+            The finding ID or position does not exist.
         """
         record = self._finding(df, finding)
         if all_matches:
@@ -350,10 +336,8 @@ class Result(Mapping[str, Any]):
         ------
         ValueError
             The source differs, or a saved selector cannot resolve its population.
-        KeyError
-            The finding ID is unknown.
-        IndexError
-            The finding position is out of range.
+        KeyError, IndexError
+            The finding ID or position does not exist.
 
         Examples
         --------
@@ -413,27 +397,23 @@ class Result(Mapping[str, Any]):
         df : pandas.DataFrame
             The identical ordered source (labels, index and values are verified).
         **overrides : Any
-            Options replacing saved parameters, such as ``limits={"example_limit": 20}``
-            (budgets merge with the saved ones), and the
-            runtime controls of fieldwork.typing.Runtime.
+            Options replacing saved parameters, such as
+            ``limits={"example_limit": 20}`` (budgets merge with the saved ones),
+            and the runtime controls of fieldwork.typing.Runtime.
 
         Returns
         -------
         Result
-            A new result; this one is unchanged.
+            A new result under the saved scope, missing conventions and table ID.
+            To analyze a new delivery, use a Recipe.
 
         Raises
         ------
         ValueError
-            The source differs, the kind cannot be recomputed (overview,
-            comparison), or an override is invalid.
+            The source differs, or the kind cannot be recomputed (overview,
+            profile, comparison).
         TypeError
             An override is not accepted by the analysis.
-
-        Notes
-        -----
-        Saved scope, missing conventions and table ID are reapplied. To analyze a
-        new delivery, use a Recipe instead.
         """
         from .evidence import fingerprint, saved_context
         from .workflow import Recipe

@@ -6,18 +6,16 @@
 
 ## Inline API documentation
 
-- Update docstrings and type annotations alongside every public API change.
-  This includes exports, public members, and returned objects such as `Path`.
-- Use NumPy-style docstrings covering purpose, parameters and defaults,
-  returns, relevant exceptions, and examples where useful. Document the
-  exported entry point, not only its internal implementation.
-- Explain applicable behavioral contracts: populations and denominators,
-  missing values, source identity, selection, search versus display limits,
-  mutation, and serialization. Keep essential usage guidance in docstrings
-  and consistent with docs/.
-- Provide precise public types and statically discoverable signatures,
-  including decorator-added controls and forwarded options. Keep private
-  arguments out of public interfaces.
-- Verify changed examples and run applicable documentation and typing checks.
-  For interface changes, check editor signatures, completions, and result
-  navigation. Bring touched public interfaces into compliance.
+- Give every export, its public members and returned objects such as `Path` a
+  concise NumPy-style docstring: purpose, parameters with defaults, returns,
+  and one example where it helps. Add `Raises` or `Notes` only when a caller
+  needs them.
+- Document population and denominator semantics, missing values, source
+  identity and selection once in `docs/`; docstrings refer to those pages
+  instead of restating them.
+- Keep public signatures precise and statically discoverable: annotated
+  parameters and returns, TypedDicts for option mappings, no private
+  arguments.
+- Update docstrings, types and `docs/` with every public API change, and run
+  the checks in `docs/development.md` (doctests, the public-API smoke test and
+  pyright on `tests/typing`).

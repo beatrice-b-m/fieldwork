@@ -82,12 +82,10 @@ def levels(
         Source frame, read without mutation.
     features : iterable of str or None, optional
         Columns to count; default None counts every column.
-    top_n : int or None, optional
-        Report only the top_n most frequent levels; default None. Output only.
-    max_levels : int or None, optional
-        Displayed levels per feature; default 100, None is unbounded.
-    min_count : int, optional
-        Minimum displayed count; default 1. Output only.
+    top_n, max_levels, min_count : optional
+        Output limits: the top_n most frequent levels (default None, all),
+        levels shown per feature (default 100, None unbounded), and the minimum
+        count shown (default 1). They never change the counts.
     dropna : bool, optional
         Default False counts missing values as a level; True excludes them per
         feature, so denominators can differ between features.
@@ -95,8 +93,7 @@ def levels(
         Advisory roles ('id', 'categorical', 'continuous', 'unknown') by column;
         'id' and 'continuous' roles add a warning. Values are never cast.
     scope, missing, table_id
-        Source context shared by every analysis: a Scope restricting rows,
-        extra missing sentinels per column, and a source label.
+        Source context shared by every analysis.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
@@ -253,13 +250,11 @@ def census(
         Source frame, read without mutation.
     dimensions : iterable of str
         Nonempty ordered columns; order changes the tree.
-    top_n : int or None, optional
-        Keep the top_n levels per dimension; default None keeps all.
-    top_n_mode : {'post', 'pre'}, optional
-        'post' (default) counts every row and limits output; 'pre' keeps only
-        rows whose levels are all kept, recording the excluded rows.
-    top_n_per_parent : bool, optional
-        Choose leading levels within each parent prefix instead of globally.
+    top_n, top_n_mode, top_n_per_parent : optional
+        Keep the top_n levels per dimension (default None keeps all), globally
+        or, with top_n_per_parent=True, within each parent prefix. Mode 'post'
+        (default) counts every row and limits output; 'pre' keeps only rows whose
+        levels are all kept and records the excluded rows.
     min_retained_fraction : float, optional
         Warn when pre-selection keeps less than this share of rows; default 0.01.
     max_depth : int or None, optional
@@ -288,7 +283,7 @@ def census(
     Raises
     ------
     ValueError
-        Pre-selection removes every row, or options are invalid.
+        Options are invalid, or pre-selection removes every row (DEGENERATE_TOP_N).
 
     Examples
     --------

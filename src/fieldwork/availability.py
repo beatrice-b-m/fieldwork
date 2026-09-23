@@ -139,6 +139,8 @@ def missingness(
 ) -> Result:
     """Measure where values are present: per column, jointly, and within contexts.
 
+    Denominators, entity units and selection are defined in docs/contracts.md.
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -149,22 +151,17 @@ def missingness(
     by : iterable of str or None, optional
         Context columns; each joint context value gets its own availability.
     entity : str, iterable of str, or None, optional
-        Entity key columns; adds per-entity summaries. Rows with an incomplete key
-        are excluded from entity counts and counted.
+        Entity key columns; adds per-entity summaries.
     unit : {'rows', 'entities'}, optional
         Count rows (default) or entities (requires ``entity``).
     entity_presence : {'any', 'all'}, optional
         With unit='entities': populated when any row (default) or every row is.
     min_implication, min_similarity : float, optional
-        Report "A populated implies B populated" at or above min_implication
-        (default 0.9, denominator: units with A), and similar presence at or above
-        min_similarity Jaccard (default 0.8, denominator: units with A or B).
+        Thresholds for reporting "A populated implies B populated" (default 0.9)
+        and similar presence by Jaccard (default 0.8).
     limits : MissingnessLimits or None, optional
-        Budgets: column pairs tested (``max_pairs``, default 200), availability
-        patterns saved (``max_signatures``, 50), contexts analyzed
-        (``max_contexts``, 32), all with omissions counted, and saved example
-        rows per finding (``example_limit``, 5; selection always recovers the
-        complete population).
+        Budgets: ``max_pairs`` (200), ``max_signatures`` (50), ``max_contexts``
+        (32) and ``example_limit`` (5). Omissions are counted in ``coverage``.
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -175,8 +172,7 @@ def missingness(
     Result
         Kind 'missingness': ``availability`` (every column), ``signatures``,
         ``families``, ``contexts``, ``entities``, ``analysis_unit``, ``coverage``
-        and findings. Vacuous evidence (always-present targets, identical
-        columns) is not reported as findings.
+        and findings.
 
     Examples
     --------

@@ -65,42 +65,27 @@ def _value_hashes(values):
 
 @dataclass(frozen=True)
 class Scope:
-    """Identify a reusable population by positions in one ordered source frame.
+    """A reusable population: row positions in one ordered source frame.
+
+    Scopes are frozen and source-bound: they store positions (never index labels
+    or cells) and the source fingerprint, so reordering or changing the frame's
+    labels, values or dtypes invalidates them. See docs/contracts.md.
 
     Parameters
     ----------
     dataset_id : str
-        Canonical source fingerprint. Prefer from_positions to compute it.
+        Source fingerprint; prefer from_positions, which computes it.
     positions : tuple of int
-        Unique nonnegative source row positions, sorted into source order.
-        from_positions additionally validates bounds against the dataframe.
+        Unique nonnegative source row positions, stored in source order.
     name : str, optional
         Population label; default 'selection'.
     parent : str or None, optional
-        Parent scope name recording lineage; default None.
-
-    Attributes
-    ----------
-    dataset_id : str
-        Identity of ordered column labels, index labels, and cell values.
-    positions : tuple[int, ...]
-        Absolute source positions, never dataframe index labels or offsets within
-        a parent selection. Duplicate dataframe indexes are therefore safe.
-    name : str
-        Displayed population label.
-    parent : str or None
-        Parent scope name, when refined or selected from saved evidence.
+        Name of the scope this one was selected from; default None.
 
     Raises
     ------
     ValueError
-        Positions repeat or are negative/noninteger (booleans are invalid).
-
-    Notes
-    -----
-    Scopes are frozen and source-bound. Reordering or changing values, labels
-    or column dtypes invalidates reuse. Scopes store
-    positions, not source cells. Search/display budgets do not modify a scope.
+        Positions repeat or are not nonnegative integers.
 
     Examples
     --------
@@ -144,12 +129,10 @@ class Scope:
         Parameters
         ----------
         df : pandas.DataFrame
-            Source frame, read without mutation. Labels may be unique strings, integers,
-            or recursively nested tuples. Duplicate index labels are supported;
-            selections use integer row positions. Unsupported scalars raise TypeError.
+            Source frame, read (and fingerprinted) without mutation.
         positions : iterable of int
-            Unique, nonnegative, in-bounds positions in the original source frame.
-            Input order is normalized to source order; an empty iterable is valid.
+            Unique in-bounds row positions (not index labels), in any order; an
+            empty iterable is valid.
         name : str, optional
             Scope label; default 'selection'.
         **runtime : Unpack[Runtime]
@@ -158,23 +141,12 @@ class Scope:
         Returns
         -------
         Scope
-            Frozen selection with the full source fingerprint and sorted positions.
+            Frozen selection with the source fingerprint and sorted positions.
 
         Raises
         ------
-        KeyError
-            A requested column is unknown.
         ValueError
-            Columns, limits, thresholds, constraints, or source scope are invalid.
-        TypeError
-            The frame, column labels, or scalar values are unsupported.
-        AnalysisCancelled
-            Cancellation or the cooperative timeout stops analysis.
-
-        Notes
-        -----
-        Reads and fingerprints the whole frame without mutation. Positions are not
-        index labels; duplicate dataframe indexes are allowed.
+            A position repeats, is out of bounds or is not an integer.
         """
         selected = tuple(positions)
         if any(
@@ -200,12 +172,10 @@ class Scope:
         Parameters
         ----------
         df : pandas.DataFrame
-            Source frame, read without mutation. Labels may be unique strings, integers,
-            or recursively nested tuples. Duplicate index labels are supported;
-            selections use integer row positions. Unsupported scalars raise TypeError.
+            The scope's source frame, read without mutation.
         positions : iterable of int
-            Unique absolute source positions contained in this scope, not offsets
-            within its selected rows. An empty iterable creates an empty child.
+            Unique absolute source positions within this scope (not offsets into
+            its rows); an empty iterable creates an empty child.
         name : str, optional
             Child scope label; default 'refined'.
         **runtime : Unpack[Runtime]
@@ -214,23 +184,12 @@ class Scope:
         Returns
         -------
         Scope
-            Child scope with this scope's name as parent; the parent is unchanged.
+            Child scope whose parent is this scope's name; this scope is unchanged.
 
         Raises
         ------
-        KeyError
-            A requested column is unknown.
         ValueError
-            Columns, limits, thresholds, constraints, or source scope are invalid.
-        TypeError
-            The frame, column labels, or scalar values are unsupported.
-        AnalysisCancelled
-            Cancellation or the cooperative timeout stops analysis.
-
-        Notes
-        -----
-        The supplied frame must match the parent's ordered source. A valid row
-        position outside the parent is rejected with ValueError.
+            The frame is not this scope's source, or a position lies outside it.
         """
         child = Scope.from_positions(df, positions, name=name)
         if child.dataset_id != self.dataset_id or not set(child.positions) <= set(self.positions):

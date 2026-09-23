@@ -45,6 +45,10 @@ def value_patterns(
 ) -> Result:
     """Summarize populated values: string formats, numeric ranges and relations.
 
+    A column is numeric when every populated value is a non-boolean number,
+    whatever its dtype. Formats, tolerances and tests are described in
+    docs/algorithms.md.
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -56,10 +60,9 @@ def value_patterns(
         Context columns: each other feature is tested for being constant within
         each joint context (rows missing a context value are excluded).
     limits : PatternLimits or None, optional
-        Budgets: column pairs tested for constant numeric offsets and ratios, in
-        column order (``max_pairs``, default 100), formats, lengths and prefixes
-        saved per string column (``max_patterns``, 10), and saved example rows
-        per finding (``example_limit``, 5).
+        Budgets: pairs tested for constant offsets and ratios (``max_pairs``,
+        100), formats, lengths and prefixes kept per string column
+        (``max_patterns``, 10) and ``example_limit`` (5).
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -71,14 +74,6 @@ def value_patterns(
         Kind 'value_patterns': per-column ``summaries``, indexed name
         ``families``, ``coverage`` and findings (string patterns, numeric ranges,
         constant offsets and ratios, context constancy, indexed families).
-
-    Notes
-    -----
-    String formats replace digit runs with '9' and letter runs with 'A'; prefixes
-    are the first three characters. A column is numeric when every populated
-    value is a (non-boolean) number, whatever its dtype. Offsets and ratios use
-    finite populated pairs and numpy.allclose (rtol=1e-5, atol=1e-8); ratios
-    exclude zero divisors.
 
     Examples
     --------

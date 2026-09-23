@@ -8,28 +8,21 @@ web documentation supplements them.
 
 ## Writing public documentation
 
-Use NumPy-style sections: a concise purpose statement, `Parameters`, `Returns`,
-relevant `Raises`, `Notes` for behavioral contracts, and small `Examples` where
-useful. Document exported wrappers, properties, returned objects, and dataclass
-fields. Constructors use `Parameters`; fields use `Attributes` or adjacent field
-docstrings. Explain every supported argument, defaults, valid choices, units,
-zero/None behavior, and interactions. For forwarding implementations, enumerate
-supported keywords in `Other Parameters` and keep them aligned with overloads. Avoid duplicating type detail unnecessarily
-in prose, but keep the text useful without visiting another page.
+Docstrings are concise NumPy style: a purpose statement, `Parameters` with
+defaults and valid choices, `Returns`, and one small example where it helps.
+Add `Raises` or `Notes` only for what a caller must handle or rely on. Exported
+wrappers, properties, returned objects and dataclass fields are documented;
+constructors use `Parameters`, fields adjacent docstrings.
 
-Specify the population behind counts and fractions, missing conventions, source
-identity requirements, and mutation/serialization behavior. Distinguish bounded
-search, truncated displays, missing exclusions, and explicit cohort selection.
-A budget boundary is not a negative finding. Entity findings can select source
-rows where the feature itself is absent. Exports retain all measurements;
-topology projections are not anonymization. Keep these descriptions
-consistent with [evidence contracts](contracts.md) and
-[runtime controls](performance.md).
+Population and denominator semantics, missing conventions, source identity,
+selection, budgets and serialization are documented once, in
+[evidence contracts](contracts.md), [algorithms](algorithms.md) and
+[runtime controls](performance.md). Docstrings name the population a count uses
+when it is not obvious and refer to those pages rather than restating them.
 
-Examples should use small deterministic dataframes with explicit imports and
-useful assertions. They execute under pytest, including examples on classes and
-methods. Updating a default or option must also update the corresponding overload,
-configuration type, examples, and prose.
+Examples use small deterministic dataframes with explicit imports and execute
+under pytest, including examples on classes and methods. Changing a default or
+option also updates its configuration type, examples and docs.
 
 ## Static interfaces
 
@@ -54,8 +47,8 @@ are separate functions with explicit keyword arguments; both return a `Result`.
 Reusable dictionaries can be annotated with `SectionOptions` (the overview's
 per-section `options`), the individual operation option types, or the `limits`
 types (`PathLimits`, `MissingnessLimits`, `DependencyLimits`, `PatternLimits`,
-`PairLimits`) from `fieldwork.typing`. These are ordinary dictionaries, not runtime validation models.
-Optional keys inherit the operation defaults. Option field docstrings are present
+`PairLimits`) from `fieldwork.typing`. These are ordinary dictionaries, not
+runtime validation models. Optional keys inherit the operation defaults. Option field docstrings are present
 in source for editor hovers. Flexible serialized evidence remains a versioned
 mapping; its field meanings are documented on result classes and producer methods.
 
@@ -77,8 +70,8 @@ Run the checks documented in [development](development.md). Specifically:
   installed wheel and executes the investigation example. The wheel includes
   source docstrings and `py.typed`; no separate stub files can drift from them.
 
-Docstring section layout, parameter-list parity and editor completion are not
-tested; review them when changing a public interface. Analytical behavior is
+Docstring section layout and parameter-list parity are not tested; review them
+when changing a public interface. Analytical behavior is
 covered by the foundation/discovery suites, whose oracles recompute results
 independently. Docstring coverage does not establish scientific accuracy: review
 claims, denominators, exceptions, and defaults against implementation and
