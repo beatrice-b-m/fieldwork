@@ -3,9 +3,8 @@
 Status: steps 1–3 complete on branch `review-remediation` (2026-09-23). Steps 4
 and 5 are scoped for separate, self-contained sessions. Read the status log at the
 end first: it records what steps 1–3 changed and measured, and facts later
-sections depend on. Update the status
-log at the end of this file as each step lands, and retire this document when all
-five steps are complete (move anything durable into `docs/`).
+sections depend on. Update the status log as each step lands, and retire this
+document when all five steps are complete (move anything durable into `docs/`).
 
 ## Why this plan exists
 
@@ -75,7 +74,7 @@ CI (`.github/workflows/ci.yml`) still does not lint `benchmarks/`.
    regression test running missingness, explore and inspect on such a frame.
 2. **Default text output escapes non-ASCII, including Fieldwork's own labels.** Both
    renderers default to `unicode_mode="safe"`, so `print(fw.explore(df))` shows
-   `Fieldwork \xb7 overview` and paths print as `a → b`. Fix: default to
+   `Fieldwork \xb7 overview` and paths print as `a \u2192 b`. Fix: default to
    `"display"`. Measure width with `wcwidth` when installed, otherwise with a
    standard-library fallback (`unicodedata.east_asian_width` plus combining marks).
    Keep `"safe"` as an explicit option. Control and bidi characters stay escaped in
