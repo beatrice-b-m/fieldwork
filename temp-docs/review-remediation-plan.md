@@ -1,6 +1,6 @@
 # Review remediation plan
 
-Status: steps 1–3 complete on branch `review-remediation` (2026-09-23). Steps 4
+Status: steps 1–3 complete and released in v0.2.0 (2026-09-23). Steps 4
 and 5 are scoped for separate, self-contained sessions. Read the status log at the
 end first: it records what steps 1–3 changed and measured, and facts later
 sections depend on. Update the status log as each step lands, and retire this
@@ -622,7 +622,6 @@ Acceptance:
   - Breaking changes are listed in `docs/release-notes/unreleased.md`:
     overview finding IDs follow rank, 0.1.x fingerprints no longer match, and
     the compact format and `exact_grain` are gone.
-- Not yet done: the branch is unmerged and unreleased. The separate
-  `fieldwork-docs` repository has not been synchronized with the changes above
-  (Unicode default, `skipped_features`, leads, compact removal, fingerprint
-  identity).
+- 2026-09-23: **released as v0.2.0** at `eb45a2d` (release PR #4), published to
+  PyPI, and `fieldwork-docs` was synchronized (PR #5). See
+  `docs/releases/v0.2.0.md`. Steps 4 and 5 start from this release.
