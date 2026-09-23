@@ -18,3 +18,5 @@ between releases without migration.
   skipped and listed in the new `skipped_features` field, and in the text, SVG
   and HTML outputs. Explicitly requested columns still raise `TypeError`, now
   naming the column.
+- A progress count that exceeds its phase estimate is clamped. Previously it
+  raised `ValueError` and aborted the analysis.

@@ -219,3 +219,17 @@ def test_falsey_callable_progress_is_still_called():
     events = Recorder()
     fw.levels(sample(), progress=events)
     assert events[-1].status == "completed"
+
+
+def test_progress_overrun_is_clamped_not_fatal():
+    events = []
+
+    @_runtime.operation("test")
+    def run():
+        with _runtime.phase("work", 2, "items") as phase:
+            for _ in range(5):
+                phase.advance()
+        return "done"
+
+    assert run(progress=events.append) == "done"
+    assert all(e.completed <= e.total for e in events if e.total is not None)
