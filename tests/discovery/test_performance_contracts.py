@@ -1,4 +1,4 @@
-"""Semantic invariants for the optimized preparation/counting paths."""
+"""Semantic invariants for the optimized fingerprint and counting paths."""
 
 from datetime import date
 
@@ -47,36 +47,6 @@ def test_fingerprint_covers_order_labels_index_and_dtype():
     assert all(fingerprint(v) != identity for v in variants)
     multi = frame.set_axis(pd.MultiIndex.from_tuples([("x", 1.5), ("x", 2.5), ("y", 1.5)]))
     assert fingerprint(multi) == fingerprint(multi.copy()) != identity
-
-
-def test_presence_only_preparation_avoids_unused_value_codes(monkeypatch):
-    from fieldwork import _runtime, evidence
-
-    frame = pd.DataFrame({"selected": [1, 2], "present_only": [3.0, np.nan], "unused": [4, 5]})
-    calls = []
-    actual = evidence.encode_series
-
-    def encode(series):
-        calls.append(series.name)
-        return actual(series)
-
-    monkeypatch.setattr(evidence, "_fingerprint", lambda *args: "identity")
-    monkeypatch.setattr(evidence, "encode_series", encode)
-
-    @_runtime.operation("test")
-    def run():
-        _, _, codes, available, _ = evidence.prepare(
-            frame, features=["selected"], presence_features=["present_only"]
-        )
-        assert list(codes) == ["selected"]
-        assert available["present_only"].tolist() == [True, False]
-        evidence.prepare(frame, features=["selected"], presence_features=["present_only"])
-        assert calls == ["selected"]
-        evidence.prepare(frame, features=["present_only"])
-        assert calls == ["selected", "present_only"]
-
-    run()
-    assert _runtime.current_session() is None
 
 
 def test_packed_signature_counts_and_ties_beyond_one_byte():

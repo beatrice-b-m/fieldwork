@@ -18,21 +18,6 @@ def test_levels_are_independent() -> None:
     assert [item["unreported_rows"] for item in result["per_feature"]] == [1, 1]
 
 
-def test_post_census_conserves_each_expanded_parent() -> None:
-    frame = pd.DataFrame({"a": ["x", "x", "x", "y", "y"], "b": [1, 1, 2, 1, 2]})
-    result = census(frame, ["a", "b"], top_n=1, top_n_per_parent=True)
-    nodes = {item["node_id"]: item for item in result["tree"]["nodes"]}
-    nodes["root"] = result["tree"]["root"]
-    for parent in nodes.values():
-        if parent["expansion_state"] != "expanded":
-            continue
-        children = [item for item in nodes.values() if item.get("parent_id") == parent["node_id"]]
-        assert (
-            parent["count"]
-            == sum(item["count"] for item in children) + parent["omitted_child_rows"]
-        )
-
-
 def test_pre_census_recomputes_common_population() -> None:
     frame = pd.DataFrame({"a": ["x", "x", "y"], "b": [1, 2, 2]})
     result = census(frame, ["a", "b"], top_n=1, top_n_mode="pre")

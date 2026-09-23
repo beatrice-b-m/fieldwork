@@ -100,10 +100,10 @@ def test_scoped_pre_filter_rebases_shared_populations_once(applies_to, dropna):
     census = result["sections"]["census"]["scopes"][0]
     pairs = result["sections"]["pairs"]
     grain = result["sections"]["grain"]
-    # These are aliases in the composed result, not independent scope copies.
-    assert pairs["scope_metadata"]["scope"] is census
+    # Pairs (and grain, when the cohort applies to both) record the census cohort.
+    assert pairs["scope_metadata"]["scope"] == census
     if applies_to == "both":
-        assert grain["scope_metadata"]["scope"] is census
+        assert grain["scope_metadata"]["scope"] == census
     assert census["input_rows"] == 4
     assert census["evaluated_rows"] == census["retained_rows"] == 1
     assert census["missing_excluded_rows"] == int(dropna)

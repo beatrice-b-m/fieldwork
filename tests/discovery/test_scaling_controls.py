@@ -10,9 +10,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 import fieldwork as fw
-from fieldwork._explore._kernels import EncodedColumns, MaskPool, group_ids, modal_groups, same_mask
-from fieldwork._explore.encoding import encode_series
-from fieldwork._explore.grain import _fd_record
+from fieldwork._explore._kernels import group_ids, modal_groups
 
 
 @settings(max_examples=60, deadline=None, derandomize=True)
@@ -34,26 +32,23 @@ def test_modal_groups_matches_independent_counter(pairs):
     assert grouped.tolist() == [unique_pairs.index(p) for p in pairs]
 
 
-def test_fd_cache_keeps_different_same_size_populations_separate():
-    frame = pd.DataFrame({"k": [1, 1, 1, 1, None], "v": [2, 2, 3, 4, 5]})
-    encoded = EncodedColumns({c: encode_series(frame[c]) for c in frame})
-    pool = MaskPool()
-    masks = [None, np.array([1, 1, 0, 0, 0], bool), np.array([0, 0, 1, 1, 0], bool)]
-    expected = [False, True, False]
-    for mask, holds in zip(masks + masks, expected + expected):
-        kwargs = {"dropna": True, "scope_prefix": "test", "row_mask": mask}
-        cached, population = _fd_record(
-            frame, fw.KeySpec("k", ("k",)), "v", encoded=encoded, **kwargs
-        )
-        uncached, _ = _fd_record(
-            frame, fw.KeySpec("k", ("k",)), "v", encoded=dict(encoded), **kwargs
-        )
-        assert cached == uncached
-        assert cached["holds"] is holds
-        packed = pool.intern(population)
-        assert same_mask(packed, population)
-        assert np.array_equal(np.asarray(packed), population)
-    assert not same_mask(pool.intern(masks[1]), pool.intern(masks[2]))
+def test_key_comparisons_on_equal_size_populations_are_not_shared():
+    # t1 and t2 are observed on different four-row populations. A and B partition
+    # t1's rows identically but not t2's, so a comparison cached by population
+    # size alone would report the same relationship for both targets.
+    frame = pd.DataFrame(
+        {
+            "A": [1, 1, 2, 2, 3, 3],
+            "B": ["x", "x", "y", "y", "y", "w"],
+            "t1": [5, 5, 6, 6, None, None],
+            "t2": [None, None, 7, 7, 7, 7],
+        }
+    )
+    targets = {t["target"]["value"]: t for t in fw.grain(frame, ["A", "B"], dropna=True)["targets"]}
+    assert targets["t1"]["determining_keys"] == targets["t2"]["determining_keys"] == ["A", "B"]
+    assert targets["t1"]["equivalent_determinants"] == [["A", "B"]]
+    assert targets["t2"]["equivalent_determinants"] == []
+    assert targets["t2"]["incomparable_candidates"] == [["A", "B"]]
 
 
 def fixture():
