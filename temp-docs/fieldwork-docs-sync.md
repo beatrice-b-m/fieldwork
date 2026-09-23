@@ -1,10 +1,10 @@
-# fieldwork-docs synchronization for the next release
+# fieldwork-docs synchronization for 0.3.0
 
-The next release (after 0.2.1) changes the public API and saved formats; see
-`docs/release-notes/unreleased.md`. When it is published, synchronize
+Release 0.3.0 changes the public API and saved formats; see
+`docs/release-notes/v0.3.0.md`. When it is published, synchronize
 `fieldwork-docs` and then retire this file.
 
-- Every item in `docs/release-notes/unreleased.md`.
+- Every item in `docs/release-notes/v0.3.0.md`.
 - Walkthroughs and snippets that use `explore(df, dims)` (now `profile`),
   `discovery=` or `section_options=` (now explicit arguments and `options=`),
   flat budget keywords such as `max_candidates=` or `example_limit=` (now
