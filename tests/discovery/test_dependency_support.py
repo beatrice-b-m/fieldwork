@@ -105,7 +105,7 @@ def test_scoped_composite_contexts_and_global_counts():
         scope=fw.Scope.from_positions(df, [0, 1, 2, 3]),
         max_key_size=2,
     )
-    local = dependency(result, ("X", "Z"), context={"C": {"type": "missing"}})
+    local = dependency(result, ("X", "Z"), context={"C": None})
     assert (
         local["target_coverage"] == local["repeat_coverage"] == local["repeat_modal_accuracy"] == 1
     )

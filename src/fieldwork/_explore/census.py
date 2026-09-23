@@ -15,17 +15,16 @@ import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
-from ..typing import ColumnLabel, Runtime, SchemaRole
-from ._kernels import dense_counts
+from ..typing import Runtime, SchemaRole
 from .encoding import (
-    MISSING,
-    ScalarIdentity,
     encode_column,
+    json_value,
+    labelled,
     missing_code,
-    normalize_scalar,
     resolve_columns,
     validate_limit,
     validate_schema,
+    value_key,
 )
 from .result import ExplorerResult
 
@@ -37,7 +36,7 @@ def _source(df: pd.DataFrame) -> dict[str, Any]:
         "columns": len(df.columns),
         "dtypes": [
             {
-                "column": normalize_scalar(column, label=True).to_dict(),
+                "column": column,
                 "dtype": str(df[column].dtype),
             }
             for column in df.columns
@@ -74,48 +73,55 @@ def _scope(
     }
 
 
-def _rank_counts(counts: dict[int, int], values: list[ScalarIdentity]) -> list[tuple[int, int]]:
-    return sorted(counts.items(), key=lambda item: (-item[1], values[item[0]].sort_key()))
+def _ranked(codes: np.ndarray) -> list[tuple[int, int]]:
+    """(code, count) pairs, most frequent first; ties follow canonical value order."""
+    if not len(codes):
+        return []
+    observed, counts = np.unique(codes, return_counts=True)
+    order = np.lexsort((observed, -counts))
+    return list(zip(observed[order].tolist(), counts[order].tolist()))
 
 
-def _feature_warnings(
-    feature_id: str, column: Any, values: Iterable[ScalarIdentity], role: str | None
-) -> list[dict[str, Any]]:
+_FAMILIES = (
+    "boolean",
+    "integer",
+    "float",
+    "string",
+    "date",
+    "datetime_naive",
+    "datetime_aware",
+    "timedelta",
+)
+
+
+def _feature_warnings(column: str, values: Iterable[Any], role: str | None) -> list[dict[str, Any]]:
     """Mixed value types, and advisory roles unsuited to categorical counting."""
     warnings = []
-    label = normalize_scalar(column, label=True).to_dict()
-    families = sorted({value.kind for value in values if value is not MISSING})
+    label = column
+    families = [_FAMILIES[f] for f in sorted({value_key(v)[0] for v in values if v is not None})]
     if len(families) > 1:
         warnings.append(
             {
                 "code": "MIXED_LEVEL_TYPES",
-                "feature_id": feature_id,
                 "column": label,
                 "families": families,
             }
         )
     if role in {"id", "continuous"}:
-        warnings.append(
-            {
-                "code": "EXPLICIT_ROLE_SELECTION",
-                "feature_id": feature_id,
-                "column": label,
-                "role": role,
-            }
-        )
+        warnings.append({"code": "EXPLICIT_ROLE_SELECTION", "column": label, "role": role})
     return warnings
 
 
 @operation("levels")
 def levels(
     df: pd.DataFrame,
-    features: Iterable[ColumnLabel] | None = None,
+    features: Iterable[str] | None = None,
     *,
     top_n: int | None = None,
     max_levels: int | None = 100,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    schema: dict[str, SchemaRole] | None = None,
     scope_metadata: dict[str, Any] | None = None,
     **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
@@ -183,8 +189,9 @@ def levels(
     'levels'
     """
 
+    df = labelled(df)
     selected = resolve_columns(df, features, argument="features", default_all=True)
-    validate_schema(df, schema)
+    roles = validate_schema(df, schema)
     validate_limit("top_n", top_n, zero=False)
     validate_limit("max_levels", max_levels)
     validate_limit("min_count", min_count)
@@ -202,17 +209,15 @@ def levels(
                 keep = codes != absent_code
                 missing_excluded = int((~keep).sum())
                 eligible = eligible[keep]
-            counts = dense_counts(codes, eligible)
-            ranked = _rank_counts(counts, values)
+            ranked = _ranked(codes[eligible])
             semantic = ranked[:top_n] if top_n is not None else ranked
             semantic = [item for item in semantic if item[1] >= min_count]
             reported = semantic[:max_levels] if max_levels is not None else semantic
             evaluated_rows = len(eligible)
             output_levels = [
                 {
-                    "level_id": f"{feature_id}:l{code}",
                     "rank": rank,
-                    "value": values[code].to_dict(),
+                    "value": json_value(values[code]),
                     "count": count,
                     "share_of_feature": count / evaluated_rows if evaluated_rows else None,
                     "share_reason": None if evaluated_rows else "empty_population",
@@ -225,8 +230,8 @@ def levels(
             records.append(
                 {
                     "feature_id": feature_id,
-                    "column": normalize_scalar(column, label=True).to_dict(),
-                    "role": (schema or {}).get(column),
+                    "column": column,
+                    "role": roles.get(column),
                     "scope_id": scope_id,
                     "status": "empty" if evaluated_rows == 0 else "computed",
                     "levels_total": len(ranked),
@@ -237,7 +242,7 @@ def levels(
                     "levels": output_levels,
                 }
             )
-            warnings += _feature_warnings(feature_id, column, values, (schema or {}).get(column))
+            warnings += _feature_warnings(column, values, roles.get(column))
             tracker.advance(detail=str(column))
     payload: dict[str, Any] = {
         "status": "empty" if len(df) == 0 else "computed",
@@ -259,7 +264,7 @@ def levels(
 
 def _preselect(
     codes: list[np.ndarray],
-    values: list[list[ScalarIdentity]],
+    values: list[list[Any]],
     eligible: np.ndarray,
     top_n: int,
     per_parent: bool,
@@ -275,9 +280,7 @@ def _preselect(
     mask[eligible] = True
     retained = []
     for depth, (dimension, dictionary) in enumerate(zip(codes, values)):
-        chosen = sorted(
-            code for code, _ in _rank_counts(dense_counts(dimension, eligible), dictionary)[:top_n]
-        )
+        chosen = sorted(code for code, _ in _ranked(dimension[eligible])[:top_n])
         retained.append({"depth": depth + 1, "level_codes": chosen})
         mask &= np.isin(dimension, chosen)
     return mask, retained
@@ -285,7 +288,7 @@ def _preselect(
 
 def _preselect_per_parent(
     codes: list[np.ndarray],
-    values: list[list[ScalarIdentity]],
+    values: list[list[Any]],
     eligible: np.ndarray,
     top_n: int,
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
@@ -294,8 +297,7 @@ def _preselect_per_parent(
     queue: deque[tuple[int, np.ndarray, tuple[int, ...]]] = deque([(0, eligible, ())])
     while queue:
         depth, rows, path = queue.popleft()
-        counts = dense_counts(codes[depth], rows)
-        chosen = _rank_counts(counts, values[depth])[:top_n]
+        chosen = _ranked(codes[depth][rows])[:top_n]
         retained.append(
             {
                 "path": list(path),
@@ -315,7 +317,7 @@ def _preselect_per_parent(
 
 def _census(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     top_n: int | None = None,
     top_n_mode: str = "post",
@@ -326,13 +328,14 @@ def _census(
     max_nodes: int | None = 10000,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    schema: dict[str, SchemaRole] | None = None,
     _encoded=None,
 ) -> ExplorerResult:
     """Build a deterministic, ancestor-closed observed-prefix census."""
 
+    df = labelled(df)
     selected = resolve_columns(df, dimensions, argument="dimensions")
-    validate_schema(df, schema)
+    roles = validate_schema(df, schema)
     validate_limit("top_n", top_n, zero=False)
     validate_limit("max_depth", max_depth, zero=False)
     validate_limit("max_levels", max_levels)
@@ -347,7 +350,7 @@ def _census(
     ):
         raise ValueError("min_retained_fraction must be between 0 and 1")
     active = selected[:max_depth] if max_depth is not None else selected
-    dictionaries: list[list[ScalarIdentity]] = []
+    dictionaries: list[list[Any]] = []
     code_arrays: list[np.ndarray] = []
     missing_codes: list[int | None] = []
     for column in active:
@@ -397,34 +400,28 @@ def _census(
     )
     features = [
         {
-            "feature_id": f"f{index}",
-            "column": normalize_scalar(column, label=True).to_dict(),
-            "role": (schema or {}).get(column),
+            "column": column,
+            "role": roles.get(column),
             "dictionary_cardinality": len(dictionaries[index]),
         }
         for index, column in enumerate(active)
     ]
     for index, values in enumerate(dictionaries):
-        warnings += _feature_warnings(
-            f"f{index}", active[index], values, (schema or {}).get(active[index])
-        )
+        warnings += _feature_warnings(active[index], values, roles.get(active[index]))
     global_chosen: list[set[int] | None] = []
     for codes, values in zip(code_arrays, dictionaries):
         if top_n is not None and not top_n_per_parent and top_n_mode == "post":
-            global_chosen.append(
-                {code for code, _ in _rank_counts(dense_counts(codes, evaluated), values)[:top_n]}
-            )
+            global_chosen.append({code for code, _ in _ranked(codes[evaluated])[:top_n]})
         else:
             global_chosen.append(None)
     nodes: list[dict[str, Any]] = []
-    emitted_levels: set[tuple[int, int]] = set()
     queue: deque[tuple[str, int, np.ndarray, int]] = deque()
     queue.append(("root", 0, evaluated, len(evaluated)))
     root = {
         "node_id": "root",
         "parent_id": None,
-        "feature_id": None,
-        "level_id": None,
+        "column": None,
+        "value": None,
         "depth": 0,
         "count": len(evaluated),
         "share_of_parent": None,
@@ -446,8 +443,7 @@ def _census(
                 parent["expansion_state"] = "complete"
                 tracker.advance()
                 continue
-            counts = dense_counts(code_arrays[depth], rows)
-            ranked = _rank_counts(counts, dictionaries[depth])
+            ranked = _ranked(code_arrays[depth][rows])
             chosen = ranked
             if top_n is not None:
                 if top_n_per_parent and top_n_mode == "post":
@@ -486,8 +482,8 @@ def _census(
                 node = {
                     "node_id": node_id,
                     "parent_id": parent_id,
-                    "feature_id": f"f{depth}",
-                    "level_id": f"f{depth}:l{code}",
+                    "column": active[depth],
+                    "value": json_value(dictionaries[depth][code]),
                     "depth": depth + 1,
                     "count": count,
                     "share_of_parent": count / parent_count if parent_count else None,
@@ -500,27 +496,25 @@ def _census(
                 }
                 nodes.append(node)
                 node_lookup[node_id] = node
-                emitted_levels.add((depth, code))
                 if depth + 1 < len(active):
                     queue.append((node_id, depth + 1, child_rows, count))
             tracker.advance()
-    # Pre-selection metadata must remain decodable even when no corresponding
-    # tree node survives the output budgets or the conjunctive pre filter.
-    referenced_levels = emitted_levels.copy()
+    # Kept levels are reported by value, whether or not a node survives display limits.
+    retained_sets = []
     for retained in retained_metadata:
-        referenced_levels.update((retained["depth"] - 1, code) for code in retained["level_codes"])
-        referenced_levels.update(enumerate(retained.get("path", [])))
-    level_dictionary = [
-        {
-            "level_id": f"f{depth}:l{code}",
-            "feature_id": f"f{depth}",
-            "value": dictionaries[depth][code].to_dict(),
+        record = {
+            "depth": retained["depth"],
+            "column": active[retained["depth"] - 1],
+            "values": [
+                json_value(dictionaries[retained["depth"] - 1][code])
+                for code in retained["level_codes"]
+            ],
         }
-        for depth, code in sorted(
-            referenced_levels,
-            key=lambda item: (item[0], dictionaries[item[0]][item[1]].sort_key()),
-        )
-    ]
+        if "path" in retained:
+            record["path"] = [
+                json_value(dictionaries[depth][code]) for depth, code in enumerate(retained["path"])
+            ]
+        retained_sets.append(record)
     status = "empty" if not len(evaluated) else "computed"
     if any(node["omitted_child_rows"] for node in [root, *nodes]):
         status = "partial" if len(evaluated) else status
@@ -529,15 +523,14 @@ def _census(
         "source": _source(df),
         "scopes": [scope],
         "features": features,
-        "level_dictionary": level_dictionary,
         "tree": {
             "status": status,
             "scope_id": "s2",
-            "dimensions": [f"f{i}" for i in range(len(active))],
+            "dimensions": list(active),
             "requested_depth": len(active),
             "root": root,
             "nodes": nodes,
-            "retained_sets": retained_metadata,
+            "retained_sets": retained_sets,
         },
         "effective_limits": {
             "top_n": top_n,
@@ -557,10 +550,10 @@ def _census(
 @operation("census")
 def census(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     scope: Scope | None = None,
-    missing: Mapping[ColumnLabel, Iterable[Any]] | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
     top_n: int | None = None,
     top_n_mode: Literal["pre", "post"] = "post",
@@ -571,7 +564,7 @@ def census(
     max_nodes: int | None = 10000,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    schema: dict[str, SchemaRole] | None = None,
     **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Build a bounded tree of observed dimension prefixes.

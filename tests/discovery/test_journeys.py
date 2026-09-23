@@ -1,5 +1,6 @@
 """Regression journeys across discovery, inspection, scope and saved presentation."""
 
+import html
 import json
 
 import pandas as pd
@@ -22,7 +23,7 @@ def test_recommendation_census_preserves_context_and_original_population():
     preview = paths["paths"][0]["preview"]
     assert preview["scopes"][0]["input_rows"] == 4
     assert preview["scopes"][0]["evaluated_rows"] == 3
-    assert {"type": "missing"} in [v["value"] for v in preview["level_dictionary"]]
+    assert None in [node["value"] for node in preview["tree"]["nodes"]]
     assert paths.best.census(df)["tree"] == preview["tree"]
     with pytest.raises(ValueError, match="differs"):
         paths.best.census(df.iloc[::-1])
@@ -92,13 +93,15 @@ def test_typed_contexts_survive_saved_presentations():
         fw.render_html(saved),
         fw.render_html(saved, detail="topology"),
     ):
-        assert "(integer)" in rendered and "(string)" in rendered
+        # The integer and the string context print distinctly.
+        text = html.unescape(rendered)
+        assert "site = 1" in text and "site = '1'" in text
     rows = [
         r
         for r in fw.visualization_data(saved, detail="topology")["findings"]
         if r["structure"].get("context")
     ]
-    assert {r["structure"]["context"]["site"]["type"] for r in rows} == {"integer", "string"}
+    assert {type(r["structure"]["context"]["site"]) for r in rows} == {int, str}
     assert all("measurements" not in r and "examples" not in r for r in rows)
 
 
@@ -154,8 +157,7 @@ def test_context_and_entity_findings_select_full_source_rows():
     context = next(
         f
         for f in analysis["findings"]
-        if f["pattern"] == "context_availability"
-        and f["structure"]["context"]["site"]["value"] == "A"
+        if f["pattern"] == "context_availability" and f["structure"]["context"]["site"] == "A"
     )
     assert analysis.select(df, context["id"], exceptions=True).positions == (1,)
     entity = next(
@@ -367,9 +369,7 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     broad = dependencies["grain_views"][0]
     assert broad["population"]["evaluated_rows"] == 4
     assert broad["candidate_ids"] == ["key0", "key2"]
-    assignment = next(
-        a for a in broad["grain"]["graph"]["assignments"] if a["target"]["value"] == "Y"
-    )
+    assignment = next(a for a in broad["grain"]["graph"]["assignments"] if a["target"] == "Y")
     assert assignment["nodes"] == []
     assert assignment["reason"] == "different_target_population"
     narrow = dependencies["grain_views"][1]

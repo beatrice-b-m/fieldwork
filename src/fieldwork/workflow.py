@@ -23,7 +23,6 @@ from .leads import rank
 from .navigation import suggest_paths
 from .patterns import value_patterns
 from .typing import (
-    ColumnLabel,
     DiscoveryOptions,
     ExplicitDiscoveryOptions,
     Runtime,
@@ -52,14 +51,14 @@ def explore(
 @overload
 def explore(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     discovery: ExplicitDiscoveryOptions | None = None,
     scope: Scope | None = None,
-    missing: Mapping[ColumnLabel, Iterable[Any]] | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    features: Iterable[ColumnLabel] | None = None,
-    candidate_keys: Iterable[ColumnLabel | KeySpec] | None = None,
+    features: Iterable[str] | None = None,
+    candidate_keys: Iterable[str | KeySpec] | None = None,
     top_n: int | None = None,
     top_n_mode: Literal["pre", "post"] = "post",
     top_n_per_parent: bool = False,
@@ -70,11 +69,11 @@ def explore(
     max_nodes: int | None = 10000,
     min_count: int = 1,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
+    schema: dict[str, SchemaRole] | None = None,
     include_pairs: bool = True,
     include_absence: bool = False,
-    reference_domains: Mapping[ColumnLabel, Iterable[Any]] | None = None,
-    pair_contexts: Iterable[Mapping[ColumnLabel, Any]] | None = None,
+    reference_domains: Mapping[str, Iterable[Any]] | None = None,
+    pair_contexts: Iterable[Mapping[str, Any]] | None = None,
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
@@ -85,7 +84,7 @@ def explore(
 @operation("overview")
 def explore(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel] | None = None,
+    dimensions: Iterable[str] | None = None,
     *,
     discovery: DiscoveryOptions | ExplicitDiscoveryOptions | None = None,
     sections: Iterable[Section] | None = None,

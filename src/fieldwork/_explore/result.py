@@ -6,8 +6,6 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Self
 
-from ..typing import ColumnLabel
-
 SCHEMA_VERSION = "0.3"
 
 
@@ -35,8 +33,8 @@ class ExplorerResult(Mapping[str, Any]):
         Mutable nested evidence. Field meanings depend on kind: counts in levels,
         observed prefix tree in census, dependencies/graph in grain, pair
         measurements in pairs, and axis dictionaries/cells in joint_counts.
-        Combined explore results contain a sections mapping. Foundation values
-        are tagged identities; dictionaries resolve feature and level references.
+        Combined explore results contain a sections mapping. Values are plain JSON
+        scalars and columns are named by str(label).
     schema_version : str
         Serialized evidence schema version.
 
@@ -46,7 +44,7 @@ class ExplorerResult(Mapping[str, Any]):
     result['scopes'], for example. Frozen attributes do not make nested lists and
     dictionaries immutable. Ordinary exports also share nested containers.
     Generated evidence is compatible with json.dumps(..., allow_nan=False);
-    nonfinite scalar values use tagged encodings. Rendering is bounded and does
+    infinities are exported as the strings "inf" and "-inf". Rendering is bounded and does
     not require the original dataframe.
 
     Examples
@@ -63,14 +61,8 @@ class ExplorerResult(Mapping[str, Any]):
     payload: dict[str, Any] = field(default_factory=dict)
     schema_version: str = SCHEMA_VERSION
 
-    def to_dict(self, *, resolve_references: bool = False) -> dict[str, Any]:
-        """Export analytical evidence as ordinary or resolved JSON data.
-
-        Parameters
-        ----------
-        resolve_references : bool, optional
-            Default False keeps local IDs. True adds labels and typed values beside
-            references in an independent resolved copy; IDs remain intact.
+    def to_dict(self) -> dict[str, Any]:
+        """Export analytical evidence as JSON data.
 
         Returns
         -------
@@ -80,10 +72,9 @@ class ExplorerResult(Mapping[str, Any]):
 
         Notes
         -----
-        Both modes retain quantitative evidence; use
-        visualization_data(detail='topology') for a structural projection. Restore
-        with the corresponding result class's from_dict method. JSON serialization
-        converts tuples to lists.
+        Values are plain JSON: None for missing, infinities as "inf"/"-inf", and
+        temporal values as ISO text. Use visualization_data(detail='topology') for
+        a structural projection. Restore with from_dict.
 
         Examples
         --------
@@ -95,16 +86,11 @@ class ExplorerResult(Mapping[str, Any]):
         >>> fw.ExplorerResult.from_dict(data).kind
         'levels'
         """
-        data = {
+        return {
             "schema_version": self.schema_version,
             "kind": self.kind,
             **self.payload,
         }
-        if resolve_references:
-            from .resolved import resolve_result
-
-            data = resolve_result(data)
-        return data
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
@@ -204,7 +190,7 @@ class KeySpec:
     """
 
     name: str
-    columns: tuple[ColumnLabel, ...]
+    columns: tuple[str, ...]
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:

@@ -7,8 +7,6 @@ import pandas as pd
 import pytest
 
 import fieldwork as fw
-from fieldwork._explore.encoding import normalize_scalar
-from fieldwork._explore.resolved import resolve_result
 
 
 @pytest.mark.parametrize("label", [1, ("visit", (2, "code"))])
@@ -30,21 +28,18 @@ def test_foundation_context_preserves_typed_columns(label, context_kind, operati
     census = result if operation == fw.census else result["sections"]["census"]
     expected_census = baseline if operation == fw.census else baseline["sections"]["census"]
     assert census["tree"] == expected_census["tree"]
-    assert census["level_dictionary"] == expected_census["level_dictionary"]
     assert census["scopes"][0]["input_rows"] == 3
     assert census["scopes"][0]["restriction_excluded_rows"] == int(context_kind == "scope")
     saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
     assert saved["analysis_context"]["source"]["table_id"] == "delivery"
-    convention = saved["analysis_context"]["missing_convention"]["sentinels_by_column"][0]
-    assert convention["column"] == normalize_scalar(label, label=True).to_dict()
-    assert convention["values"] == (
-        [{"type": "integer", "value": "-999"}] if context_kind == "missing" else []
-    )
+    # Columns are named by str(label) everywhere, including sentinel conventions.
+    sentinels = saved["analysis_context"]["missing_convention"]["sentinels"]
+    assert sentinels[str(label)] == ([-999] if context_kind == "missing" else [])
     assert fw.render_plaintext(saved)
     ElementTree.fromstring(fw.render_svg(saved, section="census"))
     pd.testing.assert_frame_equal(df, original)
-    with pytest.raises(TypeError, match="Discovery requires string"):
-        fw.missingness(df, **context)
+    availability = fw.missingness(df, **context)["availability"]
+    assert [row["feature"] for row in availability] == [str(label), "value"]
 
 
 @pytest.mark.parametrize("operation", ["discovered", "scoped_discovered", "scoped_explicit"])
@@ -56,7 +51,7 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
     if operation == "scoped_explicit":
         result = fw.explore(df, ["site", "exam"], candidate_keys=["site", "exam"], **context)
         grain = result["sections"]["grain"]
-        assert result.to_dict(resolve_references=True)["sections"]["grain"]["graph"]["edges"]
+        assert result["sections"]["grain"]["graph"]["edges"]
         for section in result["sections"].values():
             assert section["source"]["table_id"] == "delivery"
             assert section["source"]["rows"] == len(df)
@@ -72,10 +67,10 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
     assert isinstance(edge["source"], str) and edge["source"] in nodes
     assert isinstance(edge["target"], str) and edge["target"] in nodes
     for saved in (grain, json.loads(json.dumps(grain, allow_nan=False))):
-        resolved = resolve_result(saved)
-        resolved_edge = resolved["graph"]["edges"][0]
-        assert resolved_edge["source_keys"] == nodes[edge["source"]]["keys"]
-        assert resolved_edge["target_keys"] == nodes[edge["target"]]["keys"]
+        keys = {node["id"]: node["keys"] for node in saved["graph"]["nodes"]}
+        saved_edge = saved["graph"]["edges"][0]
+        assert keys[saved_edge["source"]] == nodes[edge["source"]]["keys"]
+        assert keys[saved_edge["target"]] == nodes[edge["target"]]["keys"]
         for detail in ("full", "topology"):
             ElementTree.fromstring(fw.render_svg(saved, detail=detail))
             assert "<html" in fw.render_html(saved, detail=detail)

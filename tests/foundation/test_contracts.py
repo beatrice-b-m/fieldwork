@@ -16,20 +16,15 @@ def test_typed_scalar_identity_and_strict_json() -> None:
     frame = pd.DataFrame({"mixed": pd.Series([True, 1, 1.0, "1", None], dtype=object)})
     result = levels(frame)
     records = result["per_feature"][0]["levels"]
-    assert {record["value"]["type"] for record in records} == {
-        "boolean",
-        "integer",
-        "float",
-        "string",
-        "missing",
-    }
+    # Five distinct levels, exported as plain JSON values of five distinct types.
+    assert {type(record["value"]) for record in records} == {bool, int, float, str, type(None)}
     json.dumps(result.to_dict(), allow_nan=False)
 
 
 def test_nonfinite_and_large_integer_serialization() -> None:
     frame = pd.DataFrame({"x": pd.Series([2**63 + 5, float("inf"), float("-inf")], dtype=object)})
     values = [item["value"] for item in levels(frame)["per_feature"][0]["levels"]]
-    assert {item.get("value") for item in values} == {str(2**63 + 5), "inf", "-inf"}
+    assert set(values) == {2**63 + 5, "inf", "-inf"}
 
 
 def test_temporal_identity_normalizes_aware_instants() -> None:
@@ -38,22 +33,17 @@ def test_temporal_identity_normalizes_aware_instants() -> None:
     result = levels(pd.DataFrame({"when": pd.Series([utc, eastern], dtype=object)}))
     assert result["per_feature"][0]["levels_total"] == 1
     value = result["per_feature"][0]["levels"][0]["value"]
-    assert value["type"] == "datetime_aware"
-    assert value["resolution"] == "nanosecond"
+    assert pd.Timestamp(value) == utc and pd.Timestamp(value).utcoffset() == timedelta(0)
 
 
 def test_timedeltas_order_numerically_and_display_as_durations() -> None:
     durations = pd.to_timedelta(["100s", "-5s", "9s", "10s"])
     result = levels(pd.DataFrame({"d": durations}))
-    ordered = [int(level["value"]["value"]) for level in result["per_feature"][0]["levels"]]
+    ordered = [pd.Timedelta(level["value"]).value for level in result["per_feature"][0]["levels"]]
     assert ordered == sorted(d.value for d in durations)
     labels = [row["label"] for row in visualization_data(result)["features"][0]["rows"]]
-    # Signed durations such as "-0 days 00:00:05", not raw nanoseconds.
-    signed = [
-        (-1 if label.startswith("-") else 1) * pd.Timedelta(label.lstrip("-")).value
-        for label in labels
-    ]
-    assert signed == ordered
+    # Durations that pandas parses back exactly, not raw nanoseconds.
+    assert [pd.Timedelta(label).value for label in labels] == ordered
 
 
 @settings(max_examples=40, deadline=None, derandomize=True)
@@ -69,12 +59,13 @@ def test_exact_pair_ids_number_each_distinct_pair_once(pairs, force_fallback) ->
     assert [unique[i] for i in ids.tolist()] == pairs
 
 
-def test_tuple_label_is_atomic_and_composite_key_explicit() -> None:
+def test_non_string_labels_are_named_by_str_and_composite_key_explicit() -> None:
     label = ("patient", 1)
-    frame = pd.DataFrame({label: [1, 1], "side": ["L", "R"]})
-    assert levels(frame, [label])["per_feature"][0]["column"]["type"] == "tuple"
+    frame = pd.DataFrame({label: [1, 1], "side": ["L", "R"], 0: [2, 3]})
+    assert levels(frame, [label])["per_feature"][0]["column"] == str(label)
+    assert levels(frame, [0])["per_feature"][0]["column"] == "0"
     result = grain(frame, [KeySpec("composite", (label, "side"))])
-    assert result["keys"][0]["name"] == "composite"
+    assert result["keys"][0]["columns"] == [str(label), "side"]
 
 
 def test_invalid_inputs_are_actionable() -> None:
@@ -85,8 +76,8 @@ def test_invalid_inputs_are_actionable() -> None:
         census(pd.DataFrame({"x": [1]}), ["x"], top_n=0)
     with pytest.raises(ValueError, match="schema role"):
         levels(pd.DataFrame({"x": [1]}), schema={"x": "measure"})
-    with pytest.raises(TypeError, match="column label"):
-        levels(pd.DataFrame([[1]], columns=[1.5]))
+    with pytest.raises(ValueError, match="Duplicate"):
+        levels(pd.DataFrame([[1, 2]], columns=[1, "1"]))
 
 
 def test_dataframe_is_not_mutated() -> None:

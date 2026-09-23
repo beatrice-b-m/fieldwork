@@ -4,23 +4,24 @@
 
 Foundation `ExplorerResult` uses schema 0.3, retaining the migration contract.
 Discovery `InvestigationResult` uses schema 1.0. Both are mappings with `to_dict()`
-exports compatible with `json.dumps(..., allow_nan=False)`. Foundation scalar values
-are tagged; integer and float identities remain distinct, nonfinite values use
-string encodings, and native missing scalars share a missing token. Results have
-frozen top-level attributes, but nested payload containers are mutable.
+exports compatible with `json.dumps(..., allow_nan=False)`. Analyses count
+`pandas.factorize` codes; emitted values are plain JSON: `null` for every native
+missing spelling, numbers as numbers, infinities as `"inf"`/`"-inf"`, and dates,
+datetimes (aware ones as UTC instants) and timedeltas as text that pandas parses
+back. Booleans, numbers and strings never match each other, and integers and
+floats stay distinct in object columns (`1` and `1.0` are separate levels: mixed
+numeric representations are themselves a lead in a raw export). Displays quote a
+string only when it could be read as a number, boolean or missing value. Results
+have frozen top-level attributes, but nested payload containers are mutable.
 
-Discovery currently requires unique string column names. Foundation operations
-also support integer and recursively tuple-valued labels. No arbitrary object
-stringification is used to merge values. When discovery selects columns
+Columns are identified by `str(label)`: non-string labels, such as the integers of
+a headerless CSV, are analyzed and reported under their string form, and requested
+columns are matched the same way. String forms must be unique. When discovery selects columns
 automatically (`features=None`), columns containing unsupported cell types (such
 as lists, dicts or `Decimal`) are skipped and listed in `skipped_features` with
 their value type; the other columns are analyzed normally. A column named
 explicitly (in `features`, `by`, `entity`, or a foundation operation) still raises
 `TypeError`.
-Foundation context (`scope`, `missing`, `table_id`) preserves those labels. When
-columns include typed labels, `analysis_context.missing_convention` stores
-`sentinels_by_column` records with tagged `column` identities and sentinel `values`,
-so JSON exports preserve integer and tuple labels without converting them to strings.
 
 `InvestigationResult.from_dict` restores schema 1.0 saved evidence. `to_frame()`
 normalizes findings; pass a section such as `availability`, `dependencies`,
@@ -29,7 +30,7 @@ no path exists, otherwise use `best.census(df)` to preserve recommendation conte
 
 ## Population, source and scope
 
-Each discovery source has a SHA-256 fingerprint over ordered column labels and
+Each discovery source has a SHA-256 fingerprint over ordered, type-qualified column labels and
 vectorized per-value hashes (`pandas.util.hash_pandas_object`) of the index and
 every column; object columns hash a type-qualified `repr` of each cell, so `1`,
 `1.0` and `"1"` differ. Column dtype is part of the identity: casting a column
@@ -61,8 +62,9 @@ also report omitted groups and rows. Findings never embed entire source rows.
 Native missing values count as absent by default. `missing={column: [sentinels]}`
 adds column-specific sentinels without altering the source. Integer and float
 sentinels compare by numeric value (so `-999` matches a float column containing
-`-999.0`); booleans remain distinct. Other sentinel types use canonical identity.
-The declared conventions are saved in results. Dependency discovery defaults to
+`-999.0`); booleans remain distinct. Other sentinels match by their exported
+value, so a saved timestamp sentinel (ISO text) applies again unchanged. The
+declared conventions are saved in results as exported values. Dependency discovery defaults to
 pair-specific complete cases (`dropna=True`); false treats native and declared
 missing values as a shared category. Path previews apply the same missing convention.
 

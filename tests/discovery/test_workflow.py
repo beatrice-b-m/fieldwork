@@ -306,7 +306,7 @@ def test_scope_constructor_and_missing_contexts():
     df = pd.DataFrame({"site": [None, "unknown", "A"], "value": [1, 2, 3]})
     r = fw.missingness(df, by=["site"], missing={"site": ["unknown"]})
     assert r["coverage"]["contexts_total"] == 2
-    assert r["contexts"][0]["values"]["site"] == {"type": "missing"}
+    assert r["contexts"][0]["values"]["site"] is None
     assert r["contexts"][0]["rows"] == 2
 
 
@@ -509,3 +509,11 @@ def test_overview_summary_leads_with_ranked_findings_and_merged_grains():
     # The text summary leads with the top-ranked finding, by ID and statement.
     first = next(line for line in str(overview).splitlines() if "[f" in line)
     assert "[f0]" in first and overview["findings"][0]["statement"] in first
+
+
+def test_saved_timestamp_sentinel_reapplies_after_json_round_trip():
+    df = pd.DataFrame({"when": pd.to_datetime(["2020-01-01", "1900-01-01", "2020-01-02"])})
+    result = fw.missingness(df, missing={"when": [pd.Timestamp("1900-01-01")]})
+    assert result["availability"][0]["missing"] == 1
+    saved = fw.InvestigationResult.from_dict(json.loads(json.dumps(result.to_dict())))
+    assert saved.recompute(df)["availability"] == result["availability"]

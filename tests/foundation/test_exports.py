@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 
 import pandas as pd
 import pytest
@@ -20,50 +19,47 @@ from fieldwork import (
 )
 
 
-def test_resolved_census_names_parents_without_merging_repeated_levels():
+def test_census_nodes_name_their_own_values_and_parents():
     frame = pd.DataFrame({"site": ["North", "South"], "modality": ["CT", "CT"]})
     result = census(frame, ["site", "modality"])
-    before = deepcopy(result.to_dict())
-    resolved = result.to_dict(resolve_references=True)
-    children = [n for n in resolved["tree"]["nodes"] if n["depth"] == 2]
-    assert [n["label"] for n in children] == ["modality='CT'", "modality='CT'"]
-    assert [n["parent_label"] for n in children] == ["site='North'", "site='South'"]
-    assert len({n["parent_id"] for n in children}) == 2
-    assert len({n["node_id"] for n in children}) == 2
-    assert resolved["tree"]["dimension_labels"] == ["site", "modality"]
-    assert render_plaintext(resolved) == render_plaintext(result)
-    for raw, named in zip(before["tree"]["nodes"], resolved["tree"]["nodes"]):
-        assert all(named[key] == value for key, value in raw.items())
-    children[0]["value"]["value"] = "edited"
-    resolved["source"]["dtypes"].clear()
-    assert result.to_dict() == before == dict(result)
+    nodes = {n["node_id"]: n for n in result["tree"]["nodes"]}
+    children = [n for n in nodes.values() if n["depth"] == 2]
+    # A repeated level under two parents stays two nodes.
+    assert [(n["column"], n["value"]) for n in children] == [("modality", "CT")] * 2
+    assert [nodes[n["parent_id"]]["value"] for n in children] == ["North", "South"]
+    assert result["tree"]["dimensions"] == ["site", "modality"]
 
 
 @pytest.mark.parametrize("make", [levels, lambda df: census(df, list(df.columns))])
-def test_resolved_values_preserve_types_and_tuple_columns(make):
+def test_exported_values_keep_types_and_str_column_names(make):
     column = ("finding", 1)
     values = [True, 1, 1.0, "1", None, "<NA>", float("inf"), pd.Timestamp("2026-01-01")]
     frame = pd.DataFrame({column: pd.Series(values, dtype=object)})
     result = make(frame)
-    data = result.to_dict(resolve_references=True)
+    data = result.to_dict()
     records = data["per_feature"][0]["levels"] if result.kind == "levels" else data["tree"]["nodes"]
-    assert {r["value"]["type"] for r in records} == {
-        "boolean",
-        "integer",
-        "float",
-        "string",
-        "missing",
-        "datetime_naive",
-    }
-    assert len({r["label"] for r in records}) == len(values)
-    assert all(r["column"]["type"] == "tuple" for r in records)
+    exported = [r["value"] for r in records]
+    assert len(exported) == len(values)
+    assert {type(v) for v in exported} == {bool, int, float, str, type(None)}
+    rows = visualization_data(result)
+    labels = [
+        r["label"]
+        for r in (rows["features"][0]["rows"] if "features" in rows else rows["rows"][1:])
+    ]
+    assert len(set(labels)) == len(values)
+    column_name = (
+        data["per_feature"][0]["column"]
+        if result.kind == "levels"
+        else data["tree"]["dimensions"][0]
+    )
+    assert column_name == str(column)
     assert data == json.loads(json.dumps(data, allow_nan=False))
-    assert data == make(frame.iloc[::-1]).to_dict(resolve_references=True)
+    assert data == make(frame.iloc[::-1]).to_dict()
 
 
 @pytest.mark.parametrize("per_parent", [False, True])
 @pytest.mark.parametrize("limits", [{"max_nodes": 0}, {"max_levels": 0}, {"min_count": 100}])
-def test_pre_selection_metadata_resolves_without_emitted_nodes(per_parent, limits):
+def test_pre_selection_reports_kept_values_without_emitted_nodes(per_parent, limits):
     frame = pd.DataFrame({"site": ["North", "North", "South"], "modality": ["CT", "MRI", "CT"]})
     result = census(
         frame,
@@ -74,64 +70,55 @@ def test_pre_selection_metadata_resolves_without_emitted_nodes(per_parent, limit
         **limits,
     )
     assert not result["tree"]["nodes"]
-    assert len(result["level_dictionary"]) == 2
-    retained = result.to_dict(resolve_references=True)["tree"]["retained_sets"]
-    assert [r["column_label"] for r in retained] == ["site", "modality"]
-    assert [r["values"] for r in retained] == [
-        [{"type": "string", "value": "North"}],
-        [{"type": "string", "value": "CT"}],
+    retained = result["tree"]["retained_sets"]
+    assert [(r["column"], r["values"]) for r in retained] == [
+        ("site", ["North"]),
+        ("modality", ["CT"]),
     ]
     if per_parent:
-        assert retained[0]["path_values"] == []
-        assert retained[1]["path_values"][0]["label"] == "site='North'"
+        assert [r["path"] for r in retained] == [[], ["North"]]
     assert result["tree"]["root"]["count"] == 1
 
 
 def test_global_pre_selection_keeps_values_excluded_by_other_dimensions():
     frame = pd.DataFrame({"a": ["x", "x", "y", "z"], "b": ["u", "v", "w", "u"]})
     result = census(frame, ["a", "b"], top_n=2, top_n_mode="pre")
-    data = result.to_dict(resolve_references=True)
-    assert all(n["label"] != "a='y'" for n in data["tree"]["nodes"])
-    assert data["tree"]["retained_sets"][0]["labels"] == ["a='x'", "a='y'"]
+    assert all(n["value"] != "y" for n in result["tree"]["nodes"] if n["column"] == "a")
+    assert result["tree"]["retained_sets"][0]["values"] == ["x", "y"]
 
 
-def test_combined_warnings_use_section_columns_with_different_feature_orders():
+def test_combined_warnings_name_section_columns_with_different_feature_orders():
     frame = pd.DataFrame({"a": pd.Series([1, "x"], dtype=object), "b": [1, 2]})
     result = explore(frame, ["b", "a"], features=["a", "b"], schema={"b": "id"})
-    data = result.to_dict(resolve_references=True)
-    assert [w["column_label"] for w in data["warnings"]] == ["a", "b", "b", "a"]
-    for section in ("levels", "census"):
-        assert all("column_label" in w for w in data["sections"][section]["warnings"])
+    assert [w["column"] for w in result["warnings"]] == ["a", "b", "b", "a"]
     assert "feature_id=" not in render_plaintext(result)
 
 
-def test_resolved_grain_graph_and_joint_cells_are_self_contained():
+def test_grain_graph_and_joint_cells_reference_their_records():
     frame = pd.DataFrame({"site": ["N", "N", "S"], "id": [1, 2, 3], "finding": ["x", "y", "x"]})
-    result = grain(frame, ["site", KeySpec("exam", ("site", "id"))])
-    data = result.to_dict(resolve_references=True)
-    edge = data["graph"]["edges"][0]
-    assert edge["source_keys"] == ["site"] and edge["target_keys"] == ["exam"]
-    finding = next(a for a in data["graph"]["assignments"] if a["target_label"] == "finding")
-    assert finding["node_keys"] == [["exam"]]
+    graph = grain(frame, ["site", KeySpec("exam", ("site", "id"))])["graph"]
+    keys = {node["id"]: node["keys"] for node in graph["nodes"]}
+    edge = graph["edges"][0]
+    assert (keys[edge["source"]], keys[edge["target"]]) == (["site"], ["exam"])
+    finding = next(a for a in graph["assignments"] if a["target"] == "finding")
+    assert [keys[node] for node in finding["nodes"]] == [["exam"]]
     joint = joint_counts(frame, ["id", "finding"], context={"site": "N"})
-    cells = joint.to_dict(resolve_references=True)["cells"]
-    assert [c["label"] for c in cells] == ["id=1, finding='x'", "id=2, finding='y'"]
-    assert cells[0]["a_value"] == {"type": "integer", "value": "1"}
-    assert cells[0]["a_column"] == {"type": "string", "value": "id"}
-    assert "site='N'" in str(joint)
+    cells = [(joint["a"][c["a"]], joint["b"][c["b"]]) for c in joint["cells"]]
+    assert cells == [(1, "x"), (2, "y")]
+    assert joint["context"] == [{"column": "site", "value": "N"}]
+    assert "site=N" in str(joint)
 
 
-def test_resolved_combined_pairs_and_unrequested_sections():
+def test_combined_pairs_absence_and_unrequested_sections():
     frame = pd.DataFrame({"a": ["x", "y"], "b": [1, 2]})
     result = explore(frame, ["a", "b"], include_absence=True)
-    data = result.to_dict(resolve_references=True)
+    data = result.to_dict()
     assert data["sections"]["grain"] == {"status": "not_requested"}
     pair = data["sections"]["pairs"]["pairs"][0]
-    assert pair["column_labels"] == ["a", "b"]
-    assert [e["label"] for e in pair["absence"]["examples"]] == ["a='x', b=2", "a='y', b=1"]
+    assert pair["columns"] == ["a", "b"]
+    assert pair["absence"]["examples"] == [{"a": "x", "b": 2}, {"a": "y", "b": 1}]
     assert json.loads(json.dumps(data, allow_nan=False)) == data
-    proposal = infer_schema(frame).to_dict(resolve_references=True)
-    assert proposal["proposals"][0]["column_label"] == "a"
+    assert infer_schema(frame)["proposals"][0]["column"] == "a"
 
 
 def test_interactive_display_is_bounded_safe_and_does_not_serialize(monkeypatch):
@@ -176,7 +163,7 @@ def test_projection_references_have_labels_including_omission_parents(detail):
     assert graph["edges"][0]["target_label"] == "id"
     assert all(r["feature_label"] in {"site", "id"} for r in graph["evidence"])
     joint = visualization_data(joint_counts(frame, ["site", "id"]), detail=detail)
-    assert joint["cells"][0]["a_label"] == "'N'"
+    assert joint["cells"][0]["a_label"] == "N"
     pair = visualization_data(explore(frame, ["site", "id"]), section="pairs", detail=detail)
     cell = pair["contexts"][0]["cells"][0]
     assert cell["a_label"] == "site" and cell["b_label"] == "id"
@@ -194,4 +181,4 @@ def test_empty_results_have_readable_displays_and_resolved_exports():
     ):
         assert "Unsupported" not in repr(result)
         assert "empty" in repr(result)
-        json.dumps(result.to_dict(resolve_references=True), allow_nan=False)
+        json.dumps(result.to_dict(), allow_nan=False)

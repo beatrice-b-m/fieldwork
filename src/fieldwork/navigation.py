@@ -27,7 +27,7 @@ from .evidence import (
     prepare,
     saved_context,
 )
-from .typing import ColumnLabel, Runtime, SchemaRole
+from .typing import Runtime, SchemaRole
 
 
 class PathResult(InvestigationResult):
@@ -145,7 +145,7 @@ class Path:
         max_nodes: int | None = 10000,
         min_count: int = 1,
         dropna: bool = False,
-        schema: dict[ColumnLabel, SchemaRole] | None = None,
+        schema: dict[str, SchemaRole] | None = None,
         **runtime: Unpack[Runtime],
     ) -> ExplorerResult:
         """Evaluate this recommendation with its original scope and missing conventions.

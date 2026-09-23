@@ -9,22 +9,10 @@ from collections.abc import Callable, Iterator, Mapping
 from functools import cache
 from typing import Any, Literal
 
-from .encoding import ScalarIdentity, display_scalar, validate_limit
+from .encoding import display, json_order, validate_limit
 from .result import ExplorerResult
 
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]")
-
-
-def _identity(record: Mapping[str, Any]) -> ScalarIdentity:
-    kind = record["type"]
-    if kind == "tuple":
-        value = tuple(_identity(item) for item in record["value"])
-    else:
-        value = record.get("value")
-    metadata = tuple(
-        sorted((key, str(value)) for key, value in record.items() if key not in {"type", "value"})
-    )
-    return ScalarIdentity(kind, value, metadata)
 
 
 def _safe(text: str, unicode_mode: str) -> str:
@@ -96,10 +84,8 @@ def _section_lines(
 ) -> Iterator[str]:
     show_quantities = detail == "full"
 
-    def label(record: Mapping[str, Any], *, column: bool = False) -> str:
-        if column and record["type"] == "string" and record["value"].isidentifier():
-            return record["value"]
-        return display_scalar(_identity(record), missing_label)
+    def label(value: Any, *, column: bool = False) -> str:
+        return str(value) if column else display(value, missing_label)
 
     def omission(node: Mapping[str, Any], indent: str) -> Iterator[str]:
         if node.get("omitted_child_rows"):
@@ -134,21 +120,13 @@ def _section_lines(
         yield f"  cohort from {metadata['source_scope']}"
         if show_quantities:
             yield f"    {_scope_text(metadata['scope'])}"
-    warning_columns = {
-        f["feature_id"]: f["column"]
-        for f in (data.get("per_feature", []) if kind == "levels" else data.get("features", []))
-        if isinstance(f, Mapping) and "feature_id" in f
-    }
     for warning in data.get("warnings", []):
         if not show_quantities and warning["code"] == "LOW_RETAINED_FRACTION":
             continue
-        column = warning.get("column", warning_columns.get(warning.get("feature_id")))
+        column = warning.get("column")
         named = f" (column={label(column, column=True)})" if column is not None else ""
         warning_detail = ", ".join(
-            f"{key}={value!r}"
-            for key, value in warning.items()
-            if key not in {"code", "column", "column_label"}
-            and not (key == "feature_id" and column is not None)
+            f"{key}={value!r}" for key, value in warning.items() if key not in {"code", "column"}
         )
         yield (
             f"  Warning: {warning['code']}"
@@ -173,7 +151,7 @@ def _section_lines(
                 yield f"    {_scope_text(scope)}"
             levels = feature.get("levels", [])
             if not show_quantities:
-                levels = sorted(levels, key=lambda level: _identity(level["value"]).sort_key())
+                levels = sorted(levels, key=lambda level: json_order(level["value"]))
             for level in levels:
                 rendered = label(level["value"])
                 yield (
@@ -194,8 +172,7 @@ def _section_lines(
         scope = scopes.get(tree.get("scope_id"))
         if scope and show_quantities:
             yield f"  {_scope_text(scope)}"
-        features = {f["feature_id"]: label(f["column"], column=True) for f in data["features"]}
-        yield "  path: " + " > ".join(features[f] for f in tree["dimensions"])
+        yield "  path: " + " > ".join(label(c, column=True) for c in tree["dimensions"])
         root = tree["root"]
         if show_quantities:
             yield f"  total: {_quantity(root['count'], 'row')}"
@@ -205,17 +182,11 @@ def _section_lines(
         # subtree contiguously. Never infer parentage from depth or storage order.
         children: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
         retained = nodes[:max_nodes]
-        needed_levels = {node["level_id"] for node in retained}
-        values = {
-            entry["level_id"]: entry["value"]
-            for entry in data["level_dictionary"]
-            if entry["level_id"] in needed_levels
-        }
         for node in retained:
             children[node["parent_id"]].append(node)
         if not show_quantities:
             for siblings in children.values():
-                siblings.sort(key=lambda node: _identity(values[node["level_id"]]).sort_key())
+                siblings.sort(key=lambda node: json_order(node["value"]))
         stack = [iter(children[root["node_id"]])]
         while stack:
             node = next(stack[-1], None)
@@ -223,7 +194,7 @@ def _section_lines(
                 stack.pop()
                 continue
             indent = "  " * len(stack)
-            rendered = f"{indent}{features[node['feature_id']]}={label(values[node['level_id']])}"
+            rendered = f"{indent}{label(node['column'], column=True)}={label(node['value'])}"
             if show_quantities:
                 rendered += f": {_quantity(node['count'], 'row')}"
             yield rendered

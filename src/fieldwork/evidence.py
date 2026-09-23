@@ -12,10 +12,12 @@ import numpy as np
 import pandas as pd
 
 from ._explore.encoding import (
-    MISSING,
-    encode_series,
-    normalize_scalar,
-    validate_frame,
+    display,
+    encode_column,
+    json_value,
+    labelled,
+    python_value,
+    resolve_columns,
 )
 from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, current_session, operation, phase
@@ -24,7 +26,7 @@ from .typing import Runtime
 
 def fingerprint(df: pd.DataFrame) -> str:
     """Identify ordered source values and labels, including duplicate indexes."""
-    validate_frame(df)
+    labelled(df)
     session = current_session()
     if session and id(df) in session.fingerprints:
         checkpoint()
@@ -41,8 +43,8 @@ def _fingerprint(df, progress):
     # and each column. Dtype is part of the identity: an object column holding
     # 1 differs from an int64 column holding 1.
     digest = hashlib.sha256()
-    labels = [normalize_scalar(c, label=True).to_dict() for c in df.columns]
-    digest.update(json.dumps([len(df), labels], sort_keys=True).encode())
+    labels = [f"{type(c).__qualname__}:{c!r}" for c in df.columns]
+    digest.update(json.dumps([len(df), labels]).encode())
     digest.update(_value_hashes(df.index))
     for column in df:
         checkpoint()
@@ -283,7 +285,7 @@ class InvestigationResult(ExplorerResult):
     mutable. Findings contain representative positions, not source rows. inspect,
     select, and recompute require the identical ordered source. Use Recipe to
     reapply parameters to a new delivery. Methods inherited from ExplorerResult
-    provide mapping access and ordinary/resolved exports.
+    provide mapping access and exports.
 
     Examples
     --------
@@ -606,10 +608,7 @@ class InvestigationResult(ExplorerResult):
             if scoped is not None
             else None
         )
-        missing = {
-            c: [_restore_scalar(v) for v in values]
-            for c, values in self.payload["missing_convention"]["sentinels"].items()
-        }
+        missing = self.payload["missing_convention"]["sentinels"]
         parameters = {
             **self.payload["parameters"],
             "scope": scope,
@@ -670,18 +669,29 @@ class InvestigationResult(ExplorerResult):
 
 
 def columns(df, selected=None):
-    validate_frame(df)
-    if not all(isinstance(c, str) for c in df.columns):
-        raise TypeError(
-            "Discovery requires string column names; foundation operations accept typed labels"
-        )
-    selected = list(df.columns if selected is None else selected)
+    """Requested column names (str of each label); None selects every column."""
+    frame = labelled(df)
+    if selected is None:
+        return list(frame.columns)
+    selected = [c if isinstance(c, str) else str(c) for c in selected]
     if len(set(selected)) != len(selected):
         raise ValueError("Columns must not repeat")
     for c in selected:
-        if c not in df:
+        if c not in frame:
             raise KeyError(c)
     return selected
+
+
+def _sentinel_key(value):
+    """Sentinels match by exported value, and numbers numerically (-999 == -999.0).
+
+    Matching exported values lets saved sentinels, such as a timestamp saved as
+    ISO text, apply again unchanged. Booleans never match numbers.
+    """
+    exported = json_value(value)
+    if isinstance(exported, (int, float)) and not isinstance(exported, bool):
+        return ("number", exported)
+    return (type(exported).__name__, exported)
 
 
 def limit(name, value, *, minimum=0):
@@ -699,7 +709,6 @@ def prepare(
     presence_features=(),
     optional=(),
 ):
-    columns(df)
     return prepare_context(
         df,
         scope=scope,
@@ -721,13 +730,12 @@ def prepare_context(
     presence_features=(),
     optional=(),
 ):
-    """Prepare source context independently of discovery's column-label contract.
+    """Prepare source identity, scope, sentinel conventions and encodings.
 
     Columns in ``optional`` were selected automatically rather than named by the
     caller. If their values cannot be encoded they are omitted from the returned
     encodings and listed in ``base["skipped_features"]`` instead of raising.
     """
-    validate_frame(df)
     if not isinstance(table_id, str) or not table_id:
         raise ValueError("table_id must be a nonempty string")
     identity = fingerprint(df)
@@ -735,47 +743,41 @@ def prepare_context(
         raise ValueError("Scope belongs to a different ordered dataset")
     if scope is not None and any(p >= len(df) for p in scope.positions):
         raise ValueError("Scope positions exceed the source population")
-    missing = missing or {}
-    labels = {normalize_scalar(c, label=True) for c in df.columns}
-    for c in missing:
-        if normalize_scalar(c, label=True) not in labels:
-            raise KeyError(c)
-    sentinel_values = {
-        c: sorted({normalize_scalar(v) for v in missing.get(c, [])}, key=lambda v: v.sort_key())
-        for c in df
+    source = labelled(df)
+    declared = (
+        dict(
+            zip(
+                resolve_columns(source, missing or {}, argument="missing"), (missing or {}).values()
+            )
+        )
+        if missing
+        else {}
+    )
+    sentinel_keys = {
+        c: sorted({_sentinel_key(python_value(v)) for v in declared.get(c, [])}) for c in source
     }
-    conventions = {c: [v.to_dict() for v in values] for c, values in sentinel_values.items()}
+    conventions = {c: [value for _, value in keys] for c, keys in sentinel_keys.items()}
     cache_key = (
         id(df),
         scope.positions if scope else None,
-        tuple(
-            (normalize_scalar(c, label=True), tuple(values))
-            for c, values in sentinel_values.items()
-        ),
+        tuple((c, tuple(keys)) for c, keys in sentinel_keys.items()),
     )
     session = current_session()
     cached = session.prepared.get(cache_key) if session else None
     if cached is None:
         positions = np.array(scope.positions, dtype=np.int64) if scope else np.arange(len(df))
-        frame = df.iloc[positions] if scope else df
+        frame = source.iloc[positions] if scope else source
         cached = (df, frame, positions, {}, {})
         if session:
             session.prepared[cache_key] = cached
     _, frame, positions, all_encoded, all_available = cached
-    selected = list(dict.fromkeys(df.columns if features is None else features))
+    selected = list(dict.fromkeys(source.columns if features is None else features))
     presence_columns = list(dict.fromkeys([*selected, *presence_features]))
     needed = [
         c
         for c in presence_columns
         if c not in all_available or (c in selected and c not in all_encoded)
     ]
-
-    def sentinel_key(v):
-        if v.kind == "integer":
-            return ("number", int(v.value))
-        if v.kind == "float":
-            return ("number", float.fromhex(v.value))
-        return v
 
     skipped = {}
     with phase("encoding", len(needed), "columns") as tracker:
@@ -787,27 +789,25 @@ def prepare_context(
                 or pd.api.types.is_timedelta64_dtype(dtype)
                 or isinstance(dtype, pd.StringDtype)
             )
-            if c not in selected and not sentinel_values[c] and native_only:
+            if c not in selected and not sentinel_keys[c] and native_only:
                 all_available[c] = frame[c].notna().to_numpy(dtype=bool)
                 tracker.advance(detail=str(c))
                 continue
             try:
-                values, codes = encode_series(frame[c])
+                values, codes = encode_column(frame, c)
             except TypeError as error:
                 if c not in optional:
                     raise TypeError(f"Column {c!r}: {error}") from error
                 skipped[c] = _unsupported_type(frame[c])
                 tracker.advance(detail=str(c))
                 continue
-            sentinel_keys = {sentinel_key(v) for v in sentinel_values[c]}
+            sentinels = set(sentinel_keys[c])
             mask = np.array(
-                [v != MISSING and sentinel_key(v) not in sentinel_keys for v in values], dtype=bool
+                [v is not None and _sentinel_key(v) not in sentinels for v in values], dtype=bool
             )
             all_available[c] = mask[codes]
             if c in selected:
                 all_encoded[c] = codes
-                if session:
-                    session.remember_encoding((id(frame), c), (frame, values, codes))
             tracker.advance(detail=str(c))
     encoded = {c: all_encoded[c] for c in selected if c not in skipped}
     available = {c: all_available[c] for c in presence_columns if c not in skipped}
@@ -827,7 +827,7 @@ def prepare_context(
             "sentinels": conventions,
             "numeric_sentinel_equality": True,
         },
-        "features": [{"table": table_id, "column": c} for c in df],
+        "features": [{"table": table_id, "column": c} for c in source],
         "skipped_features": [{"feature": c, "value_type": kind} for c, kind in skipped.items()],
         "findings": [],
     }
@@ -837,7 +837,7 @@ def prepare_context(
 def _unsupported_type(series):
     for value in series.array:
         try:
-            normalize_scalar(value)
+            python_value(value)
         except TypeError:
             return type(value).__name__
     return "unknown"
@@ -850,30 +850,20 @@ def analyzable(selected, base):
 
 
 def normalized_encoding(frame, codes, present):
-    """Foundation dictionaries with native/sentinel absence in one missing level."""
-    session = current_session()
+    """Dictionaries whose native and declared missing values share one final level."""
     output = {}
     for c, code in codes.items():
         checkpoint()
-        cached = session.encodings.get((id(frame), c)) if session else None
-        values = cached[1] if cached else encode_series(frame[c])[0]
-        absent = np.unique(code[~present[c]])
-        if all(values[i] == MISSING for i in absent):
+        values = encode_column(frame, c)[0]
+        absent = set(np.unique(code[~present[c]]).tolist())
+        if all(values[i] is None for i in absent):
             output[c] = (values, code)
             continue
-        cache_key = (id(frame), c, id(present[c]))
-        normalized = session.encodings.get(cache_key) if session else None
-        if normalized is None:
-            tokens = list(values)
-            for i in absent:
-                tokens[i] = MISSING
-            dictionary = sorted(set(tokens), key=lambda v: v.sort_key())
-            lookup = {v: i for i, v in enumerate(dictionary)}
-            remap = np.fromiter((lookup[v] for v in tokens), dtype=np.int64)
-            normalized = (frame, dictionary, remap[code])
-            if session:
-                session.remember_encoding(cache_key, normalized)
-        output[c] = normalized[1:]
+        # Dropping sentinel values keeps the remaining canonical order.
+        kept = [i for i, v in enumerate(values) if i not in absent and v is not None]
+        remap = np.full(len(values), len(kept), dtype=np.int64)
+        remap[kept] = np.arange(len(kept))
+        output[c] = ([values[i] for i in kept] + [None], remap[code])
     return output
 
 
@@ -969,28 +959,6 @@ def qualitative_analysis_unit(base, record):
     return output
 
 
-def _restore_scalar(value):
-    kind = value["type"]
-    raw = value.get("value")
-    if kind == "missing":
-        return None
-    if kind in {"boolean", "string"}:
-        return raw
-    if kind == "integer":
-        return int(raw)
-    if kind == "float":
-        return float.fromhex(raw)
-    if kind == "date":
-        from datetime import date
-
-        return date.fromisoformat(raw)
-    if kind in {"datetime_naive", "datetime_aware"}:
-        return pd.Timestamp(raw)
-    if kind == "timedelta":
-        return pd.Timedelta(int(raw), unit="ns")
-    raise ValueError(f"Unsupported saved sentinel: {kind}")
-
-
 def saved_context(base):
     """Restore source-bound scope and typed missing conventions from saved evidence."""
     data = base["scope"]
@@ -1001,10 +969,7 @@ def saved_context(base):
         )
         if positions is not None
         else None,
-        "missing": {
-            c: [_restore_scalar(v) for v in values]
-            for c, values in base["missing_convention"]["sentinels"].items()
-        },
+        "missing": {c: values for c, values in base["missing_convention"]["sentinels"].items()},
         "table_id": base["source"]["table_id"],
     }
 
@@ -1015,7 +980,7 @@ def foundation_context(df, operation, *args, scope=None, missing=None, table_id=
 
     if operation is _census:
         # Consume a dimensions generator once, before both preparation and census.
-        args = (tuple(args[0]), *args[1:])
+        args = (tuple(columns(df, args[0])), *args[1:])
     frame, _, codes, present, base = prepare_context(
         df,
         scope=scope,
@@ -1023,13 +988,6 @@ def foundation_context(df, operation, *args, scope=None, missing=None, table_id=
         table_id=table_id,
         features=args[0] if operation is _census else None,
     )
-    if not all(isinstance(c, str) for c in df.columns):
-        # JSON object keys cannot preserve integer identities or encode tuples.
-        conventions = base["missing_convention"]
-        conventions["sentinels_by_column"] = [
-            {"column": normalize_scalar(c, label=True).to_dict(), "values": values}
-            for c, values in conventions.pop("sentinels").items()
-        ]
     if operation is _census:
         analysis = operation(
             frame, *args, _encoded=normalized_encoding(frame, codes, present), **options
@@ -1051,7 +1009,7 @@ def contextual_result(analysis, df, base):
 
     payload = deepcopy(analysis.payload)
     excluded = base["scope"]["restriction_excluded_rows"]
-    source = {**_source(df), **base["source"]}
+    source = {**_source(labelled(df)), **base["source"]}
 
     def rebase_sources(result_payload):
         # Only result roots and their analytical sections own dataset metadata.
@@ -1088,7 +1046,4 @@ def contextual_result(analysis, df, base):
 
 
 def context_statement(context):
-    return ", ".join(
-        f"{feature} = {_restore_scalar(value)!r} ({value['type']})"
-        for feature, value in context.items()
-    )
+    return ", ".join(f"{feature} = {display(value)}" for feature, value in context.items())

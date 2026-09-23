@@ -37,9 +37,8 @@ def test_census_text_lists_every_node_in_tree_order():
     )
     dimensions = [f"{d}=" for d in frame.columns]
     result = census(frame, list(frame.columns))
-    resolved = result.to_dict(resolve_references=True)["tree"]["nodes"]
     children = {}
-    for node in resolved:
+    for node in result["tree"]["nodes"]:
         children.setdefault(node["parent_id"], []).append(node)
 
     def preorder(parent):
@@ -47,7 +46,7 @@ def test_census_text_lists_every_node_in_tree_order():
             yield node
             yield from preorder(node["node_id"])
 
-    expected = [node["label"] for node in preorder("root")]
+    expected = [f"{node['column']}={node['value']}" for node in preorder("root")]
     lines = node_lines(render_plaintext(result, width=88), dimensions)
     # Each subtree follows its parent contiguously; repeated labels stay separate.
     assert [line.split(":")[0] for line in lines] == expected
@@ -145,8 +144,8 @@ def test_render_does_not_require_result_serialization() -> None:
 def test_topology_orders_levels_canonically_not_by_count():
     frame = pd.DataFrame({"site": ["Z", "Z", "Z", "A"], "kind": ["x", "y", "x", "x"]})
     for result in (levels(frame, ["site"]), census(frame, ["site", "kind"])):
-        full = node_lines(render_plaintext(result), ["site=", "'"])
-        topology = node_lines(render_plaintext(result, detail="topology"), ["site=", "'"])
+        full = node_lines(render_plaintext(result), ["site=", "Z", "A"])
+        topology = node_lines(render_plaintext(result, detail="topology"), ["site=", "Z", "A"])
         assert "Z" in full[0]  # full detail ranks by count
         assert "A" in topology[0]
 

@@ -9,9 +9,9 @@ from typing import Any, Literal, Unpack
 import pandas as pd
 
 from .._runtime import operation, phase
-from ..typing import ColumnLabel, Runtime, SchemaRole
+from ..typing import Runtime, SchemaRole
 from .census import _source
-from .encoding import encode_column, normalize_scalar, validate_frame
+from .encoding import encode_column, labelled
 from .result import ExplorerResult, KeySpec
 
 
@@ -21,8 +21,8 @@ class SchemaProposal:
 
     Parameters
     ----------
-    column : dict[str, Any]
-        Tagged column identity, not a bare column label.
+    column : str
+        Column name (non-string labels are named by str()).
     proposed_role : str
         'id', 'categorical', 'continuous', or 'unknown'.
     reasons : tuple of dict
@@ -34,8 +34,8 @@ class SchemaProposal:
 
     Attributes
     ----------
-    column : dict[str, Any]
-        Tagged column identity.
+    column : str
+        Column name.
     proposed_role : str
         Suggested role; requires user review.
     reasons : tuple[dict[str, Any], ...]
@@ -50,7 +50,7 @@ class SchemaProposal:
     Suggestions do not modify source values or automatically configure analyses.
     """
 
-    column: dict[str, Any]
+    column: str
     proposed_role: SchemaRole
     reasons: tuple[dict[str, Any], ...]
     fd_evidence: Literal["not_evaluated"] | dict[str, Any] = "not_evaluated"
@@ -75,7 +75,7 @@ class SchemaProposal:
 @operation("schema inference")
 def infer_schema(
     df: pd.DataFrame,
-    candidate_keys: Iterable[ColumnLabel | KeySpec] | None = None,
+    candidate_keys: Iterable[str | KeySpec] | None = None,
     **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Suggest reviewable column roles without changing analysis settings.
@@ -127,7 +127,7 @@ def infer_schema(
     'id'
     """
 
-    validate_frame(df)
+    df = labelled(df)
     proposals: list[SchemaProposal] = []
     rows = len(df)
     with phase("schema columns", len(df.columns), "columns") as tracker:
@@ -152,9 +152,7 @@ def infer_schema(
                 role = "unknown"
             if name.endswith(("id", "_id")):
                 reasons = (*reasons, {"code": "NAME_HINT_ID", "value": True})
-            proposals.append(
-                SchemaProposal(normalize_scalar(column, label=True).to_dict(), role, reasons)
-            )
+            proposals.append(SchemaProposal(column, role, reasons))
             tracker.advance(detail=str(column))
     if candidate_keys is not None:
         from .grain import grain
@@ -162,7 +160,7 @@ def infer_schema(
         evidence = grain(df, candidate_keys).payload["dependencies"]
         by_target: dict[str, list[dict[str, Any]]] = {}
         for dependency in evidence:
-            by_target.setdefault(str(dependency["target"]), []).append(dependency)
+            by_target.setdefault(dependency["target"], []).append(dependency)
         proposals = [
             SchemaProposal(
                 proposal.column,
@@ -176,7 +174,7 @@ def infer_schema(
                             "holds": dependency["holds"],
                             "evaluated_groups": dependency["evaluated_groups"],
                         }
-                        for dependency in by_target.get(str(proposal.column), [])
+                        for dependency in by_target.get(proposal.column, [])
                     ],
                 },
             )

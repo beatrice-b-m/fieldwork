@@ -13,8 +13,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 
-import numpy as np
-
 from .progress import CancellationToken, Progress
 
 if TYPE_CHECKING:
@@ -23,7 +21,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "CensusOptions",
-    "ColumnLabel",
     "DependencyOptions",
     "DiscoveryOptions",
     "ExplicitDiscoveryOptions",
@@ -38,8 +35,6 @@ __all__ = [
     "SectionOptions",
 ]
 
-ColumnLabel: TypeAlias = str | int | np.integer[Any] | tuple["ColumnLabel", ...]
-"""Supported foundation column label: string, non-boolean integer, or nested tuple."""
 SchemaRole: TypeAlias = Literal["id", "categorical", "continuous", "unknown"]
 """Advisory column role; supplying a role never converts source values."""
 Section: TypeAlias = Literal["missingness", "dependencies", "paths", "value_patterns"]
@@ -90,7 +85,7 @@ class CensusOptions(TypedDict, total=False):
     """Minimum displayed node count; default 1, must be nonnegative."""
     dropna: bool
     """Default False includes missing levels; True excludes rows missing active dimensions."""
-    schema: dict[ColumnLabel, SchemaRole] | None
+    schema: dict[str, SchemaRole] | None
     """Optional advisory roles by column; default None."""
 
 
@@ -122,11 +117,11 @@ class ExplicitDiscoveryOptions(TypedDict, total=False):
 
     scope: Scope | None
     """Source-bound selection, or None for all rows."""
-    missing: Mapping[ColumnLabel, Iterable[Any]] | None
+    missing: Mapping[str, Iterable[Any]] | None
     """Additional missing sentinels by typed column label; default None."""
     table_id: str
     """Nonempty source label; default 'table'."""
-    features: Iterable[ColumnLabel] | None
+    features: Iterable[str] | None
     """Columns for independent levels; default None uses dimensions."""
 
 
@@ -294,7 +289,7 @@ class FoundationOptions(CensusOptions, ExplicitDiscoveryOptions, total=False):
     from census display limits. Omitted keys use explicit exploration defaults.
     """
 
-    candidate_keys: Iterable[ColumnLabel | KeySpec] | None
+    candidate_keys: Iterable[str | KeySpec] | None
     """Explicit grain candidates; default None skips grain."""
     top_n_applies_to: Literal["census", "both"]
     """Default 'census'; 'both' also restricts pairs/grain and requires pre mode and top_n."""
@@ -302,9 +297,9 @@ class FoundationOptions(CensusOptions, ExplicitDiscoveryOptions, total=False):
     """Include pair relationships; default True."""
     include_absence: bool
     """Include bounded absent combinations; default False; requires include_pairs."""
-    reference_domains: Mapping[ColumnLabel, Iterable[Any]] | None
+    reference_domains: Mapping[str, Iterable[Any]] | None
     """Declared pair value domains, otherwise observed domains; default None."""
-    pair_contexts: Iterable[Mapping[ColumnLabel, Any]] | None
+    pair_contexts: Iterable[Mapping[str, Any]] | None
     """Additional pair analyses restricted by exact context values; default None."""
     max_absence_cells: int | None
     """Nonnegative absent-cell output budget; default 1000, None is unbounded."""

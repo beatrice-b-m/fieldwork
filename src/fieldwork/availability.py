@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from ._explore._kernels import first_indices, group_ids
-from ._explore.encoding import normalize_scalar
+from ._explore.encoding import cell
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
     EvidenceRows,
@@ -434,10 +434,7 @@ def missingness(
     for context_id in range(min(context_count, max_contexts)):
         checkpoint()
         rows = np.flatnonzero(context_ids == context_id)
-        values = {
-            c: normalize_scalar(frame[c].iloc[rows[0]] if present[c][rows[0]] else None).to_dict()
-            for c in contexts
-        }
+        values = {c: cell(frame, c, rows[0], present[c][rows[0]]) for c in contexts}
         context_units = units_for(rows)
         context_masks = masks_for(context_units)
         record = {"values": values, "rows": len(rows), "availability": [], "finding_ids": []}

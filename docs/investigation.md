@@ -55,8 +55,9 @@ all_rows = availability.inspect(df, signature["finding_id"], all_matches=True)
 Examples are bounded source rows. The selected scope contains every matching row,
 including duplicate index labels. It is bound to the ordered source values; changes
 to that source require a new analysis. `scope.refine(df, positions, name=...)`
-restricts it further. Context findings retain typed predicates such as
-`site = 'North' (string)` in text, HTML and topology. Entity pattern findings can
+restricts it further. Context findings retain their predicates, such as
+`site = North`, in text, HTML and topology; a string that could be read as a
+number is quoted (`site = '1'` versus `site = 1`). Entity pattern findings can
 select all rows belonging to entities with some, all, one, any or no populated rows.
 
 ## Refine, compare and navigate

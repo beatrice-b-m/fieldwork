@@ -30,7 +30,7 @@ def test_chain_equivalence_and_transitive_reduction():
     nodes = _nodes(graph)
     assert nodes["exam"] == nodes["exam_alias"]
     assert _edges(graph) == {(nodes["patient"], nodes["exam"]), (nodes["exam"], nodes["image"])}
-    assignments = {a["target"]["value"]: a["nodes"] for a in graph["assignments"]}
+    assignments = {a["target"]: a["nodes"] for a in graph["assignments"]}
     assert assignments["birth_year"] == [nodes["patient"]]
     assert assignments["date"] == [nodes["exam"]]
     assert any(
@@ -52,7 +52,7 @@ def test_composite_example_support_and_unplaced():
     graph = grain(frame, ["exam", KeySpec("exam_side", ("exam", "side"))])["graph"]
     nodes = _nodes(graph)
     assert _edges(graph) == {(nodes["exam"], nodes["exam_side"])}
-    evidence = [r for r in graph["dependencies"] if r["target"]["value"] == "finding"]
+    evidence = [r for r in graph["dependencies"] if r["target"] == "finding"]
     assert [
         (
             r["holds"],
@@ -63,9 +63,7 @@ def test_composite_example_support_and_unplaced():
         )
         for r in evidence
     ] == [(False, 3, 1, 0, 3), (True, 5, 0, 4, 1)]
-    assert graph["unplaced"] == [
-        {"target": {"type": "string", "value": "noise"}, "reason": "no_supported_key"}
-    ]
+    assert graph["unplaced"] == [{"target": "noise", "reason": "no_supported_key"}]
 
 
 def test_diamond_and_shared_assignment():
@@ -89,7 +87,7 @@ def test_missing_targets_do_not_merge_global_nodes():
     assert len(graph["nodes"]) == 2
     assert len(graph["edges"]) == 1
     assert graph["unplaced"][0]["reason"] == "different_target_population"
-    evidence = [r for r in graph["dependencies"] if r["target"]["value"] == "target"]
+    evidence = [r for r in graph["dependencies"] if r["target"] == "target"]
     assert all(r["holds"] and not r["scope_compatible"] for r in evidence)
     assert all(r["scope"]["evaluated_rows"] == 2 for r in evidence)
     assert graph["scope"]["evaluated_rows"] == 4

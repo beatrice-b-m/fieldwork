@@ -27,7 +27,7 @@ def test_empty_fd_is_undefined() -> None:
 def test_schema_proposal_marks_requested_fd_probe_as_evaluated() -> None:
     frame = pd.DataFrame({"id": [1, 2], "target": ["a", "b"]})
     proposal = infer_schema(frame, candidate_keys=["id"])
-    target = next(item for item in proposal["proposals"] if item["column"]["value"] == "target")
+    target = next(item for item in proposal["proposals"] if item["column"] == "target")
     assert target["fd_evidence"]["status"] == "evaluated"
     assert target["fd_evidence"]["keys"][0]["holds"] is True
 

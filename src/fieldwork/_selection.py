@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from ._explore._kernels import group_ids, modal_groups
-from ._explore.encoding import normalize_scalar
+from ._explore.encoding import json_value, same_json
 from ._runtime import phase
-from .evidence import _restore_scalar, normalized_encoding, prepare, saved_context
+from .evidence import normalized_encoding, prepare, saved_context
 
 
 def select_rows(df, analysis, record, exceptions):
@@ -48,10 +48,10 @@ def select_rows(df, analysis, record, exceptions):
     row_mask = np.ones(n, dtype=bool)
     if context:
         encoded = normalized_encoding(frame, {c: codes[c] for c in context}, present)
-        for c, typed in context.items():
+        for c, saved in context.items():
             values, dense = encoded[c]
-            token = normalize_scalar(_restore_scalar(typed))
-            row_mask &= dense == values.index(token) if token in values else False
+            code = next((i for i, v in enumerate(values) if same_json(json_value(v), saved)), None)
+            row_mask &= dense == code if code is not None else False
     with phase("selecting matches"):
         if pattern in {"exact_dependency", "approximate_dependency"}:
             metrics = record["measurements"]

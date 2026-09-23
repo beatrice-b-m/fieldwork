@@ -83,7 +83,7 @@ def test_pairs_directions_contexts_and_separate_association(frame):
     result = explore(frame, ["exam_id", "finding"], pair_contexts=[{"site": "north"}])
     data = visualization_data(result, section="pairs")
     assert len(data["contexts"]) == 2
-    assert data["contexts"][1]["label"] == "site='north'"
+    assert data["contexts"][1]["label"] == "site=north"
     ET.fromstring(render_svg(result, section="pairs", view="association"))
     with pytest.raises(ValueError, match="requires detail"):
         render_svg(result, section="pairs", detail="topology", view="association")
@@ -127,4 +127,4 @@ def test_pair_budget_preserves_untested_matrix_features_and_contexts(frame):
 
 def test_joint_context_is_visible_in_figure(frame):
     result = joint_counts(frame, ["side", "finding"], context={"site": "north"})
-    assert "site='north'" in visualization_data(result)["caption"]
+    assert "site=north" in visualization_data(result)["caption"]

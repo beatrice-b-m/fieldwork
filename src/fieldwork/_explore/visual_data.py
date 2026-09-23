@@ -6,16 +6,13 @@ from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from .encoding import display_scalar
-from .render import _CONTROL, _identity
+from .encoding import display, json_order
+from .render import _CONTROL
 from .result import ExplorerResult
 
 
-def label(value: Mapping, *, column: bool = False) -> str:
-    if column and value["type"] == "string" and value["value"].isidentifier():
-        text = value["value"]
-    else:
-        text = display_scalar(_identity(value), "<NA>")
+def label(value: Any, *, column: bool = False) -> str:
+    text = str(value) if column else display(value)
     return _CONTROL.sub(lambda match: f"\\u{ord(match.group()):04x}", text)
 
 
@@ -64,10 +61,10 @@ def visualization_data(
         output["scope"] = _scope(graph["scope"], full)
         output["missingness"] = graph["missingness"].replace("_", " ")
         names = {key["name"]: key for key in data["keys"]}
-        feature_ids = {str(a["target"]): f"f{i}" for i, a in enumerate(graph["assignments"])}
+        feature_ids = {a["target"]: f"f{i}" for i, a in enumerate(graph["assignments"])}
         output["features"] = [
             {
-                "id": feature_ids[str(a["target"])],
+                "id": feature_ids[a["target"]],
                 "label": label(a["target"], column=True),
                 "nodes": list(a["nodes"]),
                 "key_component": a["key_component"],
@@ -85,7 +82,7 @@ def visualization_data(
             projected = {
                 "id": node["id"],
                 "titles": titles,
-                "attributes": [feature_ids[str(a)] for a in node["attributes"]],
+                "attributes": [feature_ids[a] for a in node["attributes"]],
                 "key_names": list(node["keys"]),
             }
             if full:
@@ -103,7 +100,7 @@ def visualization_data(
         output["evidence"] = []
         for record in graph["dependencies"]:
             projected = {
-                "feature": feature_ids[str(record["target"])],
+                "feature": feature_ids[record["target"]],
                 "key": record["key_name"],
                 "state": (
                     "undefined"
@@ -149,7 +146,7 @@ def visualization_data(
         for feature in data["per_feature"]:
             rows = feature["levels"]
             if not full:
-                rows = sorted(rows, key=lambda r: _identity(r["value"]).sort_key())
+                rows = sorted(rows, key=lambda r: json_order(r["value"]))
             projected = {
                 "label": label(feature["column"], column=True),
                 "scope": _scope(scopes[feature["scope_id"]], full),
@@ -173,14 +170,12 @@ def visualization_data(
     elif kind == "census":
         output["scope"] = _scope(data["scopes"][0], full)
         output["caption"] = "Observed paths; omitted branches retain their original mass."
-        columns = {f["feature_id"]: label(f["column"], column=True) for f in data["features"]}
-        values = {v["level_id"]: v["value"] for v in data["level_dictionary"]}
         children = defaultdict(list)
         for node in data["tree"]["nodes"]:
             children[node["parent_id"]].append(node)
         if not full:
             for siblings in children.values():
-                siblings.sort(key=lambda n: _identity(values[n["level_id"]]).sort_key())
+                siblings.sort(key=lambda n: json_order(n["value"]))
         output["rows"] = []
         stack = [(data["tree"]["root"], None)]
         total = data["tree"]["root"]["count"]
@@ -193,7 +188,7 @@ def visualization_data(
                 "depth": node["depth"],
                 "label": "All evaluated rows"
                 if parent is None
-                else (f"{columns[node['feature_id']]}={label(values[node['level_id']])}"),
+                else f"{label(node['column'], column=True)}={label(node['value'])}",
             }
             if full:
                 item.update(
@@ -228,13 +223,11 @@ def visualization_data(
     elif kind == "pairs":
         output["contexts"] = []
         contexts = {}
-        columns = {str(c): c for c in data.get("features", [])}
-        for record in data["pairs"]:
-            for column in record["columns"]:
-                columns[str(column)] = column
-        ordered = sorted(columns.values(), key=lambda c: _identity(c).sort_key())
+        ordered = sorted(
+            {*data.get("features", []), *(c for record in data["pairs"] for c in record["columns"])}
+        )
         output["features"] = [label(c, column=True) for c in ordered]
-        indexes = {str(c): i for i, c in enumerate(ordered)}
+        indexes = {c: i for i, c in enumerate(ordered)}
         for predicates in data.get("contexts", []):
             context = tuple(
                 (label(p["column"], column=True), label(p["value"])) for p in predicates
@@ -258,8 +251,8 @@ def visualization_data(
                 contexts[context] = projected
                 output["contexts"].append(projected)
             item = {
-                "a": indexes[str(record["columns"][0])],
-                "b": indexes[str(record["columns"][1])],
+                "a": indexes[record["columns"][0]],
+                "b": indexes[record["columns"][1]],
                 "a_label": label(record["columns"][0], column=True),
                 "b_label": label(record["columns"][1], column=True),
                 "relation": record["relation"] or "undefined",

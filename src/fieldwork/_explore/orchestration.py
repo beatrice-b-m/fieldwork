@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .census import _preselect, _source, census, levels
-from .encoding import encode_column, missing_code, resolve_columns
+from .encoding import encode_column, labelled, missing_code, resolve_columns
 from .grain import grain
 from .relations import pairs
 from .result import ExplorerResult
@@ -65,6 +65,7 @@ def explore(
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
 ) -> ExplorerResult:
+    df = labelled(df)
     selected = resolve_columns(df, dimensions, argument="dimensions")
     active = selected[:max_depth] if max_depth is not None else selected
     if top_n_applies_to not in {"census", "both"}:

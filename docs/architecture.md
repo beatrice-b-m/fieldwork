@@ -31,7 +31,7 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `_explore/census.py` | Independent levels, bounded ordered observed prefixes |
 | `_explore/grain.py`, `grain_graph.py` | Exact FDs, scope compatibility, equivalence, DAG |
 | `_explore/relations.py`, `roles.py` | Pair contexts/absence, joint counts, schema suggestions |
-| `_explore/result.py`, `resolved.py` | Foundation result model and readable references |
+| `_explore/result.py` | Foundation result model |
 | `_explore/visual_data.py`, `render.py`, `graphics.py` | Foundation projections and renderers |
 | `evidence.py`, `_selection.py` | Discovery results, scopes, fingerprints, targeted source selection |
 | `_runtime.py`, `progress.py` | Call-scoped reuse, progress events/display, cancellation |

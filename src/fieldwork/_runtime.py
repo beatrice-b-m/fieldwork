@@ -42,6 +42,7 @@ class Session:
         self.next_phase = 0
         self.last_emit = -math.inf
         self.fingerprints = {}
+        self.labelled = {}
         self.prepared = {}
         self.encodings = OrderedDict()
         self.dictionary_tokens = 0
@@ -70,6 +71,7 @@ class Session:
         # Tracebacks or a callback may retain this object after the call exits.
         # Release cached frames/arrays even in that case.
         self.fingerprints.clear()
+        self.labelled.clear()
         self.prepared.clear()
         self.encodings.clear()
         self.dictionary_tokens = 0

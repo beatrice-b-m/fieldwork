@@ -12,25 +12,51 @@ import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation
-from ..typing import ColumnLabel, Runtime
+from ..typing import Runtime
 from ._kernels import exact_pair_ids
 from .census import _scope, _source
 from .encoding import (
-    ScalarIdentity,
+    code_of,
     encode_column,
+    json_value,
+    labelled,
     missing_code,
-    normalize_scalar,
+    python_value,
     resolve_columns,
     validate_limit,
+    value_key,
 )
+
+Key = tuple[int, Any]
+
+
+def _key(value: Any) -> Key:
+    """Identity of a dictionary value; the missing value sorts last."""
+    return (9, 0) if value is None else value_key(value)
+
+
+def _json(key: Key) -> Any:
+    return None if key[0] == 9 else json_value(key[1])
+
+
+def _context(df: pd.DataFrame, context: Mapping[Any, Any]) -> dict[str, Any]:
+    """Context predicates keyed by column name, with canonical values."""
+    columns = resolve_columns(df, context, argument="pair_contexts") if context else ()
+    return {c: python_value(v) for c, v in zip(columns, context.values())}
+
+
+def _predicates(context: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [{"column": c, "value": json_value(context[c])} for c in sorted(context)]
+
+
 from .result import ExplorerResult
 
 
-def _relation(pair_counts: Counter[tuple[ScalarIdentity, ScalarIdentity]]) -> str | None:
+def _relation(pair_counts: Counter[tuple[Key, Key]]) -> str | None:
     if not pair_counts:
         return None
-    a_to_b: dict[ScalarIdentity, set[ScalarIdentity]] = defaultdict(set)
-    b_to_a: dict[ScalarIdentity, set[ScalarIdentity]] = defaultdict(set)
+    a_to_b: dict[Key, set[Key]] = defaultdict(set)
+    b_to_a: dict[Key, set[Key]] = defaultdict(set)
     for (a, b), count in pair_counts.items():
         if count:
             a_to_b[a].add(b)
@@ -47,9 +73,9 @@ def _relation(pair_counts: Counter[tuple[ScalarIdentity, ScalarIdentity]]) -> st
 
 
 def _cramers_v(
-    pairs: Counter[tuple[ScalarIdentity, ScalarIdentity]],
-    a_support: Counter[ScalarIdentity],
-    b_support: Counter[ScalarIdentity],
+    pairs: Counter[tuple[Key, Key]],
+    a_support: Counter[Key],
+    b_support: Counter[Key],
 ) -> tuple[float | None, str | None]:
     total = sum(pairs.values())
     positive_a = [value for value, count in a_support.items() if count]
@@ -65,26 +91,26 @@ def _cramers_v(
 
 
 def _declared_domain(
-    reference_domains: Mapping[Any, Iterable[Any]] | None,
-    column: Any,
-    observed: set[ScalarIdentity],
-) -> tuple[list[ScalarIdentity], str]:
-    if reference_domains is None or column not in reference_domains:
-        return sorted(observed, key=ScalarIdentity.sort_key), "empirical_observed"
-    normalized = {normalize_scalar(value) for value in reference_domains[column]}
-    missing = observed - normalized
+    reference_domains: Mapping[str, Iterable[Any]],
+    column: str,
+    observed: set[Key],
+) -> tuple[list[Key], str]:
+    if column not in reference_domains:
+        return sorted(observed), "empirical_observed"
+    declared = {_key(python_value(value)) for value in reference_domains[column]}
+    missing = observed - declared
     if missing:
         raise ValueError(
             f"Declared reference domain for {column!r} omits observed levels: "
-            f"{[value.to_dict() for value in sorted(missing, key=ScalarIdentity.sort_key)]}"
+            f"{[_json(key) for key in sorted(missing)]}"
         )
-    return sorted(normalized, key=ScalarIdentity.sort_key), "caller_declared"
+    return sorted(declared), "caller_declared"
 
 
 @operation("pairs")
 def pairs(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     dropna: bool = False,
     include_absence: bool = False,
@@ -167,31 +193,26 @@ def pairs(
     >>> result.kind
     'pairs'
     """
+    df = labelled(df)
     selected = resolve_columns(df, dimensions, argument="dimensions")
     validate_limit("max_absence_cells", max_absence_cells)
     validate_limit("max_contexts", max_contexts)
     validate_limit("max_pairs", max_pairs)
     requested_pairs = list(combinations(range(len(selected)), 2))
     processed_pairs = requested_pairs[:max_pairs] if max_pairs is not None else requested_pairs
-    requested_context_values = list(pair_contexts or [])
+    domains = {
+        column if isinstance(column, str) else str(column): values
+        for column, values in (reference_domains or {}).items()
+    }
+    requested_context_values = [_context(df, context) for context in pair_contexts or []]
     requested_context_values.sort(
-        key=lambda context: tuple(
-            sorted(
-                (
-                    normalize_scalar(column, label=True).sort_key(),
-                    normalize_scalar(value).sort_key(),
-                )
-                for column, value in context.items()
-            )
-        )
+        key=lambda context: tuple(sorted((c, _key(v)) for c, v in context.items()))
     )
-    contexts: list[Mapping[Any, Any]] = [{}]
+    contexts: list[dict[str, Any]] = [{}]
     contexts.extend(requested_context_values)
     if max_contexts is not None:
         contexts = contexts[:max_contexts]
     context_columns = tuple(dict.fromkeys(column for context in contexts for column in context))
-    if context_columns:
-        context_columns = resolve_columns(df, context_columns, argument="pair_contexts")
     encoded = {
         column: encode_column(df, column) for column in dict.fromkeys((*selected, *context_columns))
     }
@@ -200,11 +221,7 @@ def pairs(
     for a_index, b_index in processed_pairs:
         checkpoint()
         a_column, b_column = selected[a_index], selected[b_index]
-        pair_tokens = {
-            normalize_scalar(a_column, label=True),
-            normalize_scalar(b_column, label=True),
-        }
-        if any(normalize_scalar(column, label=True) in pair_tokens for column in context_columns):
+        if {a_column, b_column} & set(context_columns):
             raise ValueError("pair context columns must be disjoint from the analyzed pair")
         a_values, a_codes = encoded[a_column]
         b_values, b_codes = encoded[b_column]
@@ -219,13 +236,13 @@ def pairs(
         global_a_raw = np.bincount(a_codes[base_rows], minlength=len(a_values))
         global_b_raw = np.bincount(b_codes[base_rows], minlength=len(b_values))
         global_a = Counter(
-            {a_values[index]: int(count) for index, count in enumerate(global_a_raw) if count}
+            {_key(a_values[index]): int(count) for index, count in enumerate(global_a_raw) if count}
         )
         global_b = Counter(
-            {b_values[index]: int(count) for index, count in enumerate(global_b_raw) if count}
+            {_key(b_values[index]): int(count) for index, count in enumerate(global_b_raw) if count}
         )
-        domain_a, source_a = _declared_domain(reference_domains, a_column, set(global_a))
-        domain_b, source_b = _declared_domain(reference_domains, b_column, set(global_b))
+        domain_a, source_a = _declared_domain(domains, a_column, set(global_a))
+        domain_b, source_b = _declared_domain(domains, b_column, set(global_b))
         for context_index, context in enumerate(contexts):
             local_mask = base_mask.copy()
             if dropna:
@@ -235,12 +252,10 @@ def pairs(
                     if absent is not None:
                         local_mask &= codes != absent
             eligible_rows = int(local_mask.sum())
-            for column, raw_value in context.items():
+            for column, value in context.items():
                 values, codes = encoded[column]
-                wanted = normalize_scalar(raw_value)
-                try:
-                    wanted_code = values.index(wanted)
-                except ValueError:
+                wanted_code = code_of(values, value)
+                if wanted_code is None:
                     local_mask[:] = False
                     break
                 local_mask &= codes == wanted_code
@@ -251,7 +266,7 @@ def pairs(
             pair_sizes = np.bincount(pair_ids, minlength=len(code_pairs))
             pair_counts = Counter(
                 {
-                    (a_values[a_code], b_values[b_code]): int(count)
+                    (_key(a_values[a_code]), _key(b_values[b_code])): int(count)
                     for (a_code, b_code), count in zip(code_pairs, pair_sizes)
                     if count
                 }
@@ -259,28 +274,16 @@ def pairs(
             a_raw = np.bincount(local_a_codes, minlength=len(a_values))
             b_raw = np.bincount(local_b_codes, minlength=len(b_values))
             a_support = Counter(
-                {a_values[index]: int(count) for index, count in enumerate(a_raw) if count}
+                {_key(a_values[index]): int(count) for index, count in enumerate(a_raw) if count}
             )
             b_support = Counter(
-                {b_values[index]: int(count) for index, count in enumerate(b_raw) if count}
+                {_key(b_values[index]): int(count) for index, count in enumerate(b_raw) if count}
             )
             association, association_reason = _cramers_v(pair_counts, a_support, b_support)
             record: dict[str, Any] = {
                 "pair": [f"f{a_index}", f"f{b_index}"],
-                "columns": [
-                    normalize_scalar(a_column, label=True).to_dict(),
-                    normalize_scalar(b_column, label=True).to_dict(),
-                ],
-                "context": [
-                    {
-                        "column": normalize_scalar(column, label=True).to_dict(),
-                        "value": normalize_scalar(value).to_dict(),
-                    }
-                    for column, value in sorted(
-                        context.items(),
-                        key=lambda item: normalize_scalar(item[0], label=True).sort_key(),
-                    )
-                ],
+                "columns": [a_column, b_column],
+                "context": _predicates(context),
                 "scope": _scope(
                     f"pair:{a_index}:{b_index}:context:{context_index}",
                     len(df),
@@ -298,16 +301,12 @@ def pairs(
                     "a_supported_levels": len(a_support),
                     "b_supported_levels": len(b_support),
                     "a": [
-                        {"value": value.to_dict(), "count": count}
-                        for value, count in sorted(
-                            a_support.items(), key=lambda item: item[0].sort_key()
-                        )
+                        {"value": _json(key), "count": count}
+                        for key, count in sorted(a_support.items())
                     ],
                     "b": [
-                        {"value": value.to_dict(), "count": count}
-                        for value, count in sorted(
-                            b_support.items(), key=lambda item: item[0].sort_key()
-                        )
+                        {"value": _json(key), "count": count}
+                        for key, count in sorted(b_support.items())
                     ],
                 },
                 "observed_cells": len(pair_counts),
@@ -349,7 +348,7 @@ def pairs(
                             break
                         scanned += 1
                         if (a, b) not in pair_counts:
-                            examples.append({"a": a.to_dict(), "b": b.to_dict()})
+                            examples.append({"a": _json(a), "b": _json(b)})
                     if len(examples) >= example_cap or scanned >= scan_limit:
                         break
                 if examples_remaining is not None:
@@ -375,20 +374,8 @@ def pairs(
             "source": _source(df),
             "scopes": [],
             "pairs": records,
-            "features": [normalize_scalar(c, label=True).to_dict() for c in selected],
-            "contexts": [
-                [
-                    {
-                        "column": normalize_scalar(c, label=True).to_dict(),
-                        "value": normalize_scalar(v).to_dict(),
-                    }
-                    for c, v in sorted(
-                        context.items(),
-                        key=lambda item: normalize_scalar(item[0], label=True).sort_key(),
-                    )
-                ]
-                for context in contexts
-            ],
+            "features": list(selected),
+            "contexts": [_predicates(context) for context in contexts],
             "absence_status": "computed" if include_absence else "not_requested",
             "requested_pairs": len(requested_pairs),
             "processed_pairs": len(processed_pairs),
@@ -405,7 +392,7 @@ def pairs(
 @operation("joint counts")
 def joint_counts(
     df: pd.DataFrame,
-    dimensions: Iterable[ColumnLabel],
+    dimensions: Iterable[str],
     *,
     context: Mapping[Any, Any] | None = None,
     dropna: bool = False,
@@ -467,14 +454,15 @@ def joint_counts(
     >>> counts["cells"][0]["count"]
     2
     """
+    df = labelled(df)
     selected = resolve_columns(df, dimensions, argument="dimensions")
     if len(selected) != 2:
         raise ValueError("joint_counts requires exactly two dimensions")
     if max_cells is None:
         raise ValueError("max_cells must be a positive integer")
     validate_limit("max_cells", max_cells, zero=False)
-    context = context or {}
-    context_columns = resolve_columns(df, context, argument="context") if context else ()
+    context = _context(df, context or {})
+    context_columns = tuple(context)
     if set(context_columns) & set(selected):
         raise ValueError("context columns must be disjoint from the analyzed pair")
     encoded = {c: encode_column(df, c) for c in (*selected, *context_columns)}
@@ -487,15 +475,15 @@ def joint_counts(
     eligible = int(mask.sum())
     for column, value in context.items():
         values, codes = encoded[column]
-        token = normalize_scalar(value)
-        if token not in values:
+        code = code_of(values, value)
+        if code is None:
             mask[:] = False
         else:
-            mask &= codes == values.index(token)
+            mask &= codes == code
     a_values, a_codes = encoded[selected[0]]
     b_values, b_codes = encoded[selected[1]]
-    a_supported = sorted(set(a_codes[mask].tolist()), key=lambda c: a_values[c].sort_key())
-    b_supported = sorted(set(b_codes[mask].tolist()), key=lambda c: b_values[c].sort_key())
+    a_supported = np.unique(a_codes[mask]).tolist()  # code order is value order
+    b_supported = np.unique(b_codes[mask]).tolist()
     if len(a_supported) * len(b_supported) > max_cells:
         raise ValueError(
             "Selected pair exceeds max_cells; narrow the context or increase the budget"
@@ -515,19 +503,13 @@ def joint_counts(
         {
             "status": "computed" if evaluated else "empty",
             "source": _source(df),
-            "columns": [normalize_scalar(c, label=True).to_dict() for c in selected],
-            "context": [
-                {
-                    "column": normalize_scalar(c, label=True).to_dict(),
-                    "value": normalize_scalar(v).to_dict(),
-                }
-                for c, v in context.items()
-            ],
+            "columns": list(selected),
+            "context": [{"column": c, "value": json_value(v)} for c, v in context.items()],
             "scopes": [
                 _scope("joint", len(df), len(df) - eligible, eligible - evaluated, bool(context))
             ],
-            "a": [a_values[c].to_dict() for c in a_supported],
-            "b": [b_values[c].to_dict() for c in b_supported],
+            "a": [json_value(a_values[c]) for c in a_supported],
+            "b": [json_value(b_values[c]) for c in b_supported],
             "cells": cells,
         },
     )

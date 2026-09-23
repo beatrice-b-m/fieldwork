@@ -44,7 +44,7 @@ def test_key_comparisons_on_equal_size_populations_are_not_shared():
             "t2": [None, None, 7, 7, 7, 7],
         }
     )
-    targets = {t["target"]["value"]: t for t in fw.grain(frame, ["A", "B"], dropna=True)["targets"]}
+    targets = {t["target"]: t for t in fw.grain(frame, ["A", "B"], dropna=True)["targets"]}
     assert targets["t1"]["determining_keys"] == targets["t2"]["determining_keys"] == ["A", "B"]
     assert targets["t1"]["equivalent_determinants"] == [["A", "B"]]
     assert targets["t2"]["equivalent_determinants"] == []

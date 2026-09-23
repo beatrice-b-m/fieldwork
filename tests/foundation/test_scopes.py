@@ -20,9 +20,7 @@ def test_contexts_do_not_change_global_pair_or_each_other() -> None:
     assert baseline == single["sections"]["pairs"]["pairs"][0] == records[0]
     assert baseline["relation"] == "n:m"
     assert baseline["cramers_v"] == pytest.approx(0.5)
-    north = next(
-        p for p in records if p["context"] and p["context"][0]["column"]["value"] == "site"
-    )
+    north = next(p for p in records if p["context"] and p["context"][0]["column"] == "site")
     single_north = single["sections"]["pairs"]["pairs"][1]
     assert north["evaluated_rows"] == single_north["evaluated_rows"] == 1
     assert north["scope"]["missing_excluded_rows"] == 1
@@ -63,7 +61,7 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
     assert local_pair["scope"]["evaluated_rows"] == 1
     assert pairs["scope_metadata"]["source_scope"] == "s2"
     grain_data = result["sections"]["grain"]
-    target = next(d for d in grain_data["dependencies"] if d["target"]["value"] == "target")
+    target = next(d for d in grain_data["dependencies"] if d["target"] == "target")
     target_scope = next(s for s in grain_data["scopes"] if s["scope_id"] == target["scope_id"])
     assert target_scope["evaluated_rows"] == 2
     scopes = [p["scope"] for p in pairs["pairs"]] + grain_data["scopes"]
@@ -92,8 +90,8 @@ def test_grain_key_comparison_uses_target_population(composite: bool) -> None:
         keys = [KeySpec("a", ("a", "constant")), KeySpec("b", ("b", "constant"))]
     full = grain(frame, keys, dropna=True)
     common = grain(frame.dropna(subset=["target"]), keys, dropna=True)
-    summary = next(t for t in full["targets"] if t["target"]["value"] == "target")
-    expected = next(t for t in common["targets"] if t["target"]["value"] == "target")
+    summary = next(t for t in full["targets"] if t["target"] == "target")
+    expected = next(t for t in common["targets"] if t["target"] == "target")
     assert summary == expected
     assert summary["equivalent_determinants"] == [["a", "b"]]
     assert summary["incomparable_candidates"] == []

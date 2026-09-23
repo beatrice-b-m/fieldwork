@@ -12,7 +12,7 @@ import pandas as pd
 
 from ._explore import KeySpec
 from ._explore._kernels import FDCache, first_indices, group_ids, modal_groups
-from ._explore.encoding import MissingCode, normalize_scalar
+from ._explore.encoding import MissingCode, cell
 from ._explore.grain import _grain
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
@@ -217,12 +217,7 @@ def discover_dependencies(
             rows = np.flatnonzero(context_ids == group)
             partitions.append(
                 (
-                    {
-                        c: normalize_scalar(
-                            frame[c].iloc[rows[0]] if present[c][rows[0]] else None
-                        ).to_dict()
-                        for c in contexts
-                    },
+                    {c: cell(frame, c, rows[0], present[c][rows[0]]) for c in contexts},
                     np.array(rows, dtype=np.int64),
                 )
             )
@@ -289,10 +284,7 @@ def discover_dependencies(
                         exception_groups.append(
                             {
                                 "key_values": {
-                                    c: normalize_scalar(
-                                        frame[c].iloc[rows[0]] if present[c][rows[0]] else None
-                                    ).to_dict()
-                                    for c in key
+                                    c: cell(frame, c, rows[0], present[c][rows[0]]) for c in key
                                 },
                                 "rows": int(sizes[group]),
                                 "distinct_targets": int(distinct[group]),

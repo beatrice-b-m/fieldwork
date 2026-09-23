@@ -42,7 +42,7 @@ def mr_population(df):
     cohorts = fw.missingness(
         df, features=FEATURES, by=["modality"], missing=MISSING, example_limit=1
     )
-    context = next(c for c in cohorts["contexts"] if c["values"]["modality"]["value"] == "MR")
+    context = next(c for c in cohorts["contexts"] if c["values"]["modality"] == "MR")
     return cohorts.select(df, context["finding_id"], name="MR export slots")
 
 

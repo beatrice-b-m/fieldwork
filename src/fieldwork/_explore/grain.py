@@ -10,23 +10,21 @@ import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
-from ..typing import ColumnLabel, Runtime
+from ..typing import Runtime
 from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
 from .encoding import (
     MissingCode,
     encode_column,
+    labelled,
     missing_code,
-    normalize_scalar,
     resolve_columns,
-    validate_frame,
 )
 from .grain_graph import build_grain_graph
 from .result import ExplorerResult, KeySpec
 
 
 def _key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec, ...]:
-    validate_frame(df)
     specs: list[KeySpec] = []
     for index, item in enumerate(candidate_keys):
         if isinstance(item, KeySpec):
@@ -35,9 +33,6 @@ def _key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec
             resolved = resolve_columns(df, [item], argument="candidate_keys")
             spec = KeySpec(str(item), (resolved[0],))
         columns = resolve_columns(df, spec.columns, argument=f"key {spec.name!r}")
-        tokens = [normalize_scalar(column, label=True) for column in columns]
-        if len(set(tokens)) != len(tokens):
-            raise ValueError(f"Key {spec.name!r} has repeated components")
         specs.append(KeySpec(spec.name, columns))
     if not specs:
         raise ValueError("candidate_keys must contain at least one key")
@@ -101,11 +96,11 @@ def _fd_record(
     singleton_groups = cached["singleton_groups"]
     evaluated_rows = cached["evaluated_rows"]
     missing_excluded = len(df) - evaluated_rows
-    scope_id = f"{scope_prefix}:{spec.name}:{normalize_scalar(target, label=True).sort_key()}"
+    scope_id = f"{scope_prefix}:{spec.name}:{target}"
     record = {
         "key_name": spec.name,
-        "key_columns": [normalize_scalar(c, label=True).to_dict() for c in spec.columns],
-        "target": normalize_scalar(target, label=True).to_dict(),
+        "key_columns": list(spec.columns),
+        "target": target,
         "scope_id": scope_id,
         "holds": None if evaluated_groups == 0 else violating_groups == 0,
         "undefined_reason": "no_evaluated_groups" if evaluated_groups == 0 else None,
@@ -133,6 +128,7 @@ def _grain(
 ) -> ExplorerResult:
     """Evaluate exact observed FDs for explicit determinant candidates."""
 
+    df = labelled(df)
     specs = _key_specs(df, candidate_keys)
     records: list[dict[str, Any]] = []
     scopes: list[dict[str, Any]] = []
@@ -153,9 +149,8 @@ def _grain(
     ) as tracker:
         for spec in specs:
             checkpoint()
-            components = {normalize_scalar(c, label=True) for c in spec.columns}
             for target in df.columns:
-                if normalize_scalar(target, label=True) in components:
+                if target in spec.columns:
                     continue
                 record, evaluated = _fd_record(
                     df,
@@ -204,11 +199,7 @@ def _grain(
         )
 
     for target in df.columns:
-        relevant = [
-            record
-            for record in records
-            if record["target"] == normalize_scalar(target, label=True).to_dict()
-        ]
+        relevant = [record for record in records if record["target"] == target]
         if not relevant:
             continue
         determining = holds_by_target.get(target, [])
@@ -236,7 +227,7 @@ def _grain(
                     coarsest.remove(right)
         target_summaries.append(
             {
-                "target": normalize_scalar(target, label=True).to_dict(),
+                "target": target,
                 "determining_keys": determining,
                 "assignment": "compatible" if determining else "undetermined",
                 "cross_key_comparison": "comparable" if comparable else "not_comparable",
@@ -252,7 +243,7 @@ def _grain(
         "keys": [
             {
                 "name": spec.name,
-                "columns": [normalize_scalar(c, label=True).to_dict() for c in spec.columns],
+                "columns": list(spec.columns),
             }
             for spec in specs
         ],
@@ -307,7 +298,7 @@ def _record_on(
 @operation("grain")
 def grain(
     df: pd.DataFrame,
-    candidate_keys: Iterable[ColumnLabel | KeySpec],
+    candidate_keys: Iterable[str | KeySpec],
     *,
     dropna: bool = False,
     scope_metadata: Mapping[str, Any] | None = None,

@@ -10,7 +10,7 @@ import pandas as pd
 from .._runtime import checkpoint, phase
 from ._kernels import same_mask
 from .census import _scope
-from .encoding import missing_code, normalize_scalar
+from .encoding import missing_code
 from .result import KeySpec
 
 
@@ -57,7 +57,7 @@ def build_grain_graph(
                 "repeated_groups": int((sizes > 1).sum()),
             }
             for target in df.columns:
-                token = normalize_scalar(target, label=True).to_dict()
+                token = target
                 if target in spec.columns:
                     record = {
                         "key_name": spec.name,
@@ -143,7 +143,7 @@ def build_grain_graph(
     assignments = []
     unplaced = []
     for target in df.columns:
-        token = normalize_scalar(target, label=True).to_dict()
+        token = target
         candidates = {key_node[s.name] for s in specs if truth[(s.name, target)] is True}
         coarsest = sorted(
             node for node in candidates if not any((other, node) in edges for other in candidates)
