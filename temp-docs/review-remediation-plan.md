@@ -1,9 +1,9 @@
 # Review remediation plan
 
-Status: steps 1–3 complete and released in v0.2.0 (2026-09-23). Steps 4
-and 5 are scoped for separate, self-contained sessions. Read the status log at the
-end first: it records what steps 1–3 changed and measured, and facts later
-sections depend on. Update the status log as each step lands, and retire this
+Status: steps 1–3 complete and released in v0.2.0 (2026-09-23); step 4
+complete on branch `test-suite-rebalance` (unreleased). Step 5 is scoped for a
+separate, self-contained session. Read the status log at the end first: it
+records what each step changed and measured, and facts later sections depend on. Update the status log as each step lands, and retire this
 document when all five steps are complete (move anything durable into `docs/`).
 
 ## Why this plan exists
@@ -211,7 +211,7 @@ Acceptance:
 
 ---
 
-## Step 4: rebalance the test suite (separate session)
+## Step 4: rebalance the test suite (complete, see status log)
 
 **Goal:** tests that protect analytical correctness, so step 5 can refactor safely.
 Remove tests that freeze wording, docstring layout or editor behavior. **Do step 4
@@ -625,3 +625,76 @@ Acceptance:
 - 2026-09-23: **released as v0.2.0** at `eb45a2d` (release PR #4), published to
   PyPI, and `fieldwork-docs` was synchronized (PR #5). See
   `docs/releases/v0.2.0.md`. Steps 4 and 5 start from this release.
+- 2026-09-23, **step 4 complete** on branch `test-suite-rebalance` (not yet
+  merged or released).
+  - **Oracles and gap tests, added first:** `fba8556` (shared
+    `tests/oracle.py`; the count oracle now covers None/NaN/`pd.NA`/NaT and
+    1–4 columns × 0–40 rows), `4cda52a` (dependency-discovery groupby oracle:
+    composite keys, `dropna` both ways, contexts, scopes; records, exception
+    groups, finding exceptions, candidates), `47ad37a` (pairs known answers),
+    `1417cbc` (native-dtype matrix; adds pyarrow to the dev group), `c284d96`
+    (value_patterns), `60cdfde` (row-permutation invariance for missingness,
+    dependencies and suggest_paths), `7046597` (census options as properties),
+    `9f2854f` (compare), `b1b3f39` (50k-row smoke test, marked `slow`).
+  - **Docstring and editor checks replaced** (`bcf59e9`): `test_inline_docs.py`
+    (103 items) and `test_editor_api.py` (22 jedi probes) are gone. In their
+    place: one smoke test (`tests/test_public_api.py`: docstring, annotated
+    parameters, return annotation, no underscore parameters for every export,
+    its public members and `Path`), `--doctest-modules` over `src/fieldwork`
+    (configured in `pyproject.toml`; the same 27 examples), and
+    `tests/typing/public_api.py` under pyright, unchanged. The CI wheel step
+    now runs `pytest tests/test_public_api.py --doctest-modules --pyargs
+    fieldwork` without jedi, and jedi is no longer a direct dev dependency.
+    **`AGENTS.md` was not changed:** it still asks for editor signature and
+    completion checks, and `docs/inline-api.md` "Writing public
+    documentation" still states the full NumPy policy. Step 5.6 should relax
+    both together.
+  - **Brittle and redundant tests** (`6dcd3e9`, `bab046b`, `091e5e4`,
+    `e955f13`): `tests/test_rendering_contracts.py` now holds, once for 13
+    result kinds × 4 media, renderer validity and non-mutation, live-versus-saved
+    equality, escaping, HTML ID/link integrity, topology invariance to
+    quantities and an injected-quantity allowlist. Every brittle example listed
+    above was removed or rewritten structurally, and the duplicates were dropped.
+    The benchmark-normalizer test is gone. The notebook test now checks only
+    the narrative's stated conclusions (plus companion agreement).
+  - **Counts and runtime:** before, 356 collected items in about 3.4–3.9 s, of
+    which 125 were docstring and editor items. After, 337 items (310 tests plus
+    27 doctests) in about 8.2 s, or 6.9 s with `-m "not slow"`. Most of the added
+    time is Hypothesis oracles (about 2.5 s), the rendering contracts (1.4 s)
+    and the smoke test (1.3 s). pyright, ruff, the example, `generate_assets.py
+    --check` and the installed-wheel checks pass.
+  - **Bug found and fixed** (`80aa4ba`, recorded in
+    `docs/release-notes/unreleased.md`): `value_patterns` string summaries
+    were `most_common()` tuples in memory but lists once saved. A live result
+    rendered HTML differently from its own export, and `to_dict()` did not
+    equal the saved payload. They are now lists, and the docstring example
+    changed to `[['A9', 2]]`. Sync that example in fieldwork-docs if it is shown
+    there.
+  - **Observed, not changed (step 5 should decide):**
+    - Numeric summaries (`numeric_range`, offset, ratio) require a numeric
+      dtype, so an object column of numbers gets none. Every other analysis
+      treats the same values identically in either dtype.
+    - Inside a grain view, each key→target record keeps its own pair population
+      (for example 4 rows in a 2-row view). Only key-to-key comparisons use the
+      view's common rows. This matches `grain()` but is easy to misread.
+    - `value_patterns(by=[...])` emits a trivially constant
+      `context_constancy` finding for each context column itself.
+    - Timedelta labels such as `-0 days 00:00:05` carry the sign as a prefix.
+      `pd.Timedelta` parses them as +5 s.
+    - `exact_pair_ids` numbers pairs in sorted order, not first-observed order.
+  - **For step 5:**
+    - The oracle, property, dtype, permutation, rendering-contract and scale
+      tests are the safety net, and they compare exported values through
+      `oracle.record_token`. When 5.2 replaces the tagged scalar encoding,
+      update `record_token` and the literal `{"type": …, "value": …}`
+      records in `test_contracts.py`, `test_resolved.py`,
+      `test_grain_graph.py`, `test_context_adapter.py`, `test_journeys.py`,
+      `test_workflow.py` and `test_dependency_support.py`, not the oracles.
+    - The contracts file enumerates result kinds in `KINDS`. When the result
+      model is unified (5.1), adapt that list; its assertions name no renderer
+      wording.
+    - Private imports remain only where justified: `modal_groups`/`group_ids`
+      and `exact_pair_ids` with property oracles, `_runtime`/`evidence` session
+      internals for cleanup, `render._width_function`/`_fallback_width` for
+      Unicode width, and `resolve_result`.
+    - The legacy fixture and its tests remain for 5.4.
