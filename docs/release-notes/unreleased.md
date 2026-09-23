@@ -11,3 +11,9 @@ public API without migration shims.
   dependency explanations require the fields current analyses always write.
 - `compare` no longer supplies a default row-based analysis unit for missingness
   results saved without `analysis_unit`.
+- `grain(schema=...)`, which had no effect, is removed.
+- `engine_metadata=` is removed from `levels`, `census`, `grain`, `explore` and
+  `Path.census`, together with the `engine` payload field it added.
+- Results no longer carry a `stability` attribute or export a `stability` field.
+- Pair records no longer carry the constant `claim` and
+  `higher_order_constraints_ruled_out` fields.

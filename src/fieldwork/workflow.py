@@ -81,7 +81,6 @@ def explore(
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
-    engine_metadata: bool = False,
     progress: Progress = None,
     cancel: CancellationToken | None = None,
     timeout: float | None = None,
@@ -142,7 +141,7 @@ def explore(
         Explicit mode additionally accepts census options (top_n=None,
         top_n_mode="post", top_n_per_parent=False, min_retained_fraction=0.01,
         max_depth=None, max_levels=100, max_nodes=10000, min_count=1, dropna=False,
-        schema=None, engine_metadata=False), candidate_keys=None,
+        schema=None), candidate_keys=None,
         top_n_applies_to="census", include_pairs=True, include_absence=False,
         reference_domains=None, pair_contexts=None, max_absence_cells=1000,
         max_contexts=32, and max_pairs=15. See census and pairs for meanings.
@@ -227,9 +226,6 @@ def explore(
     max_pairs : int or None, optional
         Nonnegative pair budget; default 15. None is unbounded; zero skips pairs.
         Omitted tests are reported, not treated as failed relationships.
-    engine_metadata : bool, optional
-        Explicit mode only. Default False omits producer metadata. True includes
-        the combined result's orchestrator identifier.
 
     Returns
     -------

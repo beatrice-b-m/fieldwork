@@ -26,8 +26,6 @@ class ExplorerResult(Mapping[str, Any]):
     schema_version : str, optional
         Evidence schema version; default '0.3' for foundation results. This is
         independent of the package version.
-    stability : str, optional
-        Evidence stability marker; default 'unstable'.
 
     Attributes
     ----------
@@ -41,8 +39,6 @@ class ExplorerResult(Mapping[str, Any]):
         are tagged identities; dictionaries resolve feature and level references.
     schema_version : str
         Serialized evidence schema version.
-    stability : str
-        Schema stability marker.
 
     Notes
     -----
@@ -66,7 +62,6 @@ class ExplorerResult(Mapping[str, Any]):
     kind: str
     payload: dict[str, Any] = field(default_factory=dict)
     schema_version: str = SCHEMA_VERSION
-    stability: str = "unstable"
 
     def to_dict(self, *, resolve_references: bool = False) -> dict[str, Any]:
         """Export analytical evidence as ordinary or resolved JSON data.
@@ -102,7 +97,6 @@ class ExplorerResult(Mapping[str, Any]):
         """
         data = {
             "schema_version": self.schema_version,
-            "stability": self.stability,
             "kind": self.kind,
             **self.payload,
         }
@@ -144,9 +138,8 @@ class ExplorerResult(Mapping[str, Any]):
             raise ValueError("Unsupported foundation schema version")
         return cls(
             data["kind"],
-            {k: v for k, v in data.items() if k not in {"kind", "schema_version", "stability"}},
+            {k: v for k, v in data.items() if k not in {"kind", "schema_version"}},
             schema_version=data["schema_version"],
-            stability=data.get("stability", "unstable"),
         )
 
     def __repr__(self) -> str:

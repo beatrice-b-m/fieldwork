@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter, OrderedDict
-from collections.abc import Iterable
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -203,15 +202,3 @@ def exact_pair_ids(
     for new_id, pair in enumerate(ordered):
         remap[lookup[pair]] = new_id
     return remap[inverse], ordered
-
-
-def python_prefix_counts(rows: Iterable[tuple[object, ...]]) -> list[Counter]:
-    """Readable reference kernel used by differential tests."""
-
-    counters: list[Counter] = []
-    for row in rows:
-        for depth in range(1, len(row) + 1):
-            if len(counters) < depth:
-                counters.append(Counter())
-            counters[depth - 1][row[:depth]] += 1
-    return counters

@@ -72,7 +72,6 @@ def explore(
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
-    engine_metadata: bool = False,
 ) -> ExplorerResult:
     selected = resolve_columns(df, dimensions, argument="dimensions")
     active = selected[:max_depth] if max_depth is not None else selected
@@ -126,7 +125,6 @@ def explore(
             grain_frame,
             candidate_keys,
             dropna=dropna,
-            schema=schema,
             scope_metadata=lineage if top_n_applies_to == "both" else None,
         ).to_dict()
         if candidate_keys is not None
@@ -162,6 +160,4 @@ def explore(
             *census_result.payload.get("warnings", []),
         ],
     }
-    if engine_metadata:
-        payload["engine"] = {"orchestrator": "fieldwork._explore"}
     return ExplorerResult("explore", payload)

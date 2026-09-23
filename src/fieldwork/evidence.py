@@ -273,8 +273,6 @@ class InvestigationResult(ExplorerResult):
     schema_version : str, optional
         Discovery analyses and from_dict use '1.0'. The inherited raw constructor
         defaults to foundation '0.3'; use the producer/loader for discovery data.
-    stability : str, optional
-        Inherited stability marker; default 'unstable'.
 
     Attributes
     ----------
@@ -287,8 +285,6 @@ class InvestigationResult(ExplorerResult):
         total, omitted, and limit. IDs identify findings within this result.
     schema_version : str
         '1.0' for supported discovery exports.
-    stability : str
-        Evidence stability marker.
 
     Notes
     -----
@@ -719,7 +715,7 @@ class InvestigationResult(ExplorerResult):
             result_class = PathResult
         return result_class(
             data["kind"],
-            {k: v for k, v in data.items() if k not in {"kind", "schema_version", "stability"}},
+            {k: v for k, v in data.items() if k not in {"kind", "schema_version"}},
             schema_version="1.0",
         )
 

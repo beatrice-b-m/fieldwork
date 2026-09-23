@@ -43,8 +43,6 @@ class PathResult(InvestigationResult):
     schema_version : str, optional
         Producers/loaders use discovery '1.0'; the inherited raw constructor
         defaults to foundation '0.3'. Prefer the producer/loader.
-    stability : str, optional
-        Evidence stability marker; default 'unstable'.
 
     Attributes
     ----------
@@ -149,7 +147,6 @@ class Path:
         min_count: int = 1,
         dropna: bool = False,
         schema: dict[ColumnLabel, SchemaRole] | None = None,
-        engine_metadata: bool = False,
         progress: Progress = None,
         cancel: CancellationToken | None = None,
         timeout: float | None = None,
@@ -190,8 +187,6 @@ class Path:
         schema : dict or None, optional
             Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
             Default None. Roles annotate evidence and warnings; they do not cast values.
-        engine_metadata : bool, optional
-            Include analytical producer metadata when True; default False.
         progress : bool or callable, optional
             Default None is silent; True uses the built-in display. A callback receives
             ProgressEvent objects synchronously. False is also silent. Callback errors
@@ -243,7 +238,6 @@ class Path:
             min_count=min_count,
             dropna=dropna,
             schema=schema,
-            engine_metadata=engine_metadata,
         )
 
 

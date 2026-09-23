@@ -71,8 +71,6 @@ class CensusOptions(TypedDict, total=False):
     """Default False includes missing levels; True excludes rows missing active dimensions."""
     schema: dict[ColumnLabel, SchemaRole] | None
     """Optional advisory roles by column; default None."""
-    engine_metadata: bool
-    """Include producer metadata when True; default False."""
 
 
 class OverviewOptions(TypedDict, total=False):

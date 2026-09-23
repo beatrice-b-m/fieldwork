@@ -306,8 +306,6 @@ def pairs(
                 "relation_reason": None if pair_counts else "empty_population",
                 "cramers_v": association,
                 "cramers_v_reason": association_reason,
-                "claim": "support_description_only",
-                "higher_order_constraints_ruled_out": False,
                 "marginals": {
                     "a_supported_levels": len(a_support),
                     "b_supported_levels": len(b_support),

@@ -103,7 +103,6 @@ def levels(
     min_count: int = 1,
     dropna: bool = False,
     schema: dict[ColumnLabel, SchemaRole] | None = None,
-    engine_metadata: bool = False,
     scope_metadata: dict[str, Any] | None = None,
     progress: Progress = None,
     cancel: CancellationToken | None = None,
@@ -134,8 +133,6 @@ def levels(
     schema : dict or None, optional
         Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
         Default None. Roles annotate evidence and warnings; they do not cast values.
-    engine_metadata : bool, optional
-        Include analytical producer metadata when True; default False.
     scope_metadata : mapping or None, optional
         Optional descriptive lineage supplied by composition; default None. This
         does not select rows. Use a Scope with census/explore for row selection.
@@ -267,8 +264,6 @@ def levels(
     }
     if scope_metadata:
         payload["scope_metadata"] = scope_metadata
-    if engine_metadata:
-        payload["engine"] = {"name": "typed_dense_counts"}
     return ExplorerResult("levels", payload)
 
 
@@ -316,7 +311,6 @@ def _census(
     min_count: int = 1,
     dropna: bool = False,
     schema: dict[ColumnLabel, SchemaRole] | None = None,
-    engine_metadata: bool = False,
     _encoded=None,
 ) -> ExplorerResult:
     """Build a deterministic, ancestor-closed observed-prefix census."""
@@ -559,8 +553,6 @@ def _census(
         },
         "warnings": warnings,
     }
-    if engine_metadata:
-        payload["engine"] = {"name": "encoded_observed_prefix_refinement"}
     return ExplorerResult("census", payload)
 
 
@@ -582,7 +574,6 @@ def census(
     min_count: int = 1,
     dropna: bool = False,
     schema: dict[ColumnLabel, SchemaRole] | None = None,
-    engine_metadata: bool = False,
     progress: Progress = None,
     cancel: CancellationToken | None = None,
     timeout: float | None = None,
@@ -637,8 +628,6 @@ def census(
     schema : dict or None, optional
         Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
         Default None. Roles annotate evidence and warnings; they do not cast values.
-    engine_metadata : bool, optional
-        Include analytical producer metadata when True; default False.
     progress : bool or callable, optional
         Default None is silent; True uses the built-in display. A callback receives
         ProgressEvent objects synchronously. False is also silent. Callback errors
@@ -697,7 +686,6 @@ def census(
         "min_count": min_count,
         "dropna": dropna,
         "schema": schema,
-        "engine_metadata": engine_metadata,
     }
     if scope is None and missing is None and table_id == "table":
         return _census(df, dimensions, **options)

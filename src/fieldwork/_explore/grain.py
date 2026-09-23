@@ -11,7 +11,7 @@ import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
 from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel, SchemaRole
+from ..typing import ColumnLabel
 from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
 from .encoding import (
@@ -129,8 +129,6 @@ def _grain(
     candidate_keys: Iterable[Any],
     *,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
-    engine_metadata: bool = False,
     scope_metadata: dict[str, Any] | None = None,
     _encoded=None,
     _cache=None,
@@ -290,8 +288,6 @@ def _grain(
         "warnings": [],
         "scope_metadata": scope_metadata,
     }
-    if engine_metadata:
-        payload["engine"] = {"name": "normalized_pandas_fd"}
     return ExplorerResult("grain", payload)
 
 
@@ -300,8 +296,6 @@ def grain(
     candidate_keys: Iterable[ColumnLabel | KeySpec],
     *,
     dropna: bool = False,
-    schema: dict[ColumnLabel, SchemaRole] | None = None,
-    engine_metadata: bool = False,
     scope_metadata: Mapping[str, Any] | None = None,
     progress: Progress = None,
     cancel: CancellationToken | None = None,
@@ -323,11 +317,6 @@ def grain(
     dropna : bool, optional
         Default False treats missing values as a category. True evaluates each
         determinant/target pair on its complete cases and records that population.
-    schema : dict or None, optional
-        Reserved compatibility argument; default None. Currently has no effect
-        on grain evidence. Role suggestions are available from infer_schema.
-    engine_metadata : bool, optional
-        Include analytical producer metadata when True; default False.
     scope_metadata : mapping or None, optional
         Optional descriptive lineage supplied by composition; default None. This
         does not select rows. Use a Scope with census/explore for row selection.
@@ -382,8 +371,6 @@ def grain(
         df,
         candidate_keys,
         dropna=dropna,
-        schema=schema,
-        engine_metadata=engine_metadata,
         scope_metadata=scope_metadata,
         progress=progress,
         cancel=cancel,
