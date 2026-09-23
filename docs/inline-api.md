@@ -64,23 +64,23 @@ mapping; its field meanings are documented on result classes and producer method
 
 Run the checks documented in [development](development.md). Specifically:
 
-- `tests/test_inline_docs.py` checks direct public documentation, correspondence
-  between method/function parameters and docstrings, type annotation presence,
-  static runtime controls, option-field descriptions, and executable examples.
-- `tests/test_editor_api.py` exercises Jedi hover, signature help, keyword
-  completion, and navigation through the actual imported package. It checks that
-  private and unsupported census arguments do not appear in completion.
+- `pytest` runs every docstring example in `src/fieldwork` (`--doctest-modules`
+  is configured in `pyproject.toml`), including examples on classes and methods.
+- `tests/test_public_api.py` is a smoke test: every export, its public members
+  and the returned `Path` have a docstring, annotated parameters and a return
+  annotation, and no public signature exposes an underscore-prefixed argument.
 - `uv run pyright --warnings` checks strict consumer examples in `tests/typing`,
-  including precise result types and expected rejection of invalid calls. Unused
-  diagnostic suppressions fail, so accidentally accepting an invalid option is
-  detected. This targets the public consumption contract, not strict typing of
-  every numerical implementation detail. Pyright checks the type engine also used
-  by Pylance; automated tests do not drive the VS Code UI.
-- CI reruns documentation/editor checks against an isolated installed wheel and
-  executes the investigation example. The wheel includes source docstrings and
-  `py.typed`; no separate stub files can override or drift from those sources.
+  including precise result types, overload selection, option dictionaries and
+  expected rejection of invalid calls. Unused diagnostic suppressions fail, so
+  accidentally accepting an invalid option is detected. Pyright checks the type
+  engine also used by Pylance; automated tests do not drive an editor UI.
+- CI reruns the smoke test and the docstring examples against an isolated
+  installed wheel and executes the investigation example. The wheel includes
+  source docstrings and `py.typed`; no separate stub files can drift from them.
 
-Analytical behavior remains covered by the foundation/discovery suites and the
-revision parity corpus. Docstring coverage does not establish scientific accuracy:
-review claims, denominators, exceptions, and defaults against implementation and
+Docstring section layout, parameter-list parity and editor completion are not
+tested; review them when changing a public interface. Analytical behavior is
+covered by the foundation/discovery suites, whose oracles recompute results
+independently. Docstring coverage does not establish scientific accuracy: review
+claims, denominators, exceptions, and defaults against implementation and
 contract tests as part of every public change.

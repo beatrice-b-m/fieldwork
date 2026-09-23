@@ -39,12 +39,12 @@ dev = [
     "ipython>=8",
     "pyright>=1.1.400",
     "pandas-stubs>=2.2.3",
-    "jedi>=0.20",
     "pyarrow>=16",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/fieldwork"]
+addopts = ["--doctest-modules"]
 pythonpath = ["tests"]
 markers = ["slow: realistic-scale smoke tests; deselect locally with -m 'not slow'"]
 

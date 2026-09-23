@@ -107,15 +107,15 @@ Use the reported coverage to distinguish a budget boundary from a negative findi
 
 Follow the [inline API standard](inline-api.md) for public entry points, members,
 returned objects, and option dictionaries. The regular pytest run executes public
-docstring examples, checks documentation/annotation coverage, and probes Jedi
-hover/signature/completion behavior. `uv run pyright --warnings` checks the strict
-consumer examples in `tests/typing`, including expected invalid calls and result
-navigation. These tools are development dependencies only.
+docstring examples (`--doctest-modules` over `src/fieldwork`) and a smoke test that
+every public callable has a docstring and annotated, underscore-free parameters.
+`uv run pyright --warnings` checks the strict consumer examples in `tests/typing`,
+including expected invalid calls and result navigation.
 
 After packaging, check the installed wheel independently of the source import:
 
 ```bash
-uv run --no-project --isolated --with ./dist/*.whl --with pytest --with jedi python -I -m pytest tests/test_inline_docs.py tests/test_editor_api.py -q
+uv run --no-project --isolated --with ./dist/*.whl --with pytest python -I -m pytest tests/test_public_api.py --doctest-modules --pyargs fieldwork -q
 ```
 
 CI runs this check on each supported Python version in addition to the existing

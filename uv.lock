@@ -59,7 +59,6 @@ unicode = [
 dev = [
     { name = "hypothesis" },
     { name = "ipython" },
-    { name = "jedi" },
     { name = "pandas-stubs" },
     { name = "pillow" },
     { name = "pyarrow" },
@@ -81,7 +80,6 @@ provides-extras = ["unicode"]
 dev = [
     { name = "hypothesis", specifier = ">=6" },
     { name = "ipython", specifier = ">=8" },
-    { name = "jedi", specifier = ">=0.20" },
     { name = "pandas-stubs", specifier = ">=2.2.3" },
     { name = "pillow", specifier = ">=11" },
     { name = "pyarrow", specifier = ">=16" },
