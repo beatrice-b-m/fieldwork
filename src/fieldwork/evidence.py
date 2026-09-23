@@ -279,29 +279,11 @@ def prepare(
     presence_features=(),
     optional=(),
 ):
-    return prepare_context(
-        df,
-        scope=scope,
-        missing=missing,
-        table_id=table_id,
-        features=features,
-        presence_features=presence_features,
-        optional=optional,
-    )
-
-
-def prepare_context(
-    df,
-    *,
-    scope=None,
-    missing=None,
-    table_id="table",
-    features=None,
-    presence_features=(),
-    optional=(),
-):
     """Prepare source identity, scope, sentinel conventions and encodings.
 
+    Returns the scoped frame, its source positions, codes of ``features``
+    (default every column), presence masks of ``features`` and
+    ``presence_features``, and the base payload every result starts from.
     Columns in ``optional`` were selected automatically rather than named by the
     caller. If their values cannot be encoded they are omitted from the returned
     encodings and listed in ``base["skipped_features"]`` instead of raising.
@@ -314,33 +296,8 @@ def prepare_context(
     if scope is not None and any(p >= len(df) for p in scope.positions):
         raise ValueError("Scope positions exceed the source population")
     source = labelled(df)
-    declared = (
-        dict(
-            zip(
-                resolve_columns(source, missing or {}, argument="missing"), (missing or {}).values()
-            )
-        )
-        if missing
-        else {}
-    )
-    sentinel_keys = {
-        c: sorted({_sentinel_key(python_value(v)) for v in declared.get(c, [])}) for c in source
-    }
-    conventions = {c: [value for _, value in keys] for c, keys in sentinel_keys.items() if keys}
-    cache_key = (
-        id(df),
-        scope.positions if scope else None,
-        tuple((c, tuple(keys)) for c, keys in sentinel_keys.items()),
-    )
-    session = current_session()
-    cached = session.prepared.get(cache_key) if session else None
-    if cached is None:
-        positions = np.array(scope.positions, dtype=np.int64) if scope else np.arange(len(df))
-        frame = source.iloc[positions] if scope else source
-        cached = (df, frame, positions, {}, {})
-        if session:
-            session.prepared[cache_key] = cached
-    _, frame, positions, all_encoded, all_available = cached
+    sentinel_keys = _sentinels(source, missing)
+    frame, positions, all_encoded, all_available = _scoped(df, source, scope, sentinel_keys)
     selected = list(dict.fromkeys(source.columns if features is None else features))
     presence_columns = list(dict.fromkeys([*selected, *presence_features]))
     needed = [
@@ -348,36 +305,15 @@ def prepare_context(
         for c in presence_columns
         if c not in all_available or (c in selected and c not in all_encoded)
     ]
-
     skipped = {}
     with phase("encoding", len(needed), "columns") as tracker:
         for c in needed:
-            dtype = frame[c].dtype
-            native_only = (
-                pd.api.types.is_numeric_dtype(dtype)
-                or pd.api.types.is_datetime64_any_dtype(dtype)
-                or pd.api.types.is_timedelta64_dtype(dtype)
-                or isinstance(dtype, pd.StringDtype)
-            )
-            if c not in selected and not sentinel_keys[c] and native_only:
-                all_available[c] = frame[c].notna().to_numpy(dtype=bool)
-                tracker.advance(detail=str(c))
-                continue
             try:
-                values, codes = encode_column(frame, c)
+                _encode(frame, c, c in selected, sentinel_keys[c], all_encoded, all_available)
             except TypeError as error:
                 if c not in optional:
                     raise TypeError(f"Column {c!r}: {error}") from error
                 skipped[c] = _unsupported_type(frame[c])
-                tracker.advance(detail=str(c))
-                continue
-            sentinels = set(sentinel_keys[c])
-            mask = np.array(
-                [v is not None and _sentinel_key(v) not in sentinels for v in values], dtype=bool
-            )
-            all_available[c] = mask[codes]
-            if c in selected:
-                all_encoded[c] = codes
             tracker.advance(detail=str(c))
     encoded = {c: all_encoded[c] for c in selected if c not in skipped}
     available = {c: all_available[c] for c in presence_columns if c not in skipped}
@@ -399,11 +335,67 @@ def prepare_context(
             "restriction_excluded_rows": len(df) - len(frame),
             "selection_positions": list(scope.positions) if scope else None,
         },
-        "missing_convention": {"sentinels": conventions},
+        "missing_convention": {
+            "sentinels": {
+                c: [value for _, value in keys] for c, keys in sentinel_keys.items() if keys
+            }
+        },
         "skipped_features": [{"feature": c, "value_type": kind} for c, kind in skipped.items()],
         "findings": [],
     }
     return frame, positions, encoded, available, base
+
+
+def _sentinels(source, missing):
+    """Sorted sentinel keys declared for each column (empty when none)."""
+    declared = {}
+    if missing:
+        names = resolve_columns(source, missing, argument="missing")
+        declared = dict(zip(names, missing.values()))
+    return {
+        c: sorted({_sentinel_key(python_value(v)) for v in declared.get(c, [])}) for c in source
+    }
+
+
+def _scoped(df, source, scope, sentinel_keys):
+    """The scoped frame and its per-session encoding caches, shared across analyses."""
+    key = (
+        id(df),
+        scope.positions if scope else None,
+        tuple((c, tuple(keys)) for c, keys in sentinel_keys.items()),
+    )
+    session = current_session()
+    cached = session.prepared.get(key) if session else None
+    if cached is None:
+        positions = np.array(scope.positions, dtype=np.int64) if scope else np.arange(len(df))
+        frame = source.iloc[positions] if scope else source
+        # df is kept so its id cannot be reused while the entry lives.
+        cached = (df, frame, positions, {}, {})
+        if session:
+            session.prepared[key] = cached
+    return cached[1:]
+
+
+def _encode(frame, c, selected, sentinel_keys, encoded, available):
+    """Record a column's presence (and, when selected, its codes) in the caches."""
+    dtype = frame[c].dtype
+    native_only = (
+        pd.api.types.is_numeric_dtype(dtype)
+        or pd.api.types.is_datetime64_any_dtype(dtype)
+        or pd.api.types.is_timedelta64_dtype(dtype)
+        or isinstance(dtype, pd.StringDtype)
+    )
+    if not selected and not sentinel_keys and native_only:
+        available[c] = frame[c].notna().to_numpy(dtype=bool)
+        return
+    values, codes = encode_column(frame, c)
+    sentinels = set(sentinel_keys)
+    mask = np.array(
+        [v is not None and _sentinel_key(v) not in sentinels for v in values], dtype=bool
+    )
+    available[c] = mask[codes]
+    if selected:
+        encoded[c] = codes
 
 
 def prepare_values(df, columns, *, scope=None, missing=None, table_id="table"):
