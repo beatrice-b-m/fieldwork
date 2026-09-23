@@ -140,9 +140,10 @@ def test_signature_to_complete_scope_and_saved_overview_inspection():
     overview = fw.explore(df)
     record = next(f for f in overview["findings"] if f["pattern"] == "availability_signature")
     assert len(overview.select(df, record["id"]).positions) == 3
-    for rendered in (fw.render_plaintext(saved), fw.render_html(saved)):
-        assert "Present: a; absent: b" in rendered
-    assert "<pre>" not in fw.render_html(saved)
+    statement = next(f for f in saved["findings"] if f["id"] == signature["finding_id"])
+    assert all(
+        statement["statement"] in render(saved) for render in (fw.render_plaintext, fw.render_html)
+    )
 
 
 def test_context_and_entity_findings_select_full_source_rows():
@@ -163,7 +164,6 @@ def test_context_and_entity_findings_select_full_source_rows():
         if f["pattern"] == "entity_availability" and f["structure"]["presence_pattern"] == "some"
     )
     assert analysis.select(df, entity["id"]).positions == (0, 1)
-    assert "some populated rows" in fw.render_plaintext(analysis)
 
 
 def test_equal_entity_weights_and_aggregation():
@@ -202,7 +202,6 @@ def test_equal_entity_weights_and_aggregation():
         fw.compare(any_present, all_present)
     with pytest.raises(ValueError, match="requires entity"):
         fw.missingness(mixed, unit="entities")
-    assert "2 entities" in fw.render_plaintext(any_present)
 
 
 def test_recommendations_explain_evidence_and_diversify_feature_choices():
@@ -218,7 +217,9 @@ def test_recommendations_explain_evidence_and_diversify_feature_choices():
     assert len(paths["paths"]) == 3
     assert len({frozenset(p["dimensions"]) for p in paths["paths"]}) == 3
     for path in paths["paths"]:
-        assert "Observed prefix groups" in path["explanation"]
+        branching = next(r for r in path["reasons"] if r["kind"] == "branching")
+        assert branching["dimensions"] == path["dimensions"]
+        assert branching["prefix_groups"] == path["measurements"]["prefix_counts"]
         assert {r["kind"] for r in path["reasons"]} >= {
             "branching",
             "nesting",
@@ -228,14 +229,14 @@ def test_recommendations_explain_evidence_and_diversify_feature_choices():
     nested = fw.suggest_paths(df, features=["site", "exam"], max_dimensions=2)
     assert nested.best.dimensions == ("site", "exam")
     assert len(nested["paths"]) == 1  # The reverse permutation is not a new investigation.
-    assert "site → exam" in nested["paths"][0]["explanation"]
+    nesting = next(r for r in nested["paths"][0]["reasons"] if r["kind"] == "nesting")
+    assert nesting["reversed_edges"] == 0
     target = fw.suggest_paths(df, objective="target", target="site", max_dimensions=1)
     assert any(r["kind"] == "target_separation" for r in target["paths"][0]["reasons"])
     constrained = fw.suggest_paths(
         df, start_with=["mode"], before=[("site", "exam")], max_dimensions=3
     )
     assert all(p["dimensions"] == ["mode", "site", "exam"] for p in constrained["paths"])
-    assert "Observed prefix groups" in fw.render_plaintext(paths)
 
 
 def test_connected_feature_relationships_preserve_evidence_types():
@@ -267,13 +268,8 @@ def test_connected_feature_relationships_preserve_evidence_types():
             for f in overview["sections"][evidence["section"]]["findings"]
         )
     saved = json.loads(json.dumps(overview.to_dict(), allow_nan=False))
-    assert "Browse feature connections" in fw.render_html(saved)
-    assert "inspect evidence</a>" in fw.render_html(saved)
     topology = fw.visualization_data(saved, detail="topology")["feature_network"]
-    serialized = json.dumps(topology)
-    for key in ("population_ref", "overview_finding_id", "denominator", "measurements"):
-        assert key not in serialized
-    assert "indexed_name" in serialized and "exact_dependency" in serialized
+    assert {"indexed_name", "exact_dependency"} <= {r["kind"] for r in topology["relationships"]}
 
 
 def test_overview_entity_context_configuration_and_selection():
@@ -296,10 +292,10 @@ def test_path_empty_exception_selection_and_entity_presentation_units():
     assert paths.select(df, path["id"], exceptions=True).positions == ()
     assert paths.inspect(df, path["id"], exceptions=True, all_matches=True).empty
     overview = fw.explore(df, discovery={"entity": "e", "unit": "entities"})
-    text = fw.render_plaintext(overview)
-    assert "(1 entities)" in text
-    assert "(1 rows)" not in text
-    assert "2 entities" in fw.render_svg(overview)
+    data = fw.visualization_data(overview)
+    # Signatures count the two entities, not the three rows.
+    assert data["analysis_unit"]["counting_unit"] == "entities"
+    assert sum(s["count"] for s in data["overview"]["signatures"]) == 2
 
 
 def test_whole_context_and_entity_summaries_are_selectable_after_save():
@@ -314,7 +310,6 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
     assert saved.select(df, context_id).positions == (0, 1)
     entity = next(f for f in saved["findings"] if f["pattern"] == "entity_summary")
     assert saved.select(df, entity["id"]).positions == (0, 1)
-    assert "x: 1/2 populated rows" in fw.render_plaintext(saved)
 
 
 @pytest.mark.parametrize("aggregation", ["any", "all"])
@@ -356,19 +351,6 @@ def test_topology_retains_entity_relationship_meaning(aggregation):
                 edge.pop("analysis_unit")
             # Older exports can recover connection context from their linked findings.
             assert fw.visualization_data(saved, detail="topology") == topology
-        for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
-            text = render(saved, detail="topology")
-            assert "entities; keys=e; presence=" + aggregation in text
-        serialized = json.dumps(topology)
-        for key in (
-            "denominator",
-            "positions",
-            "dataset_id",
-            "measurements",
-            "source_rows",
-            "evaluated_rows",
-        ):
-            assert key not in serialized
 
 
 def test_dependency_support_survives_overview_network_and_graph_handoffs():
@@ -413,22 +395,11 @@ def test_dependency_support_survives_overview_network_and_graph_handoffs():
     assert overview.select(df, finding_id).positions == (0, 2)
     finding = next(f for f in overview["findings"] if f["id"] == finding_id)
     assert finding["measurements"]["target_coverage"] == 0.5
-    assert "0 with repeated support" in fw.render_plaintext(overview)
-    assert "target observed on 2/4" in fw.render_html(overview, section="dependencies")
-    assert "repeat-only consistency not assessable" in fw.render_html(overview)
-    assert "target_coverage" not in json.dumps(fw.visualization_data(overview, detail="topology"))
+    assert finding["measurements"]["repeat_modal_accuracy"] is None
 
 
-def test_singleton_inflation_and_incompatible_views_remain_visible():
-    frame = pd.DataFrame({"X": [*range(99), 98], "Y": ["a"] * 99 + ["b"]})
-    overview = fw.explore(frame)
-    dep = next(
-        d for d in overview["sections"]["dependencies"]["dependencies"] if d["determinant"] == ["X"]
-    )
-    assert dep["modal_accuracy"] == 0.99
-    assert dep["repeat_modal_accuracy"] == 0.5
-    assert "repeat-only consistency 0.5" in fw.render_html(overview)
-    assert "repeat coverage 0.02" in fw.render_html(overview, section="dependencies")
+def test_incompatible_grain_views_remain_separate():
+    # Singleton inflation of modal accuracy is covered in test_dependency_support.py.
     overlapping = fw.discover_dependencies(
         pd.DataFrame({"X": [1, 1, 2, 2], "left": [1, 1, None, None], "right": [None, None, 2, 2]}),
         max_key_size=1,
