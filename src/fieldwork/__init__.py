@@ -37,7 +37,7 @@ from .presentation import render_html, render_plaintext, render_svg, visualizati
 from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
 from .workflow import Recipe, compare, explore
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "AnalysisCancelled",
     "CancellationToken",

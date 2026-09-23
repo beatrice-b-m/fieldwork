@@ -1,6 +1,6 @@
 # Exploring saved outputs
 
-This page describes the output interfaces in Fieldwork 0.2.0. The separate
+This page describes the output interfaces in Fieldwork 0.2.1. The separate
 documentation site records its release and source commit in `docs-source.json`.
 
 ## HTML evidence reports
