@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import fieldwork as fw
 
@@ -42,7 +43,10 @@ def test_legacy_export_loads_without_source():
     assert result.to_dict() == data
     for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
         assert "X" in render(result)
-    assert result.select(sparse_frame(), result["findings"][0]["id"]).positions == (0, 2)
+    # 0.1.x source fingerprints are not comparable with current ones: saved
+    # evidence still renders, but source inspection refuses rather than guessing.
+    with pytest.raises(ValueError, match="Source dataset differs"):
+        result.select(sparse_frame(), result["findings"][0]["id"])
 
 
 def test_sparse_support_and_finding_measurements():

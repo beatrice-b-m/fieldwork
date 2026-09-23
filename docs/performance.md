@@ -133,11 +133,10 @@ The context is discarded after success, failure, or cancellation. A later call
 revalidates the source, including mutations. There is no persistent dataframe
 cache or public session to invalidate manually.
 
-Fingerprinting preserves the original canonical SHA-256 byte stream, including
-ordered typed labels, duplicate indexes, and all cells. Repeated values are
-serialized once per bounded 8,192-row chunk. High-cardinality values still need
-individual canonical serialization. Selecting features or a scope reduces
-analytical work but does **not** eliminate full-source fingerprinting. Physically
+Fingerprinting hashes the index and every column with vectorized pandas hashing
+(about 0.04 s for 500,000 rows × 14 columns); only object columns need a Python
+pass to hash a typed representation of each cell. Selecting features or a scope
+reduces analytical work but does **not** eliminate full-source fingerprinting. Physically
 projecting the dataframe reduces that scan and creates a different source identity;
 use the same projected source for subsequent inspection.
 

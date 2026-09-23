@@ -43,3 +43,12 @@ between releases without migration.
   signatures are described by the columns they are missing ("Missing: notes",
   "All populated") instead of long lists of present columns that truncated to
   identical lines. HTML finding cards show each lead reason.
+
+## Speed and saved evidence
+
+- Source fingerprinting uses vectorized pandas hashing and is roughly 100× faster
+  (0.04 s instead of 4.8 s for 500,000 rows × 14 columns). This was most of the
+  runtime of every call that verifies a source, such as `missingness`, `inspect`,
+  `select` and scoped `census`. **Breaking:** fingerprints saved by 0.1.x no longer
+  match, so older saved results and scopes still load and render but cannot
+  inspect or select against a source. Column dtype is now part of source identity.

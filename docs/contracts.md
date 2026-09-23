@@ -29,9 +29,12 @@ no path exists, otherwise use `best.census(df)` to preserve recommendation conte
 
 ## Population, source and scope
 
-Each discovery source has a SHA-256 fingerprint over canonical ordered column
-labels, index labels and all cell values. Dataframe dtype metadata is not part of
-the identity. Duplicate indexes are allowed. Inspection compares the fingerprint
+Each discovery source has a SHA-256 fingerprint over ordered column labels and
+vectorized per-value hashes (`pandas.util.hash_pandas_object`) of the index and
+every column; object columns hash a type-qualified `repr` of each cell, so `1`,
+`1.0` and `"1"` differ. Column dtype is part of the identity: casting a column
+changes it. Fingerprints saved by 0.1.x use a different scheme and do not match.
+Duplicate indexes are allowed. Inspection compares the fingerprint
 and selects with `.iloc`, returning a copy. Reordering or changing source values
 invalidates inspection. Identical rows are analytically interchangeable.
 

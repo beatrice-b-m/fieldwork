@@ -13,7 +13,6 @@ import pandas as pd
 
 from ._explore.encoding import (
     MISSING,
-    ScalarIdentity,
     encode_series,
     normalize_scalar,
     validate_frame,
@@ -38,65 +37,28 @@ def fingerprint(df: pd.DataFrame) -> str:
 
 
 def _fingerprint(df, progress):
+    # SHA-256 over column labels, then vectorized per-value hashes of the index
+    # and each column. Dtype is part of the identity: an object column holding
+    # 1 differs from an int64 column holding 1.
     digest = hashlib.sha256()
-    for values, identify in ((df.columns, _label_identity), (df.index, _value_identity)):
-        digest.update(b"[")
-        for i, value in enumerate(values):
-            if i % 8192 == 0:
-                checkpoint()
-            digest.update(
-                json.dumps(identify(value).to_dict(), sort_keys=True, allow_nan=False).encode()
-            )
-            digest.update(b"\n")
-        digest.update(b"]")
-    # Bound allocation even for continuous/unique columns. Serialize canonical
-    # values once per chunk; preserve the original byte stream and saved IDs.
+    labels = [normalize_scalar(c, label=True).to_dict() for c in df.columns]
+    digest.update(json.dumps([len(df), labels], sort_keys=True).encode())
+    digest.update(_value_hashes(df.index))
     for column in df:
-        digest.update(b"[")
-        for start in range(0, len(df), 8192):
-            checkpoint()
-            chunk = df[column].iloc[start : start + 8192]
-            try:
-                values, codes = encode_series(chunk)
-            except TypeError:
-                # Fingerprints historically allow tuple-valued labels/cells even
-                # where the analytical scalar encoder rejects tuple cells.
-                serialized = [
-                    json.dumps(
-                        _value_identity(v).to_dict(), sort_keys=True, allow_nan=False
-                    ).encode()
-                    + b"\n"
-                    for v in chunk.array
-                ]
-            else:
-                dictionary = np.array(
-                    [
-                        json.dumps(v.to_dict(), sort_keys=True, allow_nan=False).encode() + b"\n"
-                        for v in values
-                    ],
-                    dtype=object,
-                )
-                serialized = dictionary[codes].tolist()
-            digest.update(b"".join(serialized))
-        digest.update(b"]")
+        checkpoint()
+        digest.update(_value_hashes(df[column]))
         progress.advance(detail=str(column))
     return digest.hexdigest()
 
 
-def _label_identity(value):
-    return normalize_scalar(value, label=True)
-
-
-def _value_identity(value):
-    # Index entries and tuple cells are values: MultiIndex levels may hold floats
-    # or timestamps, which column-label normalization rejects.
-    if isinstance(value, tuple):
-        return ScalarIdentity("tuple", tuple(_value_identity(item) for item in value))
-    try:
-        return normalize_scalar(value)
-    except TypeError:
-        # Analyses skip or reject such values; identity only needs a stable form.
-        return ScalarIdentity("object", f"{type(value).__qualname__}:{value!r}")
+def _value_hashes(values):
+    if isinstance(values, pd.MultiIndex):
+        return pd.util.hash_pandas_object(values).to_numpy().tobytes()
+    if values.dtype == object:
+        # pandas hashes object values by str(), which conflates 1, 1.0 and "1"
+        # and rejects lists; hash a typed representation instead.
+        values = pd.Index([f"{type(v).__qualname__}:{v!r}" for v in values], dtype=object)
+    return pd.util.hash_pandas_object(pd.Index(values)).to_numpy().tobytes()
 
 
 @dataclass(frozen=True)
@@ -134,8 +96,8 @@ class Scope:
 
     Notes
     -----
-    Scopes are frozen and source-bound. Reordering or changing values/labels
-    invalidates reuse; dtype metadata alone is not part of identity. Scopes store
+    Scopes are frozen and source-bound. Reordering or changing values, labels
+    or column dtypes invalidates reuse. Scopes store
     positions, not source cells. Search/display budgets do not modify a scope.
 
     Examples

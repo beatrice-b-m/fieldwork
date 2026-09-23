@@ -363,7 +363,7 @@ def suggest_paths(
     -----
     Search and display budgets never sample rows. Evidence records evaluated
     populations and omissions separately. Source identity covers ordered column
-    labels, index labels, and all cell values (not dtype metadata); changing or
+    labels, index labels, column dtypes and all cell values; changing or
     reordering them invalidates inspection against saved findings.
 
     Missing values form categories under the saved missing convention. Rankings
