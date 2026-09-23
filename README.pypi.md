@@ -18,11 +18,11 @@ relationships are buried in **960 rows and 43 columns**. Starting with identifie
 such as participant and specimen IDs, Fieldwork builds a map that helps you see
 which details belong together and where repeated measurements enter the picture.
 
-![A map of a laboratory table: participants connect to specimens, instruments and assays connect to runs, and the branches meet at specimen measurements](https://raw.githubusercontent.com/beatrice-b-m/fieldwork/v0.2.1/docs/assets/wide-table.png)
+![A map of a laboratory table: participants connect to specimens, instruments and assays connect to runs, and the branches meet at specimen measurements](https://raw.githubusercontent.com/beatrice-b-m/fieldwork/v0.3.0/docs/assets/wide-table.png)
 
 That gives you a starting point for deciding how to group the data, what to count,
 and which records deserve a closer look.
-[Try the laboratory example](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/examples/wide_table.py) to build this map yourself
+[Try the laboratory example](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/examples/wide_table.py) to build this map yourself
 from synthetic data.
 
 ## Follow the questions that emerge
@@ -57,18 +57,16 @@ completed work, and elapsed time in a terminal or notebook.
 
 Follow the [first investigation](https://fieldwork.beabm.dev/getting-started/)
 to go from an overview to examining individual records, or work through the
-[guided notebook](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/examples/investigation.ipynb). The
+[guided notebook](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/examples/investigation.ipynb). The
 [documentation](https://fieldwork.beabm.dev/) covers the tools you can use as
 your questions become more specific.
 
-Fieldwork 0.2.1 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
+Fieldwork 0.3.0 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
 only required runtime dependencies.
 
-See the [0.2.1 release notes](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/docs/release-notes/v0.2.1.md) for a value-pattern fix and a
-test suite that checks analyses against independent recomputation, and the
-[0.2.0 release notes](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/docs/release-notes/v0.2.0.md) for ranked investigation leads,
-support for columns with unsupported values, faster source checks, and saved-result
-compatibility changes.
+See the [0.3.0 release notes](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/docs/release-notes/v0.3.0.md) for the simplified result
+model, the separate `explore` and `profile` functions, faster analyses and the
+saved-format and API changes. Results saved by 0.2.x must be recomputed.
 
-For contributing and local setup, see the [developer documentation](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/docs/index.md).
-Fieldwork is [MIT licensed](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/LICENSE); see [NOTICE](https://github.com/beatrice-b-m/fieldwork/blob/v0.2.1/NOTICE) for project provenance.
+For contributing and local setup, see the [developer documentation](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/docs/index.md).
+Fieldwork is [MIT licensed](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/LICENSE); see [NOTICE](https://github.com/beatrice-b-m/fieldwork/blob/v0.3.0/NOTICE) for project provenance.
