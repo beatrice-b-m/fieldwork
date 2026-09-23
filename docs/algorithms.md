@@ -123,6 +123,13 @@ All candidates remain in `candidates`, with view membership; unsupported candida
 also appear in `graph_selection.excluded` with `no_evaluated_support`. With
 `dropna=False`, all candidates share the scoped population.
 
+Inside a grain result (standalone or in a view) there are two populations. Each
+key→target record in `dependencies` counts its own complete cases for that key and
+target, as a standalone test would, so it can count more rows than the view. The
+graph's `tests` table, nodes and placements compare keys on the graph's common
+rows (`graph.evaluated_rows`). Read placements from the graph and per-pair support
+from `dependencies`.
+
 Presentation ranks supported repeated groupings before unique identifiers,
 constants, and candidates without evaluated support. Within each class, more exact
 determined targets and repeated rows rank first, with shorter keys and lexical
