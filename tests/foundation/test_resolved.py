@@ -95,14 +95,6 @@ def test_global_pre_selection_keeps_values_excluded_by_other_dimensions():
     assert data["tree"]["retained_sets"][0]["labels"] == ["a='x'", "a='y'"]
 
 
-def test_legacy_incomplete_retained_dictionary_has_actionable_error():
-    result = census(pd.DataFrame({"a": ["x"]}), ["a"], top_n=1, top_n_mode="pre", max_nodes=0)
-    payload = deepcopy(result.payload)
-    payload["level_dictionary"] = []
-    with pytest.raises(ValueError, match=r"recompute census\(\)"):
-        ExplorerResult("census", payload).to_dict(resolve_references=True)
-
-
 def test_combined_warnings_use_section_columns_with_different_feature_orders():
     frame = pd.DataFrame({"a": pd.Series([1, "x"], dtype=object), "b": [1, 2]})
     result = explore(frame, ["b", "a"], features=["a", "b"], schema={"b": "id"})

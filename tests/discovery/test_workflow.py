@@ -355,17 +355,6 @@ def test_saved_comparison_preserves_both_scopes_and_units(unit):
         assert projected["before_scope"]["parent"] == "delivery"
 
 
-def test_comparison_restores_legacy_row_unit_metadata():
-    df = pd.DataFrame({"a": [1, None]})
-    before = fw.missingness(df)
-    before.payload.pop("analysis_unit")
-    after = fw.missingness(df, scope=fw.Scope.from_positions(df, [0]))
-    comparison = fw.compare(before, after)
-    assert comparison["before_analysis_unit"]["denominator"] == 2
-    assert comparison["before_analysis_unit"]["counting_unit"] == "rows"
-    assert comparison["after_analysis_unit"]["denominator"] == 1
-
-
 def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path):
     df = pd.DataFrame({"e": [1, 1, 2, 3], "site": ["A", "B", "B", "B"], "a": [1, -999, 2, 3]})
     scope = fw.Scope.from_positions(df, [0, 1], name="selected cohort")

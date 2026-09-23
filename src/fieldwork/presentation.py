@@ -42,7 +42,7 @@ def candidate_role(candidate):
     return "repeated grouping"
 
 
-def candidate_priority(candidate, *, legacy=False):
+def candidate_priority(candidate):
     roles = {
         "repeated grouping": 0,
         "unique identifier": 1,
@@ -51,75 +51,17 @@ def candidate_priority(candidate, *, legacy=False):
     }
     return (
         roles[candidate_role(candidate)],
-        -len(candidate["determines"] if legacy else candidate["determines_with_repeated_support"]),
+        -len(candidate["determines_with_repeated_support"]),
         -candidate["repeated_rows"],
         len(candidate["columns"]),
         tuple(candidate["columns"]),
     )
 
 
-def _dependency_measurements(record):
-    """Recover only arithmetic supported by saved evidence; never mutate it."""
-    row = dict(record)
-    if "repeated_rows" not in row:
-        fields = ("evaluated_rows", "evaluated_groups", "repeated_groups")
-        row["repeated_rows"] = (
-            row["evaluated_rows"] - (row["evaluated_groups"] - row["repeated_groups"])
-            if all(row.get(k) is not None for k in fields)
-            else None
-        )
-    repeated, evaluated = row["repeated_rows"], row.get("evaluated_rows")
-    row.setdefault(
-        "repeat_coverage", repeated / evaluated if evaluated and repeated is not None else None
-    )
-    row.setdefault(
-        "repeat_modal_accuracy",
-        1 - row["repair_rows"] / repeated
-        if repeated and row.get("repair_rows") is not None
-        else None,
-    )
-    for field in (
-        "determinant_evaluated_rows",
-        "target_observed_rows",
-        "target_coverage",
-        "target_missing_excluded_rows",
-    ):
-        row.setdefault(field, None)
-    return row
-
-
 def _candidate_summaries(data):
     """Use one comparable ranking for the whole saved candidate collection."""
-    candidates = []
-    for original in data.get("candidates", []):
-        candidate = dict(original)
-        records = [
-            d
-            for d in data.get("dependencies", [])
-            if d.get("context") is None and d["determinant"] == candidate["columns"]
-        ]
-        by_target = {d["target"]: d for d in records}
-        if "determines_with_repeated_support" not in candidate:
-            exact_records = [by_target.get(target) for target in candidate["determines"]]
-            candidate["determines_with_repeated_support"] = (
-                [d["target"] for d in exact_records if d["repeated_groups"] > 0]
-                if all(
-                    d is not None and d.get("repeated_groups") is not None for d in exact_records
-                )
-                else None
-            )
-        candidate.setdefault(
-            "global_targets_tested", len(records) if "dependencies" in data else None
-        )
-        features = data.get("parameters", {}).get("features")
-        candidate.setdefault(
-            "global_targets_possible",
-            len(set(features) - set(candidate["columns"])) if features is not None else None,
-        )
-        candidate["role"] = candidate_role(candidate)
-        candidates.append(candidate)
-    legacy = any(c["determines_with_repeated_support"] is None for c in candidates)
-    return sorted(candidates, key=lambda c: candidate_priority(c, legacy=legacy))
+    candidates = [{**c, "role": candidate_role(c)} for c in data.get("candidates", [])]
+    return sorted(candidates, key=candidate_priority)
 
 
 def _collapse_equivalent(candidates):
@@ -167,49 +109,35 @@ def _signature_label(signature):
     return "Only: " + (", ".join(present) or "none")
 
 
-def _available(value):
-    return "unavailable" if value is None else str(value)
-
-
 def _candidate_explanation(candidate):
     supported = candidate["determines_with_repeated_support"]
     tested, possible = candidate["global_targets_tested"], candidate["global_targets_possible"]
     text = (
         f"{candidate['groups']} groups, {candidate['repeated_groups']} repeated; "
         f"{candidate['repeated_rows']} determinant repeated rows; "
-        f"{len(candidate['determines'])} exact targets, "
-        f"{_available(len(supported) if supported is not None else None)} with repeated support; "
-        f"global targets tested {_available(tested)}/{_available(possible)}"
+        f"{len(candidate['determines'])} exact targets, {len(supported)} with repeated support; "
+        f"global targets tested {tested}/{possible}"
     )
-    if tested is None or possible is None:
-        text += " (test coverage unavailable)"
-    elif tested < possible:
+    if tested < possible:
         text += " (incomplete; untested targets are unknown)"
     return text
 
 
-def _dependency_explanation(record, dropna):
-    row = _dependency_measurements(record)
-    n, repeated = row.get("evaluated_rows"), row["repeated_rows"]
+def _dependency_explanation(row, dropna):
+    n, repeated = row["evaluated_rows"], row["repeated_rows"]
     text = (
         "Exact"
-        if row.get("exact")
+        if row["exact"]
         else "Consistency unsupported"
-        if row.get("exact") is None
+        if row["exact"] is None
         else "Approximate"
-    ) + f" on {_available(n)} evaluated rows"
+    ) + f" on {n} evaluated rows"
     q, observed = row["determinant_evaluated_rows"], row["target_observed_rows"]
-    text += (
-        f"; target observed on {observed}/{q} determinant-eligible rows"
-        if q is not None and observed is not None
-        else "; observed target coverage unavailable"
-    )
+    text += f"; target observed on {observed}/{q} determinant-eligible rows"
     if row["target_coverage"] is not None:
         text += f" (observed target coverage {row['target_coverage']:.3g})"
     if repeated == 0:
         text += "; no repeated groups after exclusions; repeat-only consistency not assessable"
-    elif repeated is None:
-        text += "; repeated support unavailable; repeat-only consistency unavailable"
     else:
         text += f"; {repeated}/{n} rows in repeated groups"
         if row["repeat_coverage"] is not None:
@@ -280,8 +208,7 @@ def visualization_data(
         Fresh allowlisted presentation projection; not an analytical round-trip
         export. Use to_dict for full serialization. Full dependency results include
         candidate summaries and all completed dependency tests, even below the
-        finding threshold. Legacy repeat measurements are recovered when possible;
-        unavailable target coverage remains None, without changing saved data.
+        finding threshold.
         Full overviews include section_coverage keyed by analytical section;
         each section retains its own search and retention limits.
 
@@ -335,7 +262,6 @@ def visualization_data(
                 row["lead"] = record["lead"]
             if record["pattern"] in {"exact_dependency", "approximate_dependency"}:
                 dependency_data = data.get("sections", {}).get("dependencies", data)
-                row["measurements"] = _dependency_measurements(record["measurements"])
                 row["explanation"] = _dependency_explanation(
                     record["measurements"], dependency_data.get("parameters", {}).get("dropna")
                 )
@@ -412,7 +338,7 @@ def visualization_data(
         output["candidates"] = _candidate_summaries(data)
         output["dependencies"] = [
             {
-                **_dependency_measurements(d),
+                **d,
                 "explanation": _dependency_explanation(d, data.get("parameters", {}).get("dropna")),
             }
             for d in data.get("dependencies", [])
@@ -667,7 +593,7 @@ def render_plaintext(
             if detail == "full":
                 text += (
                     f"; {candidate['groups']} groups, {len(candidate['determines'])} exact"
-                    f" targets, {len(candidate['determines_with_repeated_support'] or [])}"
+                    f" targets, {len(candidate['determines_with_repeated_support'])}"
                     " with repeated support"
                 )
             lines.append(text)

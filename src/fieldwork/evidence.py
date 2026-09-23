@@ -344,8 +344,7 @@ class InvestigationResult(ExplorerResult):
         The result is a projection of saved data; it does not rerun analysis or
         validate source identity. Nested object values may remain shared.
         The dependencies section includes completed tests below min_accuracy;
-        findings contains only emitted findings. Legacy exports retain their
-        original fields; to_frame does not fabricate missing measurements.
+        findings contains only emitted findings.
         """
         return pd.json_normalize(self.payload.get(section, []))
 
@@ -561,8 +560,7 @@ class InvestigationResult(ExplorerResult):
                 self["source"]["dataset_id"], tuple(selected), name, analysis["scope"]["name"]
             )
         replay = analysis.recompute(df, example_limit=len(df))
-        # Match semantic selectors, not ordinal IDs: older saved results can have
-        # different finding orders after new evidence types are introduced.
+        # Match semantic selectors, not ordinal IDs, which depend on parameters.
         bookkeeping = {
             "dataset_id",
             "scope_ref",

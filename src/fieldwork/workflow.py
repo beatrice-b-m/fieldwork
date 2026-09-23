@@ -654,20 +654,9 @@ def compare(before: InvestigationResult, after: InvestigationResult) -> Investig
     if before.kind != "missingness" or after.kind != "missingness":
         raise ValueError("compare accepts two missingness results")
 
-    def analysis_unit(analysis):
-        return analysis.payload.get(
-            "analysis_unit",
-            {
-                "counting_unit": "rows",
-                "entity_keys": [],
-                "denominator": analysis["scope"]["evaluated_rows"],
-                "presence_aggregation": "per_row",
-            },
-        )
-
     def counting(analysis):
-        unit = analysis_unit(analysis)
-        if unit.get("counting_unit", "rows") == "rows":
+        unit = analysis["analysis_unit"]
+        if unit["counting_unit"] == "rows":
             return ("rows",)
         return ("entities", unit["entity_keys"], unit["presence_aggregation"])
 
@@ -691,12 +680,12 @@ def compare(before: InvestigationResult, after: InvestigationResult) -> Investig
         "after_source": after["source"],
         "before_scope": before["scope"],
         "after_scope": after["scope"],
-        "before_analysis_unit": analysis_unit(before),
-        "after_analysis_unit": analysis_unit(after),
+        "before_analysis_unit": before["analysis_unit"],
+        "after_analysis_unit": after["analysis_unit"],
         "before_convention": before["missing_convention"],
         "after_convention": after["missing_convention"],
         "changes": records,
-        "analysis_unit": analysis_unit(after),
+        "analysis_unit": after["analysis_unit"],
         "findings": [],
     }
     for record in records:

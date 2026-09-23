@@ -60,13 +60,7 @@ def _resolve(data: dict) -> None:
 
             def predicate_at(index: int, code: int) -> dict:
                 feature_id = tree["dimensions"][index]
-                level_id = f"{feature_id}:l{code}"
-                if level_id not in values:
-                    raise ValueError(
-                        "Retained census values are missing from this saved result; "
-                        "recompute census() before resolving references"
-                    )
-                return _predicate(columns[feature_id], values[level_id])
+                return _predicate(columns[feature_id], values[f"{feature_id}:l{code}"])
 
             retained["column"] = tree["dimension_columns"][depth]
             retained["column_label"] = tree["dimension_labels"][depth]
