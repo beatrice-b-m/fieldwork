@@ -164,3 +164,33 @@ public API without migration shims.
 - `context_constancy` is no longer reported for the `by` columns themselves,
   which were trivially constant within their own contexts; later finding IDs
   shift accordingly.
+
+## Work budgets and `profile` options
+
+- Search and output budgets move into one `limits` mapping per analysis, typed
+  by new `fieldwork.typing` classes: `suggest_paths(limits=PathLimits)`
+  (`max_candidates`, `max_features`, `max_pairs`, `beam_width`,
+  `display_budget`), `missingness(limits=MissingnessLimits)` (`max_pairs`,
+  `max_signatures`, `max_contexts`, `example_limit`),
+  `discover_dependencies(limits=DependencyLimits)` (`max_candidates`,
+  `max_contexts`, `max_dependency_tests`, `max_grain_views`,
+  `example_limit`), `value_patterns(limits=PatternLimits)` (`max_pairs`,
+  `max_patterns`, `example_limit`) and `pairs(limits=PairLimits)`
+  (`max_pairs`, `max_contexts`, `max_absence_cells`). The flat keywords are
+  removed; `fw.missingness(df, example_limit=1)` becomes
+  `fw.missingness(df, limits={"example_limit": 1})`. Unknown budget names
+  raise `TypeError`. Analytical settings (`max_key_size`, `min_accuracy`,
+  thresholds, `max_dimensions`, `n_paths`) stay ordinary arguments.
+- Results record the effective budgets as `parameters["limits"]` (every
+  budget, including unbounded ones) instead of flat parameter fields; saved
+  recipes need the same nesting. Overview `options` take budgets under each
+  section's `limits`, merged key by key with the overview's defaults, and
+  `Result.recompute(df, limits={...})` merges with the saved budgets.
+- `profile` takes `census=` (`CensusOptions`, except `dropna`) and `pairs=`
+  (`PairOptions`: `include_absence`, `reference_domains`, `pair_contexts`,
+  `limits`; or False) instead of 17 forwarded keywords; `include_pairs=False`
+  becomes `pairs=False`. `dropna`, `top_n_applies_to`, `candidate_keys` and
+  `features` stay on `profile`.
+- Parameter order: `missingness` and `value_patterns` now list `scope`,
+  `missing` and `table_id` last, like the other analyses (all are
+  keyword-only, so calls are unaffected).

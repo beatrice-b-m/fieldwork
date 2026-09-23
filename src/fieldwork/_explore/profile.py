@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal, Unpack
 
@@ -10,10 +11,11 @@ import pandas as pd
 
 from .._runtime import operation
 from ..result import Result
-from ..typing import Runtime, SchemaRole
-from .census import _complete, _preselect, census, levels
+from ..typing import CensusOptions, PairOptions, Runtime
+from .census import _complete, _preselect, levels
+from .census import census as census_analysis
 from .grain import KeySpec, grain
-from .relations import pairs
+from .relations import pairs as pair_analysis
 
 if TYPE_CHECKING:
     from ..evidence import Scope
@@ -56,24 +58,10 @@ def profile(
     *,
     candidate_keys: Iterable[str | KeySpec | Mapping[str, Any]] | None = None,
     features: Iterable[str] | None = None,
-    top_n: int | None = None,
-    top_n_mode: Literal["pre", "post"] = "post",
-    top_n_per_parent: bool = False,
+    census: CensusOptions | None = None,
+    pairs: PairOptions | bool = True,
     top_n_applies_to: Literal["census", "both"] = "census",
-    min_retained_fraction: float = 0.01,
-    max_depth: int | None = None,
-    max_levels: int | None = 100,
-    max_nodes: int | None = 10000,
-    min_count: int = 1,
     dropna: bool = False,
-    schema: dict[str, SchemaRole] | None = None,
-    include_pairs: bool = True,
-    include_absence: bool = False,
-    reference_domains: Mapping[str, Iterable[Any]] | None = None,
-    pair_contexts: Iterable[Mapping[str, Any]] | None = None,
-    max_absence_cells: int | None = 1000,
-    max_contexts: int | None = 32,
-    max_pairs: int | None = 15,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
@@ -86,25 +74,22 @@ def profile(
     df : pandas.DataFrame
         Source frame, read without mutation.
     dimensions : iterable of str
-        Nonempty ordered census dimensions; pairs use the first max_depth.
+        Nonempty ordered census dimensions; pairs use the first ``max_depth``.
     candidate_keys : iterable of str, KeySpec or mapping, or None, optional
         Keys for a grain section; default None skips grain.
     features : iterable of str or None, optional
         Columns for levels; default None uses the dimensions.
-    top_n, top_n_mode, top_n_per_parent, min_retained_fraction, max_depth,
-    max_levels, max_nodes, min_count, schema : optional
-        Census options (see census); levels share top_n, max_levels, min_count
-        and schema.
+    census : CensusOptions or None, optional
+        Census options (see census) except ``dropna``; levels share ``top_n``,
+        ``max_levels``, ``min_count`` and ``schema``.
+    pairs : PairOptions or bool, optional
+        Pair options (see pairs); True (default) uses the defaults and False
+        skips the pairs section.
     top_n_applies_to : {'census', 'both'}, optional
-        With top_n_mode='pre', pairs always analyze the census pre-selection;
+        With ``top_n_mode='pre'``, pairs always analyze the census pre-selection;
         'both' makes grain analyze it too. Requires top_n and pre mode.
     dropna : bool, optional
         Exclude missing values in every section, each on its own complete cases.
-    include_pairs : bool, optional
-        Compute the pairs section; default True.
-    include_absence, reference_domains, pair_contexts, max_absence_cells,
-    max_contexts, max_pairs : optional
-        Pair options (see pairs); include_absence requires include_pairs.
     scope, missing, table_id
         Source context shared by every section.
     **runtime : Unpack[Runtime]
@@ -123,7 +108,7 @@ def profile(
     >>> import pandas as pd
     >>> import fieldwork as fw
     >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
-    >>> fw.profile(df, ["site", "visit"], include_pairs=False).section("census").kind
+    >>> fw.profile(df, ["site", "visit"], pairs=False).section("census").kind
     'census'
     """
     from ..evidence import columns
@@ -131,48 +116,39 @@ def profile(
     selected = columns(df, dimensions)
     if not selected:
         raise ValueError("dimensions must contain at least one column")
-    active = selected[:max_depth] if max_depth is not None else selected
+    census_options = dict(census or {})
+    if "dropna" in census_options:
+        raise ValueError("Pass dropna to profile; it applies to every section")
+    inspect.signature(census_analysis).bind(df, selected, **census_options)
+    pair_options = {} if isinstance(pairs, bool) else dict(pairs)
+    inspect.signature(pair_analysis).bind(df, selected, **pair_options)
+    top_n, max_depth = census_options.get("top_n"), census_options.get("max_depth")
+    pre = census_options.get("top_n_mode", "post") == "pre" and top_n is not None
     if top_n_applies_to not in {"census", "both"}:
         raise ValueError("top_n_applies_to must be 'census' or 'both'")
-    if include_absence and not include_pairs:
-        raise ValueError("include_absence=True requires include_pairs=True")
-    if top_n_applies_to == "both" and (top_n_mode != "pre" or top_n is None):
+    if top_n_applies_to == "both" and not pre:
         raise ValueError("top_n_applies_to='both' requires pre mode with top_n")
+    active = selected[:max_depth] if max_depth is not None else selected
     context = {"missing": missing, "table_id": table_id}
+    shared = ("top_n", "max_levels", "min_count", "schema")
     level_result = levels(
         df,
         features=features if features is not None else selected,
-        top_n=top_n,
-        max_levels=max_levels,
-        min_count=min_count,
         dropna=dropna,
-        schema=schema,
         scope=scope,
+        **{k: census_options[k] for k in shared if k in census_options},
         **context,
     )
-    census_result = census(
-        df,
-        selected,
-        top_n=top_n,
-        top_n_mode=top_n_mode,
-        top_n_per_parent=top_n_per_parent,
-        min_retained_fraction=min_retained_fraction,
-        max_depth=max_depth,
-        max_levels=max_levels,
-        max_nodes=max_nodes,
-        min_count=min_count,
-        dropna=dropna,
-        schema=schema,
-        scope=scope,
-        **context,
+    census_result = census_analysis(
+        df, selected, **census_options, dropna=dropna, scope=scope, **context
     )
     cohort = scope
-    if top_n_mode == "pre" and top_n is not None:
+    if pre:
         cohort = _cohort(
             df,
             active,
             top_n=top_n,
-            per_parent=top_n_per_parent,
+            per_parent=census_options.get("top_n_per_parent", False),
             dropna=dropna,
             scope=scope,
             **context,
@@ -189,20 +165,10 @@ def profile(
         ).to_dict()
         if candidate_keys is not None
         else {"status": "not_requested"},
-        "pairs": pairs(
-            df,
-            active,
-            dropna=dropna,
-            include_absence=include_absence,
-            reference_domains=reference_domains,
-            pair_contexts=pair_contexts,
-            max_absence_cells=max_absence_cells,
-            max_contexts=max_contexts,
-            max_pairs=max_pairs,
-            scope=cohort,
-            **context,
+        "pairs": pair_analysis(
+            df, active, **pair_options, dropna=dropna, scope=cohort, **context
         ).to_dict()
-        if include_pairs
+        if pairs is not False
         else {"status": "not_requested"},
     }
     payload = {

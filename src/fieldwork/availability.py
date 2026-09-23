@@ -19,15 +19,15 @@ from .evidence import (
     EvidenceRows,
     Scope,
     analyzable,
+    budgets,
     columns,
     context_statement,
     finding,
-    limit,
     prepare,
     result,
 )
 from .result import Result
-from .typing import Runtime
+from .typing import MissingnessLimits, Runtime
 
 
 class _Units:
@@ -117,6 +117,9 @@ class _Analysis:
         )
 
 
+_LIMITS = {"max_pairs": 200, "max_signatures": 50, "max_contexts": 32, "example_limit": 5}
+
+
 @operation("missingness")
 def missingness(
     df: pd.DataFrame,
@@ -126,15 +129,12 @@ def missingness(
     entity: str | Iterable[str] | None = None,
     unit: Literal["rows", "entities"] = "rows",
     entity_presence: Literal["any", "all"] = "any",
-    missing: Mapping[str, Iterable[Any]] | None = None,
-    scope: Scope | None = None,
-    table_id: str = "table",
     min_implication: float = 0.9,
     min_similarity: float = 0.8,
-    max_pairs: int = 200,
-    max_signatures: int = 50,
-    max_contexts: int = 32,
-    example_limit: int = 5,
+    limits: MissingnessLimits | None = None,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
     **runtime: Unpack[Runtime],
 ) -> Result:
     """Measure where values are present: per column, jointly, and within contexts.
@@ -155,18 +155,18 @@ def missingness(
         Count rows (default) or entities (requires ``entity``).
     entity_presence : {'any', 'all'}, optional
         With unit='entities': populated when any row (default) or every row is.
-    missing, scope, table_id
-        Source context shared by every analysis.
     min_implication, min_similarity : float, optional
         Report "A populated implies B populated" at or above min_implication
         (default 0.9, denominator: units with A), and similar presence at or above
         min_similarity Jaccard (default 0.8, denominator: units with A or B).
-    max_pairs, max_signatures, max_contexts : int, optional
-        Budgets: column pairs tested (default 200), availability patterns saved
-        (default 50), and contexts analyzed (default 32). Omissions are counted.
-    example_limit : int, optional
-        Saved example and exception source rows per finding; default 5. Selection
-        always recovers the complete population.
+    limits : MissingnessLimits or None, optional
+        Budgets: column pairs tested (``max_pairs``, default 200), availability
+        patterns saved (``max_signatures``, 50), contexts analyzed
+        (``max_contexts``, 32), all with omissions counted, and saved example
+        rows per finding (``example_limit``, 5; selection always recovers the
+        complete population).
+    scope, missing, table_id
+        Source context shared by every analysis.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
@@ -188,13 +188,7 @@ def missingness(
     >>> result["availability"][0]["populated_fraction"]
     0.5
     """
-    for name, value in [
-        ("max_pairs", max_pairs),
-        ("max_signatures", max_signatures),
-        ("max_contexts", max_contexts),
-        ("example_limit", example_limit),
-    ]:
-        limit(name, value)
+    budget = budgets(limits, _LIMITS)
     if not 0 <= min_implication <= 1 or not 0 <= min_similarity <= 1:
         raise ValueError("Thresholds must be between zero and one")
     if unit not in {"rows", "entities"} or entity_presence not in {"any", "all"}:
@@ -226,7 +220,7 @@ def missingness(
         entities,
         unit,
         entity_presence,
-        example_limit,
+        budget["example_limit"],
     )
     units = analysis.units(np.arange(len(frame)))
     masks = analysis.masks(units)
@@ -238,15 +232,13 @@ def missingness(
         "entity_presence": entity_presence,
         "min_implication": min_implication,
         "min_similarity": min_similarity,
-        "max_pairs": max_pairs,
-        "max_signatures": max_signatures,
-        "max_contexts": max_contexts,
-        "example_limit": example_limit,
+        "limits": budget,
     }
     base["analysis_unit"] = _analysis_unit(analysis, units)
     base["availability"] = _availability(analysis, units, masks)
-    signature_ids, shown, total = _signatures(analysis, units, masks, max_signatures)
+    signature_ids, shown, total = _signatures(analysis, units, masks, budget["max_signatures"])
     base["families"] = _families(analysis, units, masks)
+    max_pairs, max_contexts = budget["max_pairs"], budget["max_contexts"]
     evaluated = _pairs(analysis, units, masks, max_pairs, min_similarity, min_implication)
     context_count = _contexts(analysis, max_contexts)
     base["entities"] = _entities(analysis) if entities else []

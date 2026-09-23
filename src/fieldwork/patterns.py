@@ -19,14 +19,16 @@ from .evidence import (
     Scope,
     analyzable,
     bounded_rows,
+    budgets,
     columns,
     finding,
-    limit,
     prepare,
     result,
 )
 from .result import Result
-from .typing import Runtime
+from .typing import PatternLimits, Runtime
+
+_LIMITS = {"max_pairs": 100, "max_patterns": 10, "example_limit": 5}
 
 
 @operation("value patterns")
@@ -35,12 +37,10 @@ def value_patterns(
     *,
     features: Iterable[str] | None = None,
     by: Iterable[str] | None = None,
-    missing: Mapping[str, Iterable[Any]] | None = None,
+    limits: PatternLimits | None = None,
     scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    max_pairs: int = 100,
-    max_patterns: int = 10,
-    example_limit: int = 5,
     **runtime: Unpack[Runtime],
 ) -> Result:
     """Summarize populated values: string formats, numeric ranges and relations.
@@ -55,15 +55,13 @@ def value_patterns(
     by : iterable of str or None, optional
         Context columns: each other feature is tested for being constant within
         each joint context (rows missing a context value are excluded).
-    missing, scope, table_id
+    limits : PatternLimits or None, optional
+        Budgets: column pairs tested for constant numeric offsets and ratios, in
+        column order (``max_pairs``, default 100), formats, lengths and prefixes
+        saved per string column (``max_patterns``, 10), and saved example rows
+        per finding (``example_limit``, 5).
+    scope, missing, table_id
         Source context shared by every analysis.
-    max_pairs : int, optional
-        Column pairs tested for constant numeric offsets and ratios, in column
-        order; default 100.
-    max_patterns : int, optional
-        Formats, lengths and prefixes saved per string column; default 10.
-    example_limit : int, optional
-        Saved example and exception rows per finding; default 5.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
@@ -91,12 +89,7 @@ def value_patterns(
     >>> result["summaries"][0]["formats"]
     [['A9', 2]]
     """
-    for name, value in [
-        ("max_pairs", max_pairs),
-        ("max_patterns", max_patterns),
-        ("example_limit", example_limit),
-    ]:
-        limit(name, value)
+    budget = budgets(limits, _LIMITS)
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
@@ -108,15 +101,15 @@ def value_patterns(
         presence_features=selected,
         optional=selected if features is None else (),
     )
-    patterns = _Patterns(frame, positions, present, base, example_limit)
+    patterns = _Patterns(frame, positions, present, base, budget["example_limit"])
     selected = analyzable(selected, base)
     base["summaries"] = []
     with phase("value summaries", len(selected), "columns") as tracker:
         for c in selected:
-            base["summaries"].append(_summary(patterns, c, max_patterns))
+            base["summaries"].append(_summary(patterns, c, budget["max_patterns"]))
             tracker.advance(detail=c)
     base["families"] = _indexed_families(patterns, selected)
-    tested = _numeric_pairs(patterns, selected, max_pairs)
+    tested = _numeric_pairs(patterns, selected, budget["max_pairs"])
     if contexts:
         _context_constancy(patterns, codes, selected, contexts)
     base["coverage"] = {
@@ -126,9 +119,7 @@ def value_patterns(
     base["parameters"] = {
         "features": selected,
         "by": contexts,
-        "max_pairs": max_pairs,
-        "max_patterns": max_patterns,
-        "example_limit": example_limit,
+        "limits": budget,
     }
     return result("value_patterns", base)
 

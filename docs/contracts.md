@@ -135,8 +135,9 @@ the census `tree` records how many rows the pre-selection and missing values
 removed.
 
 `explore(df)` surveys a table; `profile(df, dimensions)` combines levels, census,
-grain and pairs for chosen dimensions. Both accept the shared `scope`, `missing`
-and `table_id` context directly.
+grain and pairs for chosen dimensions, configured by a `census` options mapping
+(`CensusOptions`) and a `pairs` mapping (`PairOptions`, or False to skip pairs).
+Both accept the shared `scope`, `missing` and `table_id` context directly.
 
 An overview stores its sections' results under `sections` and ranks their
 findings as `leads`, each referencing a section finding (`section`,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Unpack
 
@@ -267,6 +267,26 @@ def _sentinel_key(value):
 def limit(name, value, *, minimum=0):
     if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
         raise ValueError(f"{name} must be an integer >= {minimum}")
+
+
+def budgets(given, defaults, *, positive=(), nullable=()):
+    """An analysis's ``limits`` merged over its default budgets and validated.
+
+    Unknown names raise TypeError, like unknown keyword arguments. Each budget is
+    a nonnegative integer (positive when named in ``positive``); None, meaning
+    unbounded, is accepted where the default is None or the name is ``nullable``.
+    """
+    if given is not None and not isinstance(given, Mapping):
+        raise TypeError("limits must be a mapping")
+    unknown = sorted(set(given or {}) - set(defaults))
+    if unknown:
+        raise TypeError(f"Unknown limit {unknown[0]!r}; expected one of {', '.join(defaults)}")
+    merged = {**defaults, **(given or {})}
+    for name, value in merged.items():
+        if value is None and (defaults[name] is None or name in nullable):
+            continue
+        limit(name, value, minimum=1 if name in positive else 0)
+    return merged
 
 
 def prepare(

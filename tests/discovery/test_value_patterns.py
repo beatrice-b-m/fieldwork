@@ -46,7 +46,7 @@ def shape(text):
 def test_string_formats_lengths_and_prefixes_match_oracle(values, max_patterns):
     frame = pd.DataFrame({"code": pd.Series(values, dtype=object)})
     populated = [v for v in values if v is not None]
-    result = fw.value_patterns(frame, max_patterns=max_patterns)
+    result = fw.value_patterns(frame, limits={"max_patterns": max_patterns})
     record = findings(result, "string_patterns").get(("code",))
     if not populated:
         assert record is None
@@ -146,7 +146,7 @@ def test_numeric_offset_and_ratio_use_only_valid_rows():
     assert not any("noise" in pair for pair in (*offset, *ratio))
     assert result["coverage"] == {"pair_candidates": 6, "pairs_evaluated": 6}
     # Pairs are tested in column-combination order: only (x, shifted) fits one test.
-    limited = fw.value_patterns(frame, max_pairs=1)
+    limited = fw.value_patterns(frame, limits={"max_pairs": 1})
     assert limited["coverage"]["pairs_evaluated"] == 1
     assert set(findings(limited, "numeric_offset")) == {("x", "shifted")}
     assert not findings(limited, "numeric_ratio")

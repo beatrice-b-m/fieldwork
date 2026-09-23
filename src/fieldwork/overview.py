@@ -34,9 +34,9 @@ _OPERATIONS = {
 # The overview searches less than the standalone analyses do.
 _DEFAULTS = {
     "missingness": {},
-    "dependencies": {"max_key_size": 1, "max_candidates": 20},
+    "dependencies": {"max_key_size": 1, "limits": {"max_candidates": 20}},
     "paths": {},
-    "value_patterns": {"max_pairs": 20},
+    "value_patterns": {"limits": {"max_pairs": 20}},
 }
 _CONTEXT = {"scope", "missing", "table_id", "progress", "cancel", "timeout"}
 
@@ -80,7 +80,8 @@ def explore(
         ``{"paths": {"objective": "compact"}, "dependencies": {"max_key_size": 2}}``.
         Only requested sections may be configured; source context and runtime
         controls cannot be. By default dependencies use single-column keys and
-        20 candidates, and value patterns 20 pairs.
+        20 candidates, and value patterns 20 pairs; a section's ``limits`` merge
+        with these defaults key by key.
     scope, missing, table_id
         Source context shared by every analysis and section.
     **runtime : Unpack[Runtime]
@@ -153,7 +154,11 @@ def _configs(df, requested, options, shared, availability) -> dict[str, dict[str
             config["by"] = shared["by"]
         if name == "missingness":
             config.update(availability)
+        # Budgets merge key by key, so overriding one keeps the overview's others.
+        limits = {**config.get("limits", {}), **(overrides.pop("limits", None) or {})}
         config.update(overrides)
+        if limits:
+            config["limits"] = limits
         inspect.signature(_OPERATIONS[name]).bind(df, **config)
         configs[name] = config
     return configs

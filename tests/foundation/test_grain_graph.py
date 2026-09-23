@@ -108,7 +108,11 @@ def test_common_key_missingness_and_empty_are_explicit():
 def test_graph_scope_is_the_census_cohort():
     frame = pd.DataFrame({"a": ["x", "x", "y"], "key": [1, 2, 3], "value": [1, 2, 3]})
     section = profile(
-        frame, ["a"], candidate_keys=["key"], top_n=1, top_n_mode="pre", top_n_applies_to="both"
+        frame,
+        ["a"],
+        candidate_keys=["key"],
+        census={"top_n": 1, "top_n_mode": "pre"},
+        top_n_applies_to="both",
     )["sections"]["grain"]
     # The grain graph evaluates only the census pre-selection's rows.
     assert section["scope"]["name"] == "census top_n cohort"

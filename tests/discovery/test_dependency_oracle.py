@@ -88,7 +88,7 @@ def check_against_oracle(frame, *, dropna, by, positions=None, max_key_size=2):
         scope=scope,
         max_key_size=max_key_size,
         min_accuracy=0,
-        example_limit=example_limit,
+        limits={"example_limit": example_limit},
         include_grain=False,
     )
     rows = list(range(len(frame))) if positions is None else sorted(positions)

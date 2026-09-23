@@ -18,6 +18,7 @@ from ._runtime import checkpoint, operation, phase
 from .evidence import (
     Scope,
     analyzable,
+    budgets,
     columns,
     finding,
     fingerprint,
@@ -26,7 +27,7 @@ from .evidence import (
     saved_context,
 )
 from .result import Result
-from .typing import Runtime, SchemaRole
+from .typing import PathLimits, Runtime, SchemaRole
 
 
 class Path:
@@ -159,6 +160,15 @@ class Path:
         )
 
 
+_LIMITS = {
+    "max_candidates": 200,
+    "max_features": 20,
+    "max_pairs": 200,
+    "beam_width": 12,
+    "display_budget": 40,
+}
+
+
 @operation("paths")
 def suggest_paths(
     df: pd.DataFrame,
@@ -170,12 +180,8 @@ def suggest_paths(
     exclude: Iterable[str] | None = None,
     target: str | None = None,
     max_dimensions: int = 4,
-    max_candidates: int = 200,
-    max_features: int = 20,
-    max_pairs: int = 200,
-    beam_width: int = 12,
     n_paths: int = 3,
-    display_budget: int = 40,
+    limits: PathLimits | None = None,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
@@ -202,13 +208,14 @@ def suggest_paths(
     start_with, before, exclude, target : optional
         Steering: required initial columns, acyclic (earlier, later) column
         pairs, excluded columns, and the column 'target' explains.
-    max_dimensions, max_candidates, max_features, max_pairs, beam_width, n_paths : int
-        Path length (default 4), extensions scored (200), candidate columns (20),
-        column pairs tested for nesting (200), alternatives kept per depth (12)
-        and paths returned (3).
-    display_budget : int, optional
-        Node budget of each path's census preview and the prefix-cost reference;
-        default 40.
+    max_dimensions, n_paths : int, optional
+        Path length (default 4) and number of paths returned (default 3).
+    limits : PathLimits or None, optional
+        Search budgets: extensions scored (``max_candidates``, default 200),
+        candidate columns (``max_features``, 20), column pairs tested for nesting
+        (``max_pairs``, 200), alternatives kept per depth (``beam_width``, 12),
+        and each preview's node budget, also the prefix-cost reference
+        (``display_budget``, 40).
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -234,16 +241,10 @@ def suggest_paths(
     objectives = {"structure", "availability", "compact", "target", "context"}
     if objective not in objectives:
         raise ValueError(f"objective must be one of {sorted(objectives)}")
-    for name, value in [
-        ("max_dimensions", max_dimensions),
-        ("max_candidates", max_candidates),
-        ("max_features", max_features),
-        ("beam_width", beam_width),
-        ("n_paths", n_paths),
-        ("display_budget", display_budget),
-    ]:
-        limit(name, value, minimum=1)
-    limit("max_pairs", max_pairs)
+    limit("max_dimensions", max_dimensions, minimum=1)
+    limit("n_paths", n_paths, minimum=1)
+    budget = budgets(limits, _LIMITS, positive=_LIMITS.keys() - {"max_pairs"})
+    max_features, display_budget = budget["max_features"], budget["display_budget"]
     steering = _steering(df, features, exclude, start_with, before, target, objective)
     if len(steering.starts) > max_dimensions or len(steering.required) > max_dimensions:
         raise ValueError("max_dimensions cannot fit steering constraints")
@@ -266,7 +267,7 @@ def suggest_paths(
     encoded = {c: np.where(present[c], code, -1) for c, code in encoded.items()}
     cardinality = {c: len(np.unique(encoded[c])) for c in selected}
     active = [c for c in selected if cardinality[c] > 1 or c in required]
-    edges, aliases, tested_pairs = _nesting(encoded, active, cardinality, max_pairs)
+    edges, aliases, tested_pairs = _nesting(encoded, active, cardinality, budget["max_pairs"])
     _check_constraints(steering)
     scorer = _Scorer(
         encoded,
@@ -279,7 +280,9 @@ def suggest_paths(
         encoded[target] if target is not None else None,
     )
     width = min(max_dimensions, len(active))
-    beam, evaluated = _beam_search(scorer, active, steering, width, max_candidates, beam_width)
+    beam, evaluated = _beam_search(
+        scorer, active, steering, width, budget["max_candidates"], budget["beam_width"]
+    )
     alternatives = _alternatives(scorer, beam, active, aliases)
     context = {"scope": scope, "missing": missing or {}, "table_id": table_id}
     base["paths"] = []
@@ -307,7 +310,7 @@ def suggest_paths(
         "paths_evaluated": evaluated,
         "distinct_alternatives": len(alternatives),
         "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
-        "search_exhausted_budget": evaluated >= max_candidates,
+        "search_exhausted_budget": evaluated >= budget["max_candidates"],
         "requested_depth": width,
         "returned_depth": max((len(p["dimensions"]) for p in base["paths"]), default=0),
     }
@@ -319,12 +322,8 @@ def suggest_paths(
         "exclude": sorted(steering.excluded),
         "target": target,
         "max_dimensions": max_dimensions,
-        "max_candidates": max_candidates,
-        "max_features": max_features,
-        "max_pairs": max_pairs,
-        "beam_width": beam_width,
         "n_paths": n_paths,
-        "display_budget": display_budget,
+        "limits": budget,
     }
     return Result("paths", base)
 

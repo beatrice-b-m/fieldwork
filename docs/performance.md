@@ -82,9 +82,8 @@ overview = fw.explore(
         "missingness": {"features": ["site", "visit", "value"]},
         "dependencies": {
             "max_key_size": 1,
-            "max_candidates": 5,
-            "max_dependency_tests": 100,
             "include_grain": False,
+            "limits": {"max_candidates": 5, "max_dependency_tests": 100},
         },
     },
     progress=True,
@@ -94,23 +93,29 @@ overview = fw.explore(
 The four overview sections are `missingness`, `dependencies`, `paths`, and
 `value_patterns`. Omitted sections are explicitly `not_requested`; text, HTML,
 and SVG presentations identify them. `options` accepts each requested
-operation's analytical options, such as `features`, `max_pairs`, or
-`max_candidates`. Shared source settings (`scope`, `missing`, `table_id`) and
+operation's analytical options, such as `features` or `max_key_size`, and its
+work budgets under `limits`. A section's `limits` merge with the overview's
+defaults key by key. Shared source settings (`scope`, `missing`, `table_id`) and
 runtime controls stay on the overview.
 
 Shared parameters (`features`, `by`, entity settings) flow to their relevant
 sections; path search settings belong in `options["paths"]`. Use
-`options["dependencies"]` to override the overview's default 20 single-column
-dependency candidates. Separate calls to
+`options["dependencies"]` to override the overview's default single-column keys
+and 20 candidates (`{"max_key_size": 2, "limits": {"max_candidates": 50}}`). Separate calls to
 `discover_dependencies` still default to 100 candidates and maximum key size two.
 
-Dependency options available both directly and in `options["dependencies"]`:
+Every analysis with search or output budgets takes them in one `limits`
+mapping (`fieldwork.typing.PathLimits`, `MissingnessLimits`, `DependencyLimits`,
+`PatternLimits`, `PairLimits`); omitted budgets keep their defaults, unknown
+names raise `TypeError`, and results record the effective budgets in
+`parameters["limits"]`. Dependency work controls, directly or in
+`options["dependencies"]`:
 
 | Option | Effect |
 | --- | --- |
 | `include_grain=False` | Skip foundation grain graphs; retain dependency tests and candidate summaries. |
-| `max_grain_views=n` | Build at most n distinct supported population views in their usual order. |
-| `max_dependency_tests=n` | Cap discovery candidate/target/context tests in their usual order. |
+| `limits={"max_grain_views": n}` | Build at most n distinct supported population views in their usual order. |
+| `limits={"max_dependency_tests": n}` | Cap discovery candidate/target/context tests in their usual order. |
 
 These options default to the previous complete work within the existing search
 budgets. Graph metadata records possible/omitted views and reasons for excluded
@@ -118,7 +123,7 @@ candidates. Test coverage records possible/omitted tests. A test budget does not
 cap foundation graph computations; combine it with `include_grain=False` or a
 graph-view budget to control both. An untested relation is not negative evidence.
 Candidate summaries are still computed up to `max_candidates`, including when
-`max_dependency_tests=0`.
+`max_dependency_tests` is 0.
 `min_accuracy` and example/display limits primarily control output, not test work.
 
 ## What is reused and what still costs time

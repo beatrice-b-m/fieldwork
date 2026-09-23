@@ -74,15 +74,27 @@ def rich_frame():
 
 DEPENDENCY_FEATURES = ["entity", "site", "site_code", "tied", "sparse", "measure"]
 ANALYSES = {
-    "missingness": lambda df: fw.missingness(df, example_limit=len(df)),
+    "missingness": lambda df: fw.missingness(df, limits={"example_limit": len(df)}),
     "missingness_entities": lambda df: fw.missingness(
-        df, entity="entity", unit="entities", by=["site"], example_limit=len(df)
+        df,
+        entity="entity",
+        unit="entities",
+        by=["site"],
+        limits={"example_limit": len(df)},
     ),
     "dependencies": lambda df: fw.discover_dependencies(
-        df, features=DEPENDENCY_FEATURES, by=["arm"], min_accuracy=0, example_limit=len(df)
+        df,
+        features=DEPENDENCY_FEATURES,
+        by=["arm"],
+        min_accuracy=0,
+        limits={"example_limit": len(df)},
     ),
     "dependencies_na": lambda df: fw.discover_dependencies(
-        df, features=DEPENDENCY_FEATURES, dropna=False, min_accuracy=0, example_limit=len(df)
+        df,
+        features=DEPENDENCY_FEATURES,
+        dropna=False,
+        min_accuracy=0,
+        limits={"example_limit": len(df)},
     ),
     "paths": lambda df: fw.suggest_paths(df),
     "availability_paths": lambda df: fw.suggest_paths(df, objective="availability"),
@@ -107,9 +119,9 @@ def test_small_tied_frames_are_order_invariant(rows, random):
     frame = pd.DataFrame(rows, columns=["a", "b", "c"]).astype(object)
     order = np.array(random.sample(range(len(frame)), len(frame)))
     for analysis in (
-        lambda df: fw.missingness(df, example_limit=len(df)),
-        lambda df: fw.discover_dependencies(df, min_accuracy=0, example_limit=len(df)),
-        lambda df: fw.discover_dependencies(df, dropna=False, example_limit=len(df)),
+        lambda df: fw.missingness(df, limits={"example_limit": len(df)}),
+        lambda df: fw.discover_dependencies(df, min_accuracy=0, limits={"example_limit": len(df)}),
+        lambda df: fw.discover_dependencies(df, dropna=False, limits={"example_limit": len(df)}),
         lambda df: fw.suggest_paths(df, objective="target", target="c"),
     ):
         assert_invariant(analysis, frame, order)

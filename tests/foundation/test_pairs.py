@@ -156,7 +156,9 @@ def test_absence_classes_match_hand_counts():
 
 def test_pair_and_context_budgets_are_reported():
     frame = pd.DataFrame({"a": [1, 2], "b": [1, 2], "c": [1, 2], "g": ["p", "q"]})
-    result = pairs(frame, ["a", "b", "c"], max_pairs=2, pair_contexts=[{"g": "p"}, {"g": "q"}])
+    result = pairs(
+        frame, ["a", "b", "c"], limits={"max_pairs": 2}, pair_contexts=[{"g": "p"}, {"g": "q"}]
+    )
     assert (result["requested_pairs"], result["processed_pairs"], result["omitted_pairs"]) == (
         3,
         2,
@@ -164,6 +166,6 @@ def test_pair_and_context_budgets_are_reported():
     )
     assert result["processed_contexts"] == 3 and result["omitted_contexts"] == 0
     assert [r["columns"] for r in result["pairs"]] == [["a", "b"]] * 3 + [["a", "c"]] * 3
-    limited = pairs(frame, ["a", "b", "c"], max_contexts=1, pair_contexts=[{"g": "p"}])
+    limited = pairs(frame, ["a", "b", "c"], limits={"max_contexts": 1}, pair_contexts=[{"g": "p"}])
     assert limited["omitted_contexts"] == 1
     assert all(r["context"] == [] for r in limited["pairs"])

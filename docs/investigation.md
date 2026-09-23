@@ -44,7 +44,7 @@ remain distinct evidence. Follow one relationship to `overview.inspect(df, id)`.
 ```python
 availability = fw.missingness(
     df, features=["image_1", "image_2"], by=["site"],
-    entity="exam_id", missing={"image_2": [-999]}, example_limit=3,
+    entity="exam_id", missing={"image_2": [-999]}, limits={"example_limit": 3},
 )
 signature = next(s for s in availability["signatures"] if "image_2" in s["absent"])
 examples = availability.inspect(df, signature["finding_id"])
@@ -137,14 +137,18 @@ This also works for a configured automatic overview:
 ```python
 overview_recipe = fw.Recipe(
     "explore",
-    {"discovery": {"max_candidates": 10, "entity": "exam_id", "unit": "entities"}},
+    {
+        "entity": "exam_id",
+        "unit": "entities",
+        "options": {"dependencies": {"limits": {"max_candidates": 10}}},
+    },
 )
 selected_overview = overview_recipe.run(df, scope=scope)
 ```
 
 The run uses the selected population in every section and retains the recipe's
 search and entity settings. Common run overrides (`scope`, `missing`, `table_id`,
-`features`) take precedence over their configured `discovery` values.
+`features`) take precedence over their saved values.
 Saved path results restore `best.census` as well. Topology exports retain feature
 labels, relation types and context predicates while suppressing measurements,
 source positions and population identifiers. Related-table discovery remains deferred.

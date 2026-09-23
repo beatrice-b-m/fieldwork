@@ -93,7 +93,7 @@ def test_global_pre_selection_keeps_values_excluded_by_other_dimensions():
 
 def test_combined_warnings_name_section_columns_with_different_feature_orders():
     frame = pd.DataFrame({"a": pd.Series([1, "x"], dtype=object), "b": [1, 2]})
-    result = profile(frame, ["b", "a"], features=["a", "b"], schema={"b": "id"})
+    result = profile(frame, ["b", "a"], features=["a", "b"], census={"schema": {"b": "id"}})
     assert [w["column"] for w in result["warnings"]] == ["a", "b", "b", "a"]
     assert "feature_id=" not in render_plaintext(result)
 
@@ -115,7 +115,7 @@ def test_grain_graph_and_joint_cells_reference_their_records():
 
 def test_combined_pairs_absence_and_unrequested_sections():
     frame = pd.DataFrame({"a": ["x", "y"], "b": [1, 2]})
-    result = profile(frame, ["a", "b"], include_absence=True)
+    result = profile(frame, ["a", "b"], pairs={"include_absence": True})
     data = result.to_dict()
     assert data["sections"]["grain"] == {"status": "not_requested"}
     pair = data["sections"]["pairs"]["pairs"][0]

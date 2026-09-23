@@ -87,8 +87,7 @@ def test_scoped_pre_selection_cohort_counts_rows_once(applies_to, dropna):
         ["site", "exam"],
         scope=scope,
         candidate_keys=["site", "exam"],
-        top_n=1,
-        top_n_mode="pre",
+        census={"top_n": 1, "top_n_mode": "pre"},
         top_n_applies_to=applies_to,
         dropna=dropna,
     )

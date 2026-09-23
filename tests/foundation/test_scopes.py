@@ -12,10 +12,14 @@ def test_contexts_do_not_change_global_pair_or_each_other() -> None:
     frame = pd.DataFrame(
         {"a": ["x", "x", "y"], "b": [1, 2, 2], "site": ["N", None, "S"], "batch": [None, "B", "B"]}
     )
-    options = {"dropna": True, "include_absence": True}
-    baseline = profile(frame, ["a", "b"], **options)["sections"]["pairs"]["pairs"][0]
-    single = profile(frame, ["a", "b"], pair_contexts=[{"site": "N"}], **options)
-    multiple = profile(frame, ["a", "b"], pair_contexts=[{"site": "N"}, {"batch": "B"}], **options)
+
+    def run(*contexts):
+        pairs = {"include_absence": True, "pair_contexts": list(contexts)}
+        return profile(frame, ["a", "b"], dropna=True, pairs=pairs)
+
+    baseline = run()["sections"]["pairs"]["pairs"][0]
+    single = run({"site": "N"})
+    multiple = run({"site": "N"}, {"batch": "B"})
     records = multiple["sections"]["pairs"]["pairs"]
     assert baseline == single["sections"]["pairs"]["pairs"][0] == records[0]
     assert baseline["relation"] == "n:m"
@@ -44,11 +48,9 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
         ["a", "b"],
         candidate_keys=["id"],
         dropna=True,
-        top_n=1,
-        top_n_mode="pre",
-        top_n_per_parent=per_parent,
+        census={"top_n": 1, "top_n_mode": "pre", "top_n_per_parent": per_parent},
+        pairs={"pair_contexts": [{"context": "N"}]},
         top_n_applies_to="both",
-        pair_contexts=[{"context": "N"}],
     )
     census_tree = result["sections"]["census"]["tree"]
     pairs = result["sections"]["pairs"]
@@ -80,7 +82,11 @@ def test_pre_cohort_preserves_original_scope_in_pairs_and_grain(per_parent: bool
         )
     json.dumps(result.to_dict(), allow_nan=False)
     full_grain = profile(
-        frame, ["a", "b"], candidate_keys=["id"], dropna=True, top_n=1, top_n_mode="pre"
+        frame,
+        ["a", "b"],
+        candidate_keys=["id"],
+        dropna=True,
+        census={"top_n": 1, "top_n_mode": "pre"},
     )["sections"]["grain"]
     assert full_grain["scope"]["name"] == "input"
     assert full_grain["scope"]["restriction_excluded_rows"] == 0

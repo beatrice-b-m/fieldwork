@@ -17,7 +17,7 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(scope.refine(df, []), fw.Scope)
     assert_type(token.cancelled, bool)
     options: SectionOptions = {
-        "paths": {"objective": "availability", "max_candidates": 20},
+        "paths": {"objective": "availability", "limits": {"max_candidates": 20}},
         "dependencies": {"include_grain": False},
     }
     overview = fw.explore(
@@ -40,7 +40,7 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(fw.census(df, ["site"], top_n=2, progress=True), fw.Result)
     assert_type(fw.levels(df, ["site"], timeout=2), fw.Result)
     assert_type(fw.grain(df, [fw.KeySpec("site", ("site",))]), fw.Result)
-    assert_type(fw.pairs(df, ["site", "visit"], max_pairs=1), fw.Result)
+    assert_type(fw.pairs(df, ["site", "visit"], limits={"max_pairs": 1}), fw.Result)
     assert_type(fw.joint_counts(df, ["site", "visit"]), fw.Result)
     assert_type(fw.infer_schema(df), fw.Result)
     missingness = fw.missingness(df, unit="entities", entity="site")
@@ -75,3 +75,6 @@ def consume(df: pd.DataFrame) -> None:
     fw.grain(df, ["site"], _cache=None)  # pyright: ignore[reportCallIssue]
     paths.path().census(df, missing={})  # pyright: ignore[reportCallIssue]
     fw.render_svg(overview, view="bogus")  # pyright: ignore[reportArgumentType]
+    fw.suggest_paths(df, max_candidates=2)  # pyright: ignore[reportCallIssue]
+    fw.suggest_paths(df, limits={"max_candidate": 2})  # pyright: ignore[reportArgumentType]
+    fw.profile(df, ["site"], census={"max_pair": 2})  # pyright: ignore[reportArgumentType]

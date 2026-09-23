@@ -360,7 +360,7 @@ class Result(Mapping[str, Any]):
         >>> import pandas as pd
         >>> import fieldwork as fw
         >>> df = pd.DataFrame({'x': [1, 2, None]})
-        >>> fw.missingness(df, example_limit=1).select(df, 0).positions
+        >>> fw.missingness(df, limits={"example_limit": 1}).select(df, 0).positions
         (0, 1)
         """
         from ._selection import select_rows
@@ -381,7 +381,7 @@ class Result(Mapping[str, Any]):
         selected = select_rows(df, analysis, record, exceptions)
         if selected is not None:
             return Scope(dataset, tuple(selected), name, parent)
-        replay = analysis.recompute(df, example_limit=len(df))
+        replay = analysis.recompute(df, limits={"example_limit": len(df)})
         # Match semantic selectors, not ordinal IDs, which depend on parameters.
         bookkeeping = {
             "dataset_id",
@@ -413,7 +413,8 @@ class Result(Mapping[str, Any]):
         df : pandas.DataFrame
             The identical ordered source (labels, index and values are verified).
         **overrides : Any
-            Options replacing saved parameters, such as example_limit=20, and the
+            Options replacing saved parameters, such as ``limits={"example_limit": 20}``
+            (budgets merge with the saved ones), and the
             runtime controls of fieldwork.typing.Runtime.
 
         Returns
@@ -443,7 +444,13 @@ class Result(Mapping[str, Any]):
             raise ValueError(f"A {self.kind} result cannot be recomputed; recompute its sections")
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs; use a Recipe for a new delivery")
-        parameters = {**self.payload["parameters"], **saved_context(self.payload), **overrides}
+        saved = self.payload["parameters"]
+        parameters = {**saved, **saved_context(self.payload), **overrides}
+        if isinstance(saved.get("limits"), Mapping) and isinstance(
+            overrides.get("limits"), Mapping
+        ):
+            # A budget override keeps the other saved budgets.
+            parameters["limits"] = {**saved["limits"], **overrides["limits"]}
         return operations[name](df, **parameters)
 
     def __repr__(self) -> str:

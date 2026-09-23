@@ -45,7 +45,9 @@ KINDS = {
     "census": lambda df: fw.census(df, ["site", "patient", "exam"]),
     "grain": lambda df: fw.grain(df, ["patient", "exam", KeySpec("exam_side", ("exam", "side"))]),
     "pairs": lambda df: fw.profile(
-        df, ["side", "finding"], pair_contexts=[{"site": "A"}], include_absence=True
+        df,
+        ["side", "finding"],
+        pairs={"pair_contexts": [{"site": "A"}], "include_absence": True},
     )["sections"]["pairs"],
     "joint_counts": lambda df: fw.joint_counts(df, ["side", "finding"]),
     "profile": lambda df: fw.profile(df, ["site", "exam"], candidate_keys=["patient"]),
@@ -221,7 +223,9 @@ def test_hostile_labels_and_values_are_escaped_everywhere(make):
         (lambda df: fw.grain(df, ["patient", "exam"]), None),
         (
             lambda df: fw.profile(
-                df, ["side", "finding"], pair_contexts=[{"site": "A"}, {"site": "B"}]
+                df,
+                ["side", "finding"],
+                pairs={"pair_contexts": [{"site": "A"}, {"site": "B"}]},
             ),
             "pairs",
         ),

@@ -19,6 +19,7 @@ from .evidence import (
     Scope,
     analyzable,
     bounded_rows,
+    budgets,
     columns,
     context_statement,
     finding,
@@ -28,7 +29,15 @@ from .evidence import (
     selection,
 )
 from .result import Result
-from .typing import Runtime
+from .typing import DependencyLimits, Runtime
+
+_LIMITS = {
+    "max_candidates": 100,
+    "max_contexts": 32,
+    "max_dependency_tests": None,
+    "max_grain_views": None,
+    "example_limit": 5,
+}
 
 
 @operation("dependencies")
@@ -37,18 +46,14 @@ def discover_dependencies(
     *,
     features: Iterable[str] | None = None,
     max_key_size: int = 2,
-    max_candidates: int = 100,
     min_accuracy: float = 0.95,
     by: Iterable[str] | None = None,
-    max_contexts: int = 32,
     dropna: bool = True,
+    include_grain: bool = True,
+    limits: DependencyLimits | None = None,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    example_limit: int = 5,
-    include_grain: bool = True,
-    max_grain_views: int | None = None,
-    max_dependency_tests: int | None = None,
     **runtime: Unpack[Runtime],
 ) -> Result:
     """Find observed exact and approximate functional dependencies among columns.
@@ -65,29 +70,27 @@ def discover_dependencies(
     features : iterable of str or None, optional
         Columns to use as determinants and targets; default None selects every
         column, skipping (and listing) columns with unsupported values.
-    max_key_size, max_candidates : int, optional
-        Largest determinant (default 2) and number of determinants tested
-        (default 100), in size then column order.
+    max_key_size : int, optional
+        Largest determinant; default 2.
     min_accuracy : float, optional
         Report tests whose modal repair accuracy (share of rows keeping their
         group's most common target) is at least this; default 0.95. Every
         completed test is kept in ``dependencies`` regardless.
     by : iterable of str or None, optional
         Context columns; tests are repeated within each joint context value.
-    max_contexts : int, optional
-        Contexts analyzed besides the global population; default 32.
     dropna : bool, optional
         True (default) tests each pair on rows where determinant and target are
         present; False treats missing values (and sentinels) as a category.
+    include_grain : bool, optional
+        Build grain graphs of the candidates; default True.
+    limits : DependencyLimits or None, optional
+        Budgets: determinants tested (``max_candidates``, default 100, in size
+        then column order), contexts (``max_contexts``, 32), tests
+        (``max_dependency_tests``) and grain views (``max_grain_views``, both
+        unbounded by default), and saved example rows per test
+        (``example_limit``, 5). Omitted work is reported in ``coverage``.
     missing, scope, table_id
         Source context shared by every analysis.
-    example_limit : int, optional
-        Saved example and exception rows (and exception groups) per test;
-        default 5.
-    include_grain, max_grain_views, max_dependency_tests : optional
-        Build grain graphs of the candidates (default True), at most
-        max_grain_views of them (default all), and stop after
-        max_dependency_tests tests (default all). Omitted work is reported.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
@@ -115,19 +118,11 @@ def discover_dependencies(
     ['region']
     """
     limit("max_key_size", max_key_size, minimum=1)
-    limit("max_candidates", max_candidates)
-    limit("max_contexts", max_contexts)
-    limit("example_limit", example_limit)
+    budget = budgets(limits, _LIMITS)
     if not 0 <= min_accuracy <= 1:
         raise ValueError("min_accuracy must be between zero and one")
     if not isinstance(include_grain, bool):
         raise TypeError("include_grain must be boolean")
-    for name, value in (
-        ("max_grain_views", max_grain_views),
-        ("max_dependency_tests", max_dependency_tests),
-    ):
-        if value is not None:
-            limit(name, value)
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
@@ -148,7 +143,7 @@ def discover_dependencies(
         analyzable(selected, base),
         dropna,
         min_accuracy,
-        example_limit,
+        budget["example_limit"],
     )
     candidates = list(
         islice(
@@ -157,18 +152,17 @@ def discover_dependencies(
                 for size in range(1, min(max_key_size, len(search.selected)) + 1)
                 for key in combinations(search.selected, size)
             ),
-            max_candidates,
+            budget["max_candidates"],
         )
     )
-    partitions, context_count = _partitions(search, contexts, max_contexts)
+    partitions, context_count = _partitions(search, contexts, budget["max_contexts"])
     possible = sum(len(search.selected) - len(key) for key in candidates) * len(partitions)
-    search.budget = (
-        possible if max_dependency_tests is None else min(possible, max_dependency_tests)
-    )
+    max_tests = budget["max_dependency_tests"]
+    search.budget = possible if max_tests is None else min(possible, max_tests)
     masks = _test_candidates(search, candidates, partitions)
     anchors = _anchors(masks)
     views = _grain_views(
-        search, candidates, masks, anchors[:max_grain_views] if include_grain else []
+        search, candidates, masks, anchors[: budget["max_grain_views"]] if include_grain else []
     )
     base["grain_views"] = views
     base["graph_selection"] = _graph_selection(base["candidates"], views, include_grain)
@@ -184,22 +178,19 @@ def discover_dependencies(
     base["parameters"] = {
         "features": search.selected,
         "max_key_size": max_key_size,
-        "max_candidates": max_candidates,
         "min_accuracy": min_accuracy,
         "by": contexts,
-        "max_contexts": max_contexts,
         "dropna": dropna,
-        "example_limit": example_limit,
+        "include_grain": include_grain,
+        "limits": budget,
     }
-    if not include_grain or max_grain_views is not None:
-        base["parameters"].update(include_grain=include_grain, max_grain_views=max_grain_views)
+    if not include_grain or budget["max_grain_views"] is not None:
         base["graph_selection"].update(
             status="computed" if include_grain else "not_requested",
             views_possible=len(anchors),
             views_omitted=len(anchors) - len(views),
         )
-    if max_dependency_tests is not None:
-        base["parameters"]["max_dependency_tests"] = max_dependency_tests
+    if max_tests is not None:
         base["coverage"].update(
             dependency_tests_possible=possible, dependency_tests_omitted=possible - search.tests
         )

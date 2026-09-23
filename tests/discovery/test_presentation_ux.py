@@ -31,7 +31,9 @@ def frame():
 
 
 def test_display_limit_is_distinct_from_search_coverage(frame):
-    result = fw.discover_dependencies(frame, max_dependency_tests=1, include_grain=False)
+    result = fw.discover_dependencies(
+        frame, limits={"max_dependency_tests": 1}, include_grain=False
+    )
     coverage = fw.visualization_data(result)["coverage"]
     # The search budget is recorded in the evidence ...
     assert (coverage["dependency_tests"], coverage["dependency_tests_possible"]) == (1, 2)
@@ -43,7 +45,7 @@ def test_display_limit_is_distinct_from_search_coverage(frame):
 
 
 def test_overview_retains_independent_section_coverage(frame):
-    result = fw.explore(frame, options={"dependencies": {"max_dependency_tests": 0}})
+    result = fw.explore(frame, options={"dependencies": {"limits": {"max_dependency_tests": 0}}})
     data = fw.visualization_data(result)
     assert data["section_coverage"]["missingness"]["pairs_evaluated"] == 1
     assert data["section_coverage"]["dependencies"]["dependency_tests"] == 0
@@ -51,7 +53,7 @@ def test_overview_retains_independent_section_coverage(frame):
 
 
 def test_samples_are_source_positions_with_full_support_and_executable_handoff(frame):
-    result = fw.missingness(frame, example_limit=1)
+    result = fw.missingness(frame, limits={"example_limit": 1})
     row = next(r for r in result["findings"] if r["pattern"] == "availability")
     assert row["features"][0]["column"] == "value"
     assert (row["examples"]["positions"], row["examples"]["total"]) == ([0], 3)
@@ -66,7 +68,7 @@ def test_comparison_has_no_inspection_handoff(frame):
 
 
 def test_empty_search_is_reported_in_coverage(frame):
-    empty = fw.discover_dependencies(frame, max_candidates=0, include_grain=False)
+    empty = fw.discover_dependencies(frame, limits={"max_candidates": 0}, include_grain=False)
     assert not empty["findings"]
     coverage = fw.visualization_data(empty)["coverage"]
     assert (coverage["candidates_evaluated"], coverage["candidate_space"]) == (0, 3)

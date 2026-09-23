@@ -123,7 +123,7 @@ def test_candidate_roles_and_priority():
 
 def test_signature_to_complete_scope_and_saved_overview_inspection():
     df = pd.DataFrame({"a": [1, 2, 3, None], "b": [None, None, None, 4]}, index=[0] * 4)
-    analysis = fw.missingness(df, example_limit=1)
+    analysis = fw.missingness(df, limits={"example_limit": 1})
     signature = next(s for s in analysis["signatures"] if s["present"] == ["a"])
     assert len(analysis.inspect(df, signature["finding_id"])) == 1
     saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict())))
@@ -147,7 +147,9 @@ def test_context_and_entity_findings_select_full_source_rows():
     df = pd.DataFrame(
         {"site": ["A", "A", "B"], "entity": [1, 1, 2], "x": [1, None, None]}, index=[0] * 3
     )
-    analysis = fw.missingness(df, features=["x"], by=["site"], entity="entity", example_limit=0)
+    analysis = fw.missingness(
+        df, features=["x"], by=["site"], entity="entity", limits={"example_limit": 0}
+    )
     context = next(
         f
         for f in analysis["findings"]
@@ -298,7 +300,9 @@ def test_whole_context_and_entity_summaries_are_selectable_after_save():
     df = pd.DataFrame(
         {"site": ["A", "A", "B"], "e": [1, 1, None], "x": [1, None, 2]}, index=[0] * 3
     )
-    analysis = fw.missingness(df, by=["site"], entity="e", features=["x"], example_limit=0)
+    analysis = fw.missingness(
+        df, by=["site"], entity="e", features=["x"], limits={"example_limit": 0}
+    )
     saved = fw.Result.from_dict(json.loads(json.dumps(analysis.to_dict(), allow_nan=False)))
     context_id = saved["contexts"][0]["finding_id"]
     assert saved.select(df, context_id).positions == (0, 1)

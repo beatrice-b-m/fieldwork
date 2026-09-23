@@ -1,5 +1,9 @@
 # Discovery algorithms and budgets
 
+Budgets written `name=default` below are keys of each analysis's `limits`
+mapping, except `max_key_size`, `max_dimensions` and `n_paths`, which are
+ordinary arguments.
+
 ## Availability
 
 Needed value columns are encoded once per call context; native presence-only
@@ -183,8 +187,8 @@ probabilities or measurements. Section results keep their own order and IDs.
 ## Explicit work budgets and exact kernels
 
 Overview `sections` and per-section `options` select and configure operations
-independently. Dependency discovery adds `include_grain`, `max_grain_views`, and
-`max_dependency_tests`; omitted graph views and candidate/target/context tests have
+independently. Dependency discovery adds `include_grain` and the `max_grain_views` and
+`max_dependency_tests` limits; omitted graph views and candidate/target/context tests have
 explicit coverage metadata. Defaults preserve previous work and result ordering.
 See [usage and contracts](performance.md#choose-the-work-you-need).
 

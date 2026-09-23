@@ -58,8 +58,7 @@ def test_sentinels_scope_and_signatures(frame):
         features=["a", "b"],
         missing={"a": [5]},
         scope=scope,
-        max_signatures=1,
-        example_limit=1,
+        limits={"max_signatures": 1, "example_limit": 1},
     )
     assert r["availability"][0]["populated"] == 1
     assert r["coverage"]["signature_omitted_rows"] == 1
@@ -116,7 +115,7 @@ def test_approximate_conditional_and_composite_dependencies():
         for d in r["dependencies"]
         if d["determinant"] == ["key", "site"] and d["target"] == "value"
     )
-    bounded = fw.discover_dependencies(df, max_candidates=1)
+    bounded = fw.discover_dependencies(df, limits={"max_candidates": 1})
     assert bounded["coverage"]["candidates_evaluated"] == 1
     assert bounded["coverage"]["candidate_space"] == 6
 
@@ -152,7 +151,7 @@ def test_nesting_and_constraints(frame):
         fw.suggest_paths(frame, before=[("site", "exam")], exclude=["site"])
     with pytest.raises(ValueError):
         fw.suggest_paths(frame, objective="target")
-    r = fw.suggest_paths(frame, max_candidates=1)
+    r = fw.suggest_paths(frame, limits={"max_candidates": 1})
     assert r["coverage"]["paths_evaluated"] == 1
 
 
@@ -289,9 +288,11 @@ def test_availability_matches_boolean_oracle():
 
 def test_saved_recomputation_restores_scope_and_sentinels(frame):
     scope = fw.Scope.from_positions(frame, [0, 2, 5])
-    r = fw.missingness(frame, features=["a"], scope=scope, missing={"a": [5]}, example_limit=0)
+    r = fw.missingness(
+        frame, features=["a"], scope=scope, missing={"a": [5]}, limits={"example_limit": 0}
+    )
     restored = fw.Result.from_dict(json.loads(json.dumps(r.to_dict())))
-    replay = restored.recompute(frame, example_limit=len(frame))
+    replay = restored.recompute(frame, limits={"example_limit": len(frame)})
     assert replay["availability"] == r["availability"]
     assert replay.inspect(frame, 0, exceptions=True).equals(frame.iloc[[2, 5]])
     with pytest.raises(ValueError):
@@ -367,7 +368,11 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
             "entity_presence": "all",
             "by": ["site"],
             "options": {
-                "paths": {"max_candidates": 1, "max_dimensions": 2, "start_with": ["site"]}
+                "paths": {
+                    "limits": {"max_candidates": 1},
+                    "max_dimensions": 2,
+                    "start_with": ["site"],
+                }
             },
         },
     )
@@ -392,7 +397,7 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     assert missingness["parameters"]["by"] == ["site"]
     assert missingness["availability"][1]["populated"] == 0
     paths = overview["sections"]["paths"]
-    assert paths["parameters"]["max_candidates"] == 1
+    assert paths["parameters"]["limits"]["max_candidates"] == 1
     assert paths["parameters"]["start_with"] == ["site"]
     assert paths["coverage"]["paths_evaluated"] == 1
     assert paths["paths"][0]["preview"]["scope"]["selection_positions"] == [0, 1]

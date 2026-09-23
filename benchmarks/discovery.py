@@ -26,8 +26,8 @@ frame["entity"] = np.arange(args.rows) // 4
 records = []
 for name, run in [
     ("missingness", lambda: fw.missingness(frame, entity="entity")),
-    ("dependencies", lambda: fw.discover_dependencies(frame, max_candidates=12)),
-    ("paths", lambda: fw.suggest_paths(frame, max_candidates=60)),
+    ("dependencies", lambda: fw.discover_dependencies(frame, limits={"max_candidates": 12})),
+    ("paths", lambda: fw.suggest_paths(frame, limits={"max_candidates": 60})),
 ]:
     start = time.perf_counter()
     result = run()

@@ -44,9 +44,8 @@ def workload(frame: pd.DataFrame, name: str):
         frame,
         columns[:6],
         candidate_keys=columns[:2],
-        top_n=5,
-        max_nodes=10_000,
-        include_pairs=True,
+        census={"top_n": 5, "max_nodes": 10_000},
+        pairs=True,
     )
     if name == "render":
         return render_plaintext(result, max_lines=200)

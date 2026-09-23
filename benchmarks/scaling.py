@@ -71,14 +71,12 @@ def fixture(rows, columns, kind, seed):
 def workload(frame, args, progress=None):
     selected = list(frame.columns[: args.features]) if args.features else None
     common = {"features": selected}
-    dependency_options = {"max_key_size": 1, **common}
+    # Match the overview's dependency budget, rather than the standalone 100.
+    candidates = {"max_candidates": args.candidates or 20}
+    dependency_options = {"max_key_size": 1, "limits": candidates, **common}
     path_options = {}
     if args.candidates is not None:
-        dependency_options["max_candidates"] = args.candidates
-        path_options["max_candidates"] = args.candidates
-    else:
-        # Match the overview's dependency budget, rather than the standalone 100.
-        dependency_options["max_candidates"] = 20
+        path_options["limits"] = {"max_candidates": args.candidates}
     dimensions = list(frame.columns[:4])
     operations = {
         "fingerprint": lambda: fingerprint(frame),
@@ -88,7 +86,9 @@ def workload(frame, args, progress=None):
             frame, progress=progress, **dependency_options
         ),
         "paths": lambda: fw.suggest_paths(frame, progress=progress, **common, **path_options),
-        "patterns": lambda: fw.value_patterns(frame, max_pairs=20, progress=progress, **common),
+        "patterns": lambda: fw.value_patterns(
+            frame, limits={"max_pairs": 20}, progress=progress, **common
+        ),
         "explore": lambda: fw.explore(
             frame,
             features=selected,

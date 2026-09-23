@@ -14,7 +14,7 @@ import pandas as pd
 
 from .._runtime import checkpoint, operation
 from ..result import Result
-from ..typing import Runtime
+from ..typing import PairLimits, Runtime
 from ._kernels import exact_pair_ids
 from .census import _complete
 from .encoding import code_of, json_value, python_value, validate_limit, value_key
@@ -127,6 +127,9 @@ class _Pair:
     sources: tuple[str, str]
 
 
+_LIMITS = {"max_pairs": 15, "max_contexts": 32, "max_absence_cells": 1000}
+
+
 @operation("pairs")
 def pairs(
     df: pd.DataFrame,
@@ -136,9 +139,7 @@ def pairs(
     include_absence: bool = False,
     reference_domains: Mapping[str, Iterable[Any]] | None = None,
     pair_contexts: Iterable[Mapping[str, Any]] | None = None,
-    max_absence_cells: int | None = 1000,
-    max_contexts: int | None = 32,
-    max_pairs: int | None = 15,
+    limits: PairLimits | None = None,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
@@ -162,10 +163,11 @@ def pairs(
     pair_contexts : iterable of mappings or None, optional
         Extra analyses restricted to exact column values, such as
         ``{"site": "North"}``; context columns must not be in the pair.
-    max_absence_cells, max_contexts, max_pairs : int or None, optional
-        Budgets: sampled absent cells (default 1000), contexts including the
-        global one (default 32), and pairs (default 15). None is unbounded.
-        Omitted work is reported, never treated as a negative finding.
+    limits : PairLimits or None, optional
+        Budgets: pairs (``max_pairs``, default 15), contexts including the
+        global one (``max_contexts``, 32) and sampled absent cells
+        (``max_absence_cells``, 1000). None is unbounded. Omitted work is
+        reported, never treated as a negative finding.
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -186,17 +188,13 @@ def pairs(
     >>> result["pairs"][0]["relation"]
     '1:1'
     """
-    from ..evidence import columns, prepare_values
+    from ..evidence import budgets, columns, prepare_values
 
     selected = columns(df, dimensions)
     if not selected:
         raise ValueError("dimensions must contain at least one column")
-    for name, value in [
-        ("max_absence_cells", max_absence_cells),
-        ("max_contexts", max_contexts),
-        ("max_pairs", max_pairs),
-    ]:
-        validate_limit(name, value)
+    caps = budgets(limits, _LIMITS, nullable=_LIMITS)
+    max_contexts, max_pairs = caps["max_contexts"], caps["max_pairs"]
     requested = [_context(df, context) for context in pair_contexts or []]
     requested.sort(key=lambda context: tuple(sorted((c, _key(v)) for c, v in context.items())))
     contexts = [{}, *requested]
@@ -212,7 +210,7 @@ def pairs(
     domains = {str(c): values for c, values in (reference_domains or {}).items()}
     candidates = list(combinations(selected, 2))
     processed = candidates[:max_pairs] if max_pairs is not None else candidates
-    budget: list[int | None] = [max_absence_cells]
+    budget: list[int | None] = [caps["max_absence_cells"]]
     records = []
     for a, b in processed:
         checkpoint()
@@ -234,9 +232,7 @@ def pairs(
             c: [json_value(python_value(v)) for v in values] for c, values in domains.items()
         },
         "pair_contexts": [_as_mapping(context) for context in requested],
-        "max_absence_cells": max_absence_cells,
-        "max_contexts": max_contexts,
-        "max_pairs": max_pairs,
+        "limits": caps,
     }
     base.update(
         pairs=records,

@@ -31,8 +31,8 @@ def main() -> None:
         ["side", "finding"],
         features=["side", "finding"],
         candidate_keys=["exam_id", KeySpec("exam_side", ("exam_id", "side"))],
-        top_n=1,
-        pair_contexts=[{"site": "North"}],
+        census={"top_n": 1},
+        pairs={"pair_contexts": [{"site": "North"}]},
     )
     for detail in ("full", "topology"):
         for section in ("grain", "levels", "census", "pairs"):

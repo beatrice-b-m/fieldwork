@@ -143,11 +143,13 @@ def test_scoped_composite_contexts_and_global_counts():
 def test_budgets_do_not_count_graph_or_conditional_tests():
     df = sparse_frame().assign(Z=[1, 1, 2, 2])
     for budget, expected in [(0, [0, 0, 0]), (1, [1, 0, 0]), (3, [2, 0, 0])]:
-        result = fw.discover_dependencies(df, max_key_size=1, by=["Z"], max_dependency_tests=budget)
+        result = fw.discover_dependencies(
+            df, max_key_size=1, by=["Z"], limits={"max_dependency_tests": budget}
+        )
         assert [c["global_targets_tested"] for c in result["candidates"]] == expected
         assert all(c["global_targets_possible"] == 2 for c in result["candidates"])
         assert result["grain_views"]
-    result = fw.discover_dependencies(df, max_key_size=1, max_grain_views=0)
+    result = fw.discover_dependencies(df, max_key_size=1, limits={"max_grain_views": 0})
     assert all(c["global_targets_tested"] == 2 for c in result["candidates"])
     assert not result["grain_views"]
 

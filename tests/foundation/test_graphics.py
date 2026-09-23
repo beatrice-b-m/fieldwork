@@ -80,7 +80,7 @@ def test_omitted_mass_keeps_original_denominator_and_missingness():
 
 
 def test_pairs_directions_contexts_and_separate_association(frame):
-    result = profile(frame, ["exam_id", "finding"], pair_contexts=[{"site": "north"}])
+    result = profile(frame, ["exam_id", "finding"], pairs={"pair_contexts": [{"site": "north"}]})
     data = visualization_data(result, section="pairs")
     assert len(data["contexts"]) == 2
     assert data["contexts"][1]["label"] == "site=north"
@@ -117,7 +117,9 @@ def test_empty_inputs_and_actionable_errors():
 
 def test_pair_budget_preserves_untested_matrix_features_and_contexts(frame):
     result = profile(
-        frame, ["exam_id", "side", "finding"], max_pairs=0, pair_contexts=[{"site": "north"}]
+        frame,
+        ["exam_id", "side", "finding"],
+        pairs={"pair_contexts": [{"site": "north"}], "limits": {"max_pairs": 0}},
     )
     data = visualization_data(result, section="pairs")
     assert data["features"] == ["exam_id", "finding", "side"]

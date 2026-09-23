@@ -40,7 +40,11 @@ def sample():
 def mr_population(df):
     """Rebuild eligibility from modality, independently of image completeness."""
     cohorts = fw.missingness(
-        df, features=FEATURES, by=["modality"], missing=MISSING, example_limit=1
+        df,
+        features=FEATURES,
+        by=["modality"],
+        missing=MISSING,
+        limits={"example_limit": 1},
     )
     context = next(c for c in cohorts["contexts"] if c["values"]["modality"] == "MR")
     return cohorts.select(df, context["finding_id"], name="MR export slots")
@@ -61,7 +65,7 @@ def investigate():
         by=["modality"],
         missing=MISSING,
         min_implication=0.85,
-        example_limit=1,
+        limits={"example_limit": 1},
     )
     edge = next(
         f

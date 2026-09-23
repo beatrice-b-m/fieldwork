@@ -37,8 +37,10 @@ def test_pairs_relation_cramers_and_absence() -> None:
     pair = profile(
         frame,
         ["a", "b"],
-        include_absence=True,
-        reference_domains={"a": ["x", "y", "z"], "b": [1, 2, 3]},
+        pairs={
+            "include_absence": True,
+            "reference_domains": {"a": ["x", "y", "z"], "b": [1, 2, 3]},
+        },
     )["sections"]["pairs"]["pairs"][0]
     assert pair["relation"] == "n:m"
     assert pair["cramers_v"] is not None and math.isfinite(pair["cramers_v"])
@@ -53,8 +55,7 @@ def test_top_n_both_requires_pre_and_records_conditional_grain() -> None:
         frame,
         ["a", "b"],
         candidate_keys=[KeySpec("id", ("id",))],
-        top_n=1,
-        top_n_mode="pre",
+        census={"top_n": 1, "top_n_mode": "pre"},
         top_n_applies_to="both",
     )
     # top_n=1 keeps a='x' and b=2, so only row 1 enters both census and grain.
