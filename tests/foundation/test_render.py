@@ -82,7 +82,9 @@ def test_typed_display_labels_do_not_collide() -> None:
     ]
     assert len(labels) == len(values)
     assert len(set(labels)) == len(values)
-    assert {"1", "'1'", "True", "'True'", "<NA>", "'<NA>'", "timedelta(1 ns)"} <= set(labels)
+    assert {"1", "'1'", "True", "'True'", "<NA>", "'<NA>'", "0 days 00:00:00.000000001"} <= set(
+        labels
+    )
     custom = render_plaintext(levels(pd.DataFrame({"a": [None, "x"]})), missing_label="'x'")
     assert "string('x')" in custom
 
