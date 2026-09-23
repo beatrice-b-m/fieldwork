@@ -1,6 +1,6 @@
 # Exploring saved outputs
 
-This page describes the output interfaces in Fieldwork 0.1.2. The separate
+This page describes the output interfaces in Fieldwork 0.2.0. The separate
 documentation site records its release and source commit in `docs-source.json`.
 
 ## HTML evidence reports
@@ -25,7 +25,12 @@ an analysis with no saved findings and from a report with `max_findings=0`.
 Coverage describes tested or retained work. An overview shows each analytical
 section's coverage independently, also exposed as `section_coverage` in the full
 `visualization_data` projection. Reaching a work budget does not establish absence
-of a pattern. An unrequested section is labeled separately.
+of a pattern. An unrequested section is labeled separately. Columns skipped because
+their cells have unsupported types are listed with their value type.
+
+Overview findings appear in lead order: `f0` is the most promising lead, and each
+card shows the reason it was ranked. The text overview opens with the same leads.
+Text output displays Unicode by default; pass `unicode_mode="safe"` for ASCII.
 
 Representative examples show saved/total source-position counts. Positions are
 zero-based offsets in the original ordered source, not index labels, and examples
