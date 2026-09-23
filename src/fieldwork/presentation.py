@@ -496,7 +496,7 @@ def render_plaintext(
     max_nodes: int = 1000,
     detail: Literal["full", "topology"] = "full",
     missing_label: str = "<NA>",
-    unicode_mode: Literal["safe", "display"] = "safe",
+    unicode_mode: Literal["safe", "display"] = "display",
 ) -> str:
     """Render saved evidence as bounded, escaped plaintext.
 
@@ -522,9 +522,10 @@ def render_plaintext(
         Displayed foundation missing-value label; default "<NA>". Discovery
         findings retain their producer wording.
     unicode_mode : {'safe', 'display'}, optional
-        Default 'safe' escapes non-ASCII text. 'display' preserves Unicode and
-        requires fieldwork[unicode] for width calculation. Control characters are
-        escaped in either mode.
+        Default 'display' preserves Unicode; width uses wcwidth when the optional
+        fieldwork[unicode] extra is installed, otherwise East Asian width rules.
+        'safe' escapes non-ASCII text. Control and bidirectional override
+        characters are escaped in either mode.
 
     Returns
     -------
@@ -535,8 +536,6 @@ def render_plaintext(
     ------
     ValueError
         Detail, Unicode mode, or display limits are invalid.
-    ImportError
-        unicode_mode='display' requires the optional unicode extra.
 
     Notes
     -----
