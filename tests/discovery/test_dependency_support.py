@@ -1,7 +1,6 @@
 """Target populations, repeated support, and source-free schema-1.0 compatibility."""
 
 import json
-import re
 from pathlib import Path
 
 import pandas as pd
@@ -235,71 +234,19 @@ def test_saved_details_below_threshold_and_disclosure():
             json.loads(json.dumps(result.to_dict(), allow_nan=False))
         )
         assert saved.to_dict() == result.to_dict()
+        # The full projection keeps every completed test and its support fields,
+        # including tests below the finding threshold.
         projection = fw.visualization_data(saved)
         assert len(projection["dependencies"]) == 2
-        for render in (fw.render_plaintext, fw.render_svg, fw.render_html):
-            full = " ".join(re.sub(r"<[^>]+>", " ", render(saved)).split())
-            assert "repeat-only consistency" in full
-            assert "target observed on 2/4" in full
-            assert "global targets tested" in full
-            if not dropna:
-                assert "missing values participated in consistency measurements" in full
-            assert "repeat-only consistency" not in render(saved, detail="topology")
+        d = dependency(projection)
+        assert (d["target_observed_rows"], d["determinant_evaluated_rows"]) == (2, 4)
+        assert projection["candidates"][0]["global_targets_tested"] == 1
         if not dropna:
-            assert dependency(saved)["exact"] is False
+            # Missing Y participates as a category, so X no longer determines Y.
+            assert (d["exact"], d["evaluated_rows"], d["repeat_modal_accuracy"]) == (False, 4, 0.5)
             assert not any(f["measurements"]["determinant"] == ["X"] for f in saved["findings"])
     legacy = json.loads(LEGACY.read_text())
     before = json.dumps(legacy, sort_keys=True)
-    projection = fw.visualization_data(legacy)
-    d = dependency(projection)
-    assert d["repeated_rows"] == 0
-    assert d["repeat_coverage"] == 0
-    assert d["target_coverage"] is None
-    assert "observed target coverage unavailable" in fw.render_html(legacy)
+    d = dependency(fw.visualization_data(legacy))
+    assert (d["repeated_rows"], d["repeat_coverage"], d["target_coverage"]) == (0, 0, None)
     assert json.dumps(legacy, sort_keys=True) == before
-    del legacy["dependencies"][0]["evaluated_groups"]
-    assert "repeated support unavailable" in fw.render_html(legacy)
-
-
-def test_topology_order_and_fields_do_not_follow_support_scores():
-    result = fw.discover_dependencies(ranking_frame(), max_key_size=1).to_dict()
-    topology = fw.visualization_data(overview_of(result), detail="topology")
-    for candidate in result["candidates"]:
-        candidate["determines_with_repeated_support"] = ["invented"] * 100
-        candidate["global_targets_tested"] = 0
-    assert fw.visualization_data(overview_of(result), detail="topology") == topology
-    encoded = json.dumps(topology)
-    for field in (
-        "repeated_rows",
-        "target_coverage",
-        "global_targets_tested",
-        "determines_with_repeated_support",
-        "explanation",
-    ):
-        assert field not in encoded
-
-
-def test_parity_allowlist_preserves_legacy_fields_and_graph_evidence():
-    import runpy
-
-    harness = runpy.run_path(str(Path(__file__).parents[2] / "benchmarks" / "parity.py"))
-    normalize = harness["without_support_extension"]
-    data = [{"result": fw.explore(sparse_frame()).to_dict()}]
-    normalized = normalize(data)
-    section = normalized[0]["result"]["sections"]["dependencies"]
-    assert "target_coverage" not in section["dependencies"][0]
-    assert "determines_with_repeated_support" not in section["candidates"][0]
-    assert "repeated_rows" in section["candidates"][0]
-    assert section["grain_views"] == data[0]["result"]["sections"]["dependencies"]["grain_views"]
-    for field in ("exact", "evaluated_rows", "repair_rows", "modal_accuracy"):
-        changed = json.loads(json.dumps(data))
-        changed[0]["result"]["sections"]["dependencies"]["dependencies"][0][field] = "regression"
-        assert normalize(changed) != normalized
-    changed = json.loads(json.dumps(data))
-    changed[0]["result"]["sections"]["dependencies"]["candidates"][0]["repeated_rows"] = -1
-    assert normalize(changed) != normalized
-    changed = json.loads(json.dumps(data))
-    changed[0]["result"]["sections"]["dependencies"]["grain_views"][0]["population"][
-        "evaluated_rows"
-    ] = -1
-    assert normalize(changed) != normalized

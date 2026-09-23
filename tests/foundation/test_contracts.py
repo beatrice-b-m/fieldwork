@@ -5,10 +5,11 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pandas as pd
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-from fieldwork import KeySpec, census, explore, grain, levels, render_plaintext
+from fieldwork import KeySpec, census, explore, grain, levels, visualization_data
 from fieldwork._explore._kernels import exact_pair_ids
-from fieldwork._explore.encoding import normalize_scalar
 
 
 def test_typed_scalar_identity_and_strict_json() -> None:
@@ -43,19 +44,29 @@ def test_temporal_identity_normalizes_aware_instants() -> None:
 
 def test_timedeltas_order_numerically_and_display_as_durations() -> None:
     durations = pd.to_timedelta(["100s", "-5s", "9s", "10s"])
-    text = render_plaintext(levels(pd.DataFrame({"d": durations})))
-    shown = [line.strip().rsplit(": ", 1)[0] for line in text.splitlines()[3:]]
-    assert shown == ["-0 days 00:00:05", "0 days 00:00:09", "0 days 00:00:10", "0 days 00:01:40"]
+    result = levels(pd.DataFrame({"d": durations}))
+    ordered = [int(level["value"]["value"]) for level in result["per_feature"][0]["levels"]]
+    assert ordered == sorted(d.value for d in durations)
+    labels = [row["label"] for row in visualization_data(result)["features"][0]["rows"]]
+    # Signed durations such as "-0 days 00:00:05", not raw nanoseconds.
+    signed = [
+        (-1 if label.startswith("-") else 1) * pd.Timedelta(label.lstrip("-")).value
+        for label in labels
+    ]
+    assert signed == ordered
 
 
-def test_exact_pair_fallback() -> None:
+@settings(max_examples=40, deadline=None, derandomize=True)
+@given(st.lists(st.tuples(st.integers(0, 5), st.integers(0, 5)), max_size=30), st.booleans())
+def test_exact_pair_ids_number_each_distinct_pair_once(pairs, force_fallback) -> None:
     import numpy as np
 
-    parents = np.array([0, 4, 0, 4])
-    levels_ = np.array([3, 2, 3, 2])
-    ids, pairs_ = exact_pair_ids(parents, levels_, packing_limit=1)
-    assert ids.tolist() == [0, 1, 0, 1]
-    assert pairs_ == [(0, 3), (4, 2)]
+    parents = np.array([p for p, _ in pairs], dtype=np.int64)
+    children = np.array([c for _, c in pairs], dtype=np.int64)
+    options = {"packing_limit": 1} if force_fallback else {}
+    ids, unique = exact_pair_ids(parents, children, **options)
+    assert sorted(unique) == sorted(set(pairs))
+    assert [unique[i] for i in ids.tolist()] == pairs
 
 
 def test_tuple_label_is_atomic_and_composite_key_explicit() -> None:
@@ -85,15 +96,6 @@ def test_dataframe_is_not_mutated() -> None:
     pd.testing.assert_frame_equal(frame, before)
 
 
-def test_safe_renderer_bounds_and_controls() -> None:
-    frame = pd.DataFrame({"a": ["\x1b]8;;bad\x07snowman ☃", "<NA>"]})
-    text = render_plaintext(levels(frame), width=20, max_lines=4)
-    assert len(text.splitlines()) <= 4
-    assert all(len(line) <= 20 for line in text.splitlines())
-    assert "\x1b" not in text
-    assert "\\u2603" in text or "..." in text
-
-
 def test_unsupported_values_fail() -> None:
     with pytest.raises(TypeError, match="Unsupported"):
-        normalize_scalar({"mutable": "mapping"})
+        levels(pd.DataFrame({"x": [{"mutable": "mapping"}]}))

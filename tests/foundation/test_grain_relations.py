@@ -57,7 +57,12 @@ def test_top_n_both_requires_pre_and_records_conditional_grain() -> None:
         top_n_mode="pre",
         top_n_applies_to="both",
     )
-    assert result["sections"]["grain"]["scope_metadata"]["source_scope"] == "s2"
+    # top_n=1 keeps a='x' and b=2, so only row 1 enters both census and grain.
+    cohort = result["sections"]["census"]["scopes"][0]
+    graph = result["sections"]["grain"]["graph"]["scope"]
+    assert (cohort["evaluated_rows"], cohort["restriction_excluded_rows"]) == (1, 2)
+    assert (graph["evaluated_rows"], graph["restriction_excluded_rows"]) == (1, 2)
+    assert graph["conditional"] and cohort["scope_id"] in graph["lineage"]
 
 
 def test_equivalent_and_incomparable_determinants_are_distinguished() -> None:

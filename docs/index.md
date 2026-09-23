@@ -15,7 +15,8 @@ selectable signatures, entity units and connected feature evidence.
 For a small executable tour, read `examples/investigation.py`. For exact interface
 signatures, read `src/fieldwork/__init__.py` and the exported functions' modules.
 Tests under `tests/foundation/` preserve the extracted explorer contracts;
-`tests/discovery/` exercises new investigation behavior.
+`tests/discovery/` exercises investigation behavior; `tests/oracle.py` holds the
+independent oracles. See [the test suite](development.md#test-suite).
 
 - [Large dataframes, progress, cancellation, and work budgets](performance.md)
 - [Performance implementation measurements](performance-results.md)

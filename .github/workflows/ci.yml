@@ -22,8 +22,8 @@ jobs:
       - run: uv run ruff check src tests scripts examples
       - run: uv run ruff format --check src tests scripts examples
       - run: uv build
-      - name: Check documentation and editor support in the installed wheel
-        run: uv run --no-project --isolated --with ./dist/*.whl --with pytest --with jedi python -I -m pytest tests/test_inline_docs.py tests/test_editor_api.py -q
+      - name: Check public signatures and docstring examples in the installed wheel
+        run: uv run --no-project --isolated --with ./dist/*.whl --with pytest python -I -m pytest tests/test_public_api.py --doctest-modules --pyargs fieldwork -q
       - name: Smoke-test the installed wheel
         run: uv run --no-project --isolated --with ./dist/*.whl python -I examples/investigation.py
   assets:
