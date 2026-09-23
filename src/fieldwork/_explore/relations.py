@@ -6,14 +6,13 @@ import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
 from itertools import combinations
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation
-from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel
+from ..typing import ColumnLabel, Runtime
 from ._kernels import exact_pair_ids
 from .census import _scope, _source
 from .encoding import (
@@ -95,9 +94,7 @@ def pairs(
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
     scope_metadata: dict[str, Any] | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Measure sparse pair mappings, association, and optional absence.
 
@@ -135,17 +132,8 @@ def pairs(
     scope_metadata : mapping or None, optional
         Optional descriptive lineage supplied by composition; default None. This
         does not select rows. Use a Scope with census/explore for row selection.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -422,9 +410,7 @@ def joint_counts(
     context: Mapping[Any, Any] | None = None,
     dropna: bool = False,
     max_cells: int = 2500,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Count observed cells for one selected pair and optional context.
 
@@ -447,17 +433,8 @@ def joint_counts(
         Positive supported-domain Cartesian cell budget; default 2500. Includes
         blank heatmap cells, not only nonzero cells. None is not supported.
         Exceeding the budget raises ValueError instead of dropping cell mass.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

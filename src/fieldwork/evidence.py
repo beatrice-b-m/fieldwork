@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
@@ -19,7 +19,7 @@ from ._explore.encoding import (
 )
 from ._explore.result import ExplorerResult
 from ._runtime import checkpoint, current_session, operation, phase
-from .progress import CancellationToken, Progress
+from .typing import Runtime
 
 
 def fingerprint(df: pd.DataFrame) -> str:
@@ -135,9 +135,7 @@ class Scope:
         positions: Iterable[int | np.integer[Any]],
         *,
         name: str = "selection",
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
+        **runtime: Unpack[Runtime],
     ) -> Scope:
         """Create a source-bound scope from absolute row positions.
 
@@ -152,17 +150,8 @@ class Scope:
             Input order is normalized to source order; an empty iterable is valid.
         name : str, optional
             Scope label; default 'selection'.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **runtime : Unpack[Runtime]
+            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -202,9 +191,7 @@ class Scope:
         positions: Iterable[int | np.integer[Any]],
         *,
         name: str = "refined",
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
+        **runtime: Unpack[Runtime],
     ) -> Scope:
         """Select a subset of this scope using absolute source positions.
 
@@ -219,17 +206,8 @@ class Scope:
             within its selected rows. An empty iterable creates an empty child.
         name : str, optional
             Child scope label; default 'refined'.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **runtime : Unpack[Runtime]
+            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -399,9 +377,7 @@ class InvestigationResult(ExplorerResult):
         *,
         exceptions: bool = False,
         all_matches: bool = False,
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
+        **runtime: Unpack[Runtime],
     ) -> pd.DataFrame:
         """Return representative or complete matching source rows as a copy.
 
@@ -419,17 +395,8 @@ class InvestigationResult(ExplorerResult):
         all_matches : bool, optional
             Default False returns only saved representative examples/exceptions,
             bounded by example_limit. True recovers the entire matching population.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **runtime : Unpack[Runtime]
+            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -469,9 +436,7 @@ class InvestigationResult(ExplorerResult):
         *,
         exceptions: bool = False,
         name: str = "finding selection",
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
+        **runtime: Unpack[Runtime],
     ) -> Scope:
         """Recover all matching source positions as a reusable Scope.
 
@@ -488,17 +453,8 @@ class InvestigationResult(ExplorerResult):
             rows or their complete matching population.
         name : str, optional
             Returned scope label; default 'finding selection'.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **runtime : Unpack[Runtime]
+            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -585,10 +541,6 @@ class InvestigationResult(ExplorerResult):
     def recompute(
         self,
         df: pd.DataFrame,
-        *,
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
         **overrides: Any,
     ) -> InvestigationResult:
         """Reapply a saved individual analysis to its verified source.
@@ -598,19 +550,9 @@ class InvestigationResult(ExplorerResult):
         df : pandas.DataFrame
             Original ordered source frame; labels, index, and values must match the
             saved fingerprint. Duplicate index labels are supported.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
         **overrides : Any
-            Keyword options accepted by the saved operation. Explicit values replace
+            Runtime controls (fieldwork.typing.Runtime) and keyword options accepted
+            by the saved operation. Explicit values replace
             saved parameters/context; use, for example, example_limit=20 to save more
             representatives. Options depend on the result kind.
 

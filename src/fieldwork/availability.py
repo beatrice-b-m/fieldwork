@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from itertools import combinations, islice
 from math import comb
-from typing import Any, Literal
+from typing import Any, Literal, Unpack
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ from .evidence import (
     prepare,
     result,
 )
-from .progress import CancellationToken, Progress
+from .typing import Runtime
 
 
 class _Units:
@@ -68,9 +68,7 @@ def missingness(
     max_signatures: int = 50,
     max_contexts: int = 32,
     example_limit: int = 5,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> InvestigationResult:
     """Measure availability, co-presence, and patterns of absence.
 
@@ -126,17 +124,8 @@ def missingness(
         Nonnegative maximum saved example/exception source rows per finding side;
         default 5. Zero retains totals without row examples. This display limit
         does not restrict the population recovered by select or all_matches.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

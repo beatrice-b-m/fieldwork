@@ -7,7 +7,7 @@ from collections import OrderedDict
 from collections.abc import Iterable, Mapping
 from functools import cache
 from itertools import combinations
-from typing import Any, Literal
+from typing import Any, Literal, Unpack
 
 import numpy as np
 import pandas as pd
@@ -27,8 +27,7 @@ from .evidence import (
     prepare,
     saved_context,
 )
-from .progress import CancellationToken, Progress
-from .typing import ColumnLabel, SchemaRole
+from .typing import ColumnLabel, Runtime, SchemaRole
 
 
 class PathResult(InvestigationResult):
@@ -147,9 +146,7 @@ class Path:
         min_count: int = 1,
         dropna: bool = False,
         schema: dict[ColumnLabel, SchemaRole] | None = None,
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
+        **runtime: Unpack[Runtime],
     ) -> ExplorerResult:
         """Evaluate this recommendation with its original scope and missing conventions.
 
@@ -187,17 +184,8 @@ class Path:
         schema : dict or None, optional
             Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
             Default None. Roles annotate evidence and warnings; they do not cast values.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
+        **runtime : Unpack[Runtime]
+            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -261,9 +249,7 @@ def suggest_paths(
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> PathResult:
     """Recommend ordered census dimensions from observed prefix evidence.
 
@@ -323,17 +309,8 @@ def suggest_paths(
         numerically; booleans remain distinct. The source is not modified.
     table_id : str, optional
         Nonempty source label; default 'table'. Does not replace the fingerprint.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

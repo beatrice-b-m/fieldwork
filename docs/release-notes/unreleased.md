@@ -17,3 +17,10 @@ public API without migration shims.
 - Results no longer carry a `stability` attribute or export a `stability` field.
 - Pair records no longer carry the constant `claim` and
   `higher_order_constraints_ruled_out` fields.
+
+## Changed
+
+- Runtime controls are declared once, as `fieldwork.typing.Runtime`
+  (`progress`, `cancel`, `timeout`), and appear in signatures as
+  `**runtime: Unpack[Runtime]`. Calls are unchanged; unknown keywords still
+  raise `TypeError`, and `inspect.signature` still lists the three controls.

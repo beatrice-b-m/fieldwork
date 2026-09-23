@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import math
 import statistics
 import time
@@ -180,6 +181,11 @@ def current_session():
     return _current.get()
 
 
+_CONTROLS = {
+    "progress": "Progress",
+    "cancel": "CancellationToken | None",
+    "timeout": "float | None",
+}
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -188,8 +194,30 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Add common runtime controls without putting them in analytical payloads."""
 
     def decorate(function: Callable[P, R]) -> Callable[P, R]:
+        # Signatures declare the controls once, as ``**runtime: Unpack[Runtime]``.
+        # That var-keyword must not let misspelled options through silently.
+        signature = inspect.signature(function)
+        parameters = list(signature.parameters.values())
+        strict = any(p.kind is p.VAR_KEYWORD and p.name == "runtime" for p in parameters)
+        named = {p.name for p in parameters if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)}
+        # Introspection (help, IPython, editors without a type checker) lists the
+        # controls as ordinary keyword-only parameters.
+        parameters = [p for p in parameters if not (strict and p.kind is p.VAR_KEYWORD)]
+        position = next(
+            (i for i, p in enumerate(parameters) if p.kind is p.VAR_KEYWORD), len(parameters)
+        )
+        parameters[position:position] = [
+            inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=kind)
+            for name, kind in _CONTROLS.items()
+        ]
+
         @wraps(function)
         def run(*args, progress=None, cancel=None, timeout=None, **kwargs):
+            unknown = sorted(kwargs.keys() - named) if strict else []
+            if unknown:
+                raise TypeError(
+                    f"{function.__name__}() got an unexpected keyword argument {unknown[0]!r}"
+                )
             parent = _current.get()
             token = None
             if parent is None:
@@ -207,6 +235,7 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
                     owned.close()
                     _current.reset(token)
 
+        run.__signature__ = signature.replace(parameters=parameters)  # type: ignore[attr-defined]
         return cast(Callable[P, R], run)
 
     return decorate

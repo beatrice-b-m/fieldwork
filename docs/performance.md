@@ -21,7 +21,7 @@ summaries. Completion of one phase does not imply completion of the overview.
 The default remains silent.
 
 All public dataframe analyses accept keyword-only `progress`, `cancel`, and
-`timeout`, including explicit-dimension `explore`, foundation tools (`levels`,
+`timeout` (typed once as `fieldwork.typing.Runtime`), including explicit-dimension `explore`, foundation tools (`levels`,
 `census`, `grain`, `pairs`, `joint_counts`, `infer_schema`), `Recipe.run`,
 `Path.census`, source inspection/selection/recomputation, and scope creation and
 refinement. Rendering uses saved results and does not run dataframe analysis.

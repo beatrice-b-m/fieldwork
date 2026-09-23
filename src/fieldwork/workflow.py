@@ -22,12 +22,11 @@ from .families import feature_network
 from .leads import rank
 from .navigation import suggest_paths
 from .patterns import value_patterns
-from .progress import CancellationToken, Progress
 from .typing import (
     ColumnLabel,
     DiscoveryOptions,
     ExplicitDiscoveryOptions,
-    FoundationOptions,
+    Runtime,
     SchemaRole,
     Section,
     SectionOptions,
@@ -46,9 +45,7 @@ def explore(
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
     features: Iterable[str] | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> InvestigationResult: ...
 
 
@@ -81,9 +78,7 @@ def explore(
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> ExplorerResult: ...
 
 
@@ -95,10 +90,7 @@ def explore(
     discovery: DiscoveryOptions | ExplicitDiscoveryOptions | None = None,
     sections: Iterable[Section] | None = None,
     section_options: SectionOptions | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
-    **options: Unpack[FoundationOptions],
+    **options: Any,
 ) -> ExplorerResult:
     """Explore a table automatically or compose explicit foundational analyses.
 
@@ -124,18 +116,9 @@ def explore(
         Automatic mode only: per-requested-section analytical overrides; default
         None. Cannot override scope, missing, table_id, or runtime controls.
         Use this to set independent feature choices and search budgets.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
     **options : Unpack[OverviewOptions] or Unpack[FoundationOptions]
+        Also accepts the progress, cancel and timeout controls described in
+        fieldwork.typing.Runtime.
         Automatic mode accepts only scope=None, missing=None, table_id="table",
         and features=None; explicit keys replace matching discovery settings.
         Explicit mode additionally accepts census options (top_n=None,
@@ -487,10 +470,6 @@ class Recipe:
     def run(
         self,
         df: pd.DataFrame,
-        *,
-        progress: Progress = None,
-        cancel: CancellationToken | None = None,
-        timeout: float | None = None,
         **overrides: Any,
     ) -> ExplorerResult:
         """Apply saved parameters to a delivery, with explicit overrides.
@@ -500,19 +479,9 @@ class Recipe:
         df : pandas.DataFrame
             Delivery to analyze; may differ from prior recipe runs. Supply any Scope
             override created from this delivery.
-        progress : bool or callable, optional
-            Default None is silent; True uses the built-in display. A callback receives
-            ProgressEvent objects synchronously. False is also silent. Callback errors
-            propagate unchanged; do not mutate the frame from a callback.
-        cancel : CancellationToken or None, optional
-            Cooperative cancellation token; default None. A cancelled token raises
-            AnalysisCancelled at the next checkpoint, with no partial result.
-        timeout : float or None, optional
-            Finite nonnegative seconds from call start; default None disables the
-            deadline. Expiration raises AnalysisCancelled cooperatively, after the
-            current pandas/NumPy work item returns, rather than at a hard deadline.
         **overrides : Any
-            Operation-specific keyword overrides, such as scope or example_limit.
+            Operation-specific keyword overrides, such as scope or example_limit, and
+            the progress, cancel and timeout controls of fieldwork.typing.Runtime.
             Explicit keys replace saved parameters without modifying the recipe. For
             automatic explore, scope/missing/table_id/features replace corresponding
             discovery entries while preserving other discovery settings.

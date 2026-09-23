@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, Unpack
 
 import pandas as pd
 
 from .._runtime import operation, phase
-from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel, SchemaRole
+from ..typing import ColumnLabel, Runtime, SchemaRole
 from .census import _source
 from .encoding import encode_series, normalize_scalar, validate_frame
 from .result import ExplorerResult, KeySpec
@@ -77,10 +76,7 @@ class SchemaProposal:
 def infer_schema(
     df: pd.DataFrame,
     candidate_keys: Iterable[ColumnLabel | KeySpec] | None = None,
-    *,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Suggest reviewable column roles without changing analysis settings.
 
@@ -94,17 +90,8 @@ def infer_schema(
     candidate_keys : iterable of column labels or KeySpec or None, optional
         Optional explicit determinants for exact dependency evidence; default None
         leaves fd_evidence unevaluated. Composite keys require KeySpec.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

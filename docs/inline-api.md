@@ -33,10 +33,13 @@ configuration type, examples, and prose.
 
 ## Static interfaces
 
-Public dataframe operations declare keyword-only `progress`, `cancel`, and
-`timeout` in their source signatures. The private runtime decorator consumes these
-controls and preserves the callable's parameter and return types. It no longer
-synthesizes signatures through runtime `__signature__` mutation.
+Public dataframe operations declare the runtime controls once, as
+`**runtime: Unpack[Runtime]` (`fieldwork.typing.Runtime`: `progress`, `cancel`,
+`timeout`), so type checkers and editors complete them. The private runtime
+decorator consumes the controls, rejects any other unexpected keyword with
+`TypeError`, preserves parameter and return types, and publishes an expanded
+`__signature__` so `help()` and IPython list the three controls as keyword-only
+parameters. Docstrings refer to `Runtime` instead of repeating the controls.
 
 `census` and `Path.census` spell out supported options. The latter preserves the
 recommendation's source context; `scope`, `missing`, `table_id`, and replacement

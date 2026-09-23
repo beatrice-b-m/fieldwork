@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict
 
 import numpy as np
 
+from .progress import CancellationToken, Progress
+
 if TYPE_CHECKING:
     from ._explore.result import KeySpec
     from .evidence import Scope
@@ -30,6 +32,7 @@ __all__ = [
     "OverviewOptions",
     "PathOptions",
     "PatternOptions",
+    "Runtime",
     "SchemaRole",
     "Section",
     "SectionOptions",
@@ -41,6 +44,24 @@ SchemaRole: TypeAlias = Literal["id", "categorical", "continuous", "unknown"]
 """Advisory column role; supplying a role never converts source values."""
 Section: TypeAlias = Literal["missingness", "dependencies", "paths", "value_patterns"]
 """An independently selectable automatic overview section."""
+
+
+class Runtime(TypedDict, total=False):
+    """Runtime controls accepted by every analysis and source-bound method.
+
+    They are never saved in results or recipes. Nested analyses share the
+    outermost call's controls.
+    """
+
+    progress: Progress
+    """None or False (default) is silent; True uses ProgressDisplay; a callable
+    receives each ProgressEvent synchronously. Callback errors propagate unchanged."""
+    cancel: CancellationToken | None
+    """Token checked between work items; cancelling raises AnalysisCancelled and
+    returns no partial result. Default None."""
+    timeout: float | None
+    """Finite nonnegative seconds from call start; expiry raises AnalysisCancelled at
+    the next checkpoint, after the current pandas/NumPy work item. Default None."""
 
 
 class CensusOptions(TypedDict, total=False):

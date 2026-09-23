@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
 
 from .._runtime import checkpoint, operation, phase
-from ..progress import CancellationToken, Progress
-from ..typing import ColumnLabel
+from ..typing import ColumnLabel, Runtime
 from ._kernels import EncodedColumns, MaskPool, same_mask
 from .census import _scope, _source
 from .encoding import (
@@ -123,18 +122,14 @@ def _fd_record(
     return record, mask
 
 
-@operation("grain")
 def _grain(
     df: pd.DataFrame,
     candidate_keys: Iterable[Any],
     *,
     dropna: bool = False,
-    scope_metadata: dict[str, Any] | None = None,
+    scope_metadata: Mapping[str, Any] | None = None,
     _encoded=None,
     _cache=None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
 ) -> ExplorerResult:
     """Evaluate exact observed FDs for explicit determinant candidates."""
 
@@ -291,15 +286,14 @@ def _grain(
     return ExplorerResult("grain", payload)
 
 
+@operation("grain")
 def grain(
     df: pd.DataFrame,
     candidate_keys: Iterable[ColumnLabel | KeySpec],
     *,
     dropna: bool = False,
     scope_metadata: Mapping[str, Any] | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> ExplorerResult:
     """Evaluate exact observed dependencies for explicitly supplied keys.
 
@@ -320,17 +314,8 @@ def grain(
     scope_metadata : mapping or None, optional
         Optional descriptive lineage supplied by composition; default None. This
         does not select rows. Use a Scope with census/explore for row selection.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -372,7 +357,4 @@ def grain(
         candidate_keys,
         dropna=dropna,
         scope_metadata=scope_metadata,
-        progress=progress,
-        cancel=cancel,
-        timeout=timeout,
     )

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from itertools import combinations, islice
 from math import comb
-from typing import Any
+from typing import Any, Unpack
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ from .evidence import (
     result,
     selection,
 )
-from .progress import CancellationToken, Progress
+from .typing import Runtime
 
 
 @operation("dependencies")
@@ -50,9 +50,7 @@ def discover_dependencies(
     include_grain: bool = True,
     max_grain_views: int | None = None,
     max_dependency_tests: int | None = None,
-    progress: Progress = None,
-    cancel: CancellationToken | None = None,
-    timeout: float | None = None,
+    **runtime: Unpack[Runtime],
 ) -> InvestigationResult:
     """Find observed exact and approximate dependencies over bounded candidates.
 
@@ -109,17 +107,8 @@ def discover_dependencies(
     max_dependency_tests : int or None, optional
         Nonnegative candidate/target/context test budget; default None tests all
         within other budgets. Zero skips tests. Does not cap foundation graph work.
-    progress : bool or callable, optional
-        Default None is silent; True uses the built-in display. A callback receives
-        ProgressEvent objects synchronously. False is also silent. Callback errors
-        propagate unchanged; do not mutate the frame from a callback.
-    cancel : CancellationToken or None, optional
-        Cooperative cancellation token; default None. A cancelled token raises
-        AnalysisCancelled at the next checkpoint, with no partial result.
-    timeout : float or None, optional
-        Finite nonnegative seconds from call start; default None disables the
-        deadline. Expiration raises AnalysisCancelled cooperatively, after the
-        current pandas/NumPy work item returns, rather than at a hard deadline.
+    **runtime : Unpack[Runtime]
+        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
