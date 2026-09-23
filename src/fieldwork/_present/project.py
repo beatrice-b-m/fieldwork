@@ -483,7 +483,10 @@ def _schema_proposal(data: Mapping[str, Any], context: Context) -> dict[str, Any
                 for key in evidence["keys"]
             ]
         proposals.append(projected)
-    return {"status": data["status"], "proposals": proposals}
+    output: dict[str, Any] = {"status": data["status"], "proposals": proposals}
+    if context.full and "scope" in data:
+        output["scope"] = data["scope"]
+    return output
 
 
 def _profile(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
