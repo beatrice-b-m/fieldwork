@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping
-from functools import cache
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Any, Literal, Unpack
 
@@ -181,96 +181,46 @@ def suggest_paths(
     table_id: str = "table",
     **runtime: Unpack[Runtime],
 ) -> Result:
-    """Recommend ordered census dimensions from observed prefix evidence.
+    """Recommend orders of dimensions for a census, from observed prefix structure.
+
+    A beam search over column sequences scores each prefix: the number of groups
+    it creates, groups beyond the display budget, steps that add no groups,
+    equivalent columns used together, and objective-specific penalties. Scores
+    are heuristic costs (see docs/algorithms.md), not probabilities.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Discovery requires unique string
-        column names. Duplicate index labels are supported; source selections use
-        integer row positions. Unsupported scalar objects raise TypeError.
+        Source frame, read without mutation.
     objective : {'structure', 'availability', 'compact', 'target', 'context'}, optional
-        Default 'structure' favors coarse-to-fine nesting. 'compact' favors small
-        prefixes; 'availability' separates presence signatures; 'target' separates
-        target values and requires target; 'context' favors nesting after required
-        start_with dimensions. Scores are heuristic costs, not probabilities.
+        'structure' (default) favors coarse-to-fine nesting; 'compact' small
+        prefixes; 'availability' separating presence patterns; 'target'
+        separating values of ``target``; 'context' nesting after ``start_with``.
     features : iterable of str or None, optional
-        Unique column names to analyze, in requested order; default None selects
-        all columns, skipping those with unsupported values (such as lists,
-        dicts or Decimal) and listing them in skipped_features. Restricts
-        analysis, not full-source identity validation.
-    start_with : iterable of str or None, optional
-        Required ordered initial columns; default None. Must fit both feature and
-        dimension budgets. Required for the context objective.
-    before : iterable of (str, str) pairs or None, optional
-        Acyclic precedence constraints; default None. Both columns must occur in
-        the path. Constraints must agree with start_with and exclusions.
-    exclude : iterable of str or None, optional
-        Columns excluded from paths; default None. Cannot contain required columns.
-    target : str or None, optional
-        Feature to explain; default None. Required by the target objective. Omitted
-        from candidate paths unless also explicitly required by steering.
-    max_dimensions : int, optional
-        Positive maximum path length; default 4. Must accommodate steering columns.
-    max_candidates : int, optional
-        Positive maximum path extensions evaluated; default 200. Exhaustion is
-        reported and can leave paths shorter than the requested depth.
-    max_features : int, optional
-        Positive candidate feature budget; default 20. Required columns survive
-        truncation; other columns follow requested order.
-    max_pairs : int, optional
-        Nonnegative pair budget for observed nesting and aliases; default 200.
-        Zero skips nesting/alias tests.
-    beam_width : int, optional
-        Positive alternatives retained per depth; default 12. Keeps the best order
-        per feature set so alternatives need not be permutations of one set.
-    n_paths : int, optional
-        Positive maximum returned alternatives; default 3. Alias substitutions
-        are collapsed; fewer paths may be available.
+        Candidate columns; default None selects every column, skipping (and
+        listing) columns with unsupported values.
+    start_with, before, exclude, target : optional
+        Steering: required initial columns, acyclic (earlier, later) column
+        pairs, excluded columns, and the column 'target' explains.
+    max_dimensions, max_candidates, max_features, max_pairs, beam_width, n_paths : int
+        Path length (default 4), extensions scored (200), candidate columns (20),
+        column pairs tested for nesting (200), alternatives kept per depth (12)
+        and paths returned (3).
     display_budget : int, optional
-        Positive preview node limit and prefix-cost reference; default 40. Affects
-        ranking as well as preview size, but never samples source rows.
-    scope : Scope or None, optional
-        Source-bound population selection; default None uses all rows. The scope
-        must match the ordered source. Fingerprinting still scans the full frame.
-    missing : mapping or None, optional
-        Additional missing sentinels per column; default None. Native missing
-        values are always absent. Numeric sentinels match integer/float values
-        numerically; booleans remain distinct. The source is not modified.
-    table_id : str, optional
-        Nonempty source label; default 'table'. Does not replace the fingerprint.
+        Node budget of each path's census preview and the prefix-cost reference;
+        default 40.
+    scope, missing, table_id
+        Source context shared by every analysis.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
     Result
-        Kind 'paths', with ranked paths, measurements, explanations, aliases,
-        nesting, and coverage. best is None when no nonempty path is available.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame or column labels are unsupported, or an explicitly requested
-        column contains unsupported values.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Search and display budgets never sample rows. Evidence records evaluated
-    populations and omissions separately. Source identity covers ordered column
-    labels, index labels, column dtypes and all cell values; changing or
-    reordering them invalidates inspection against saved findings.
-
-    Missing values form categories under the saved missing convention. Rankings
-    use intermediate prefixes: joint information alone is invariant to order.
-    Call paths.best.census(df) to preserve source, scope, and sentinel context;
-    copying best.dimensions alone discards that context.
+        Kind 'paths': ranked ``paths`` with measurements, reasons and a census
+        preview, ``aliases`` (equivalent columns), ``nesting`` (coarse, fine)
+        pairs and ``coverage``. ``best.census(df)`` evaluates the top path with
+        the saved source context.
 
     Examples
     --------
@@ -278,10 +228,8 @@ def suggest_paths(
     >>> import fieldwork as fw
     >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
     >>> paths = fw.suggest_paths(df, start_with=["site"])
-    >>> paths.best is not None
-    True
-    >>> paths.best.census(df).kind
-    'census'
+    >>> paths.best.dimensions
+    ('site', 'visit')
     """
     objectives = {"structure", "availability", "compact", "target", "context"}
     if objective not in objectives:
@@ -296,31 +244,16 @@ def suggest_paths(
     ]:
         limit(name, value, minimum=1)
     limit("max_pairs", max_pairs)
-    requested = columns(df, features)
-    excluded = set(columns(df, exclude or []))
-    starts = columns(df, start_with or [])
-    constraints = list(before or [])
-    for edge in constraints:
-        if len(edge) != 2:
-            raise ValueError("before entries must be pairs of columns")
-        columns(df, edge)
-    required = set(starts) | {c for edge in constraints for c in edge}
-    if required & excluded or not required <= set(requested):
-        raise ValueError("Steering columns must be included and not excluded")
-    if len(starts) > max_dimensions or len(required) > max_dimensions:
+    steering = _steering(df, features, exclude, start_with, before, target, objective)
+    if len(steering.starts) > max_dimensions or len(steering.required) > max_dimensions:
         raise ValueError("max_dimensions cannot fit steering constraints")
-    if objective == "context" and not starts:
-        raise ValueError("context objective requires start_with")
-    if objective == "target" and target is None:
-        raise ValueError("target objective requires target")
-    if target is not None:
-        columns(df, [target])
-    pool = [c for c in requested if c not in excluded and (c != target or c in required)]
-    # Required columns survive the feature budget; otherwise use input order.
-    selected = [c for c in pool if c in required] + [c for c in pool if c not in required]
-    if len(required) > max_features:
+    if len(steering.required) > max_features:
         raise ValueError("max_features cannot fit steering columns")
-    selected = selected[:max_features]
+    # Required columns survive the feature budget; otherwise use input order.
+    pool, required = steering.pool, steering.required
+    selected = ([c for c in pool if c in required] + [c for c in pool if c not in required])[
+        :max_features
+    ]
     frame, positions, encoded, present, base = prepare(
         df,
         scope=scope,
@@ -333,192 +266,25 @@ def suggest_paths(
     encoded = {c: np.where(present[c], code, -1) for c, code in encoded.items()}
     cardinality = {c: len(np.unique(encoded[c])) for c in selected}
     active = [c for c in selected if cardinality[c] > 1 or c in required]
-    edges, aliases = set(), []
-    tested_pairs = 0
-    with phase("path nesting", min(math.comb(len(active), 2), max_pairs), "pairs") as tracker:
-        for a, b in combinations(active, 2):
-            if tested_pairs >= max_pairs:
-                break
-            tested_pairs += 1
-            pairs = pair_groups(encoded[a], encoded[b])
-            count = int(pairs.max()) + 1 if len(pairs) else 0
-            a_to_b, b_to_a = count == cardinality[a], count == cardinality[b]
-            if a_to_b and b_to_a:
-                aliases.append([a, b])
-            elif a_to_b:
-                edges.add((b, a))  # coarse before finer
-            elif b_to_a:
-                edges.add((a, b))
-            tracker.advance(detail=f"{a} / {b}")
-    for a, b in constraints:
-        if a == b:
-            raise ValueError("before constraints must be acyclic")
-    # Validate user constraints, separately from soft observed nesting.
-    pending, emitted = set(required), set()
-    while pending:
-        ready = {c for c in pending if all(a in emitted for a, b in constraints if b == c)}
-        if not ready:
-            raise ValueError("before constraints contain a cycle")
-        pending -= ready
-        emitted |= ready
-    for i, c in enumerate(starts):
-        if any(b == c and a not in starts[:i] for a, b in constraints):
-            raise ValueError("start_with conflicts with before constraints")
-    target_codes = encoded[target] if target is not None else None
-
-    @cache
-    def availability_codes():
-        packed = np.zeros((len(frame), (len(selected) + 7) // 8), dtype=np.uint8)
-        for j, c in enumerate(selected):
-            packed[:, j // 8] |= present[c].astype(np.uint8) << (7 - j % 8)
-        return (
-            np.unique(packed, axis=0, return_inverse=True)[1]
-            if selected
-            else np.zeros(len(frame), dtype=np.int64)
-        )
-
-    def impurity(labels, groups):
-        if not len(labels):
-            return 0.0
-        _, sizes, _, maxima, _ = modal_groups(groups, labels)
-        return int((sizes - maxima).sum()) / len(labels)
-
-    prefix_cache = OrderedDict()
-    cached_bytes = 0
-
-    def prefix(path):
-        nonlocal cached_bytes
-        checkpoint()
-        if path in prefix_cache:
-            prefix_cache.move_to_end(path)
-            return prefix_cache[path]
-        ids = (
-            group_ids([encoded[path[0]]])
-            if len(path) == 1
-            else pair_groups(prefix(path[:-1]), encoded[path[-1]])
-        )
-        if ids.nbytes <= 32 * 1024 * 1024:
-            prefix_cache[path] = ids
-            cached_bytes += ids.nbytes
-            while cached_bytes > 32 * 1024 * 1024:
-                _, removed = prefix_cache.popitem(last=False)
-                cached_bytes -= removed.nbytes
-        return ids
-
-    @cache
-    def measure(path, explain=False):
-        prefixes, previous, redundancy = [], 1, 0
-        target_losses, availability_losses = [], []
-        for depth, c in enumerate(path, 1):
-            keys = prefix(path[:depth])
-            count = int(keys.max()) + 1 if len(keys) else 0
-            prefixes.append(count)
-            redundancy += count == previous
-            previous = count
-            if target_codes is not None and (explain or objective == "target"):
-                target_losses.append(impurity(target_codes, keys))
-            if explain or objective == "availability":
-                availability_losses.append(impurity(availability_codes(), keys))
-        inversions = sum(
-            a in path and b in path and path.index(a) > path.index(b) for a, b in edges
-        )
-        alias_steps = sum(a in path and b in path for a, b in aliases)
-        prefix_cost = sum(prefixes) / max(1, display_budget)
-        overflow = sum(max(0, n - display_budget) for n in prefixes) / max(1, display_budget)
-        # Objective penalties use prefix behavior: early useful splits and nesting.
-        score = prefix_cost + overflow + 2 * redundancy + 3 * alias_steps
-        if objective in {"structure", "context"}:
-            score += 8 * inversions
-        if objective == "target":
-            score += 12 * sum(target_losses)
-        if objective == "availability":
-            score += 12 * sum(availability_losses)
-        return {
-            "score": score,
-            "prefix_counts": prefixes,
-            "prefix_cost": prefix_cost,
-            "overflow": overflow,
-            "nesting_inversions": inversions,
-            "redundant_steps": redundancy,
-            "alias_steps": alias_steps,
-            "target_impurity_sum": sum(target_losses),
-            "target_impurity_by_depth": target_losses,
-            "availability_impurity_sum": sum(availability_losses),
-            "availability_impurity_by_depth": availability_losses,
-        }
-
+    edges, aliases, tested_pairs = _nesting(encoded, active, cardinality, max_pairs)
+    _check_constraints(steering)
+    scorer = _Scorer(
+        encoded,
+        present,
+        selected,
+        edges,
+        aliases,
+        objective,
+        display_budget,
+        encoded[target] if target is not None else None,
+    )
     width = min(max_dimensions, len(active))
-    beam = [tuple(starts)]
-    evaluated = 0
-    with phase("path search", max_candidates, "extensions budget") as tracker:
-        for depth in range(len(starts), width):
-            expanded = []
-            for path in beam:
-                for c in active:
-                    if c in path or any(b == c and a not in path for a, b in constraints):
-                        continue
-                    next_path = (*path, c)
-                    if len(required - set(next_path)) > width - len(next_path):
-                        continue
-                    if evaluated >= max_candidates:
-                        break
-                    evaluated += 1
-                    expanded.append((measure(next_path)["score"], next_path))
-                    tracker.advance(detail=" → ".join(next_path))
-                if evaluated >= max_candidates:
-                    break
-            if not expanded:
-                break
-            # Future extensions depend on the selected set, so keep its best order.
-            # This reserves beam slots for different feature choices, not permutations.
-            best_sets = {}
-            for _, path in sorted(expanded):
-                best_sets.setdefault(frozenset(path), path)
-            beam = list(best_sets.values())[:beam_width]
-    beam = [p for p in beam if required <= set(p)]
-    alias_representative = {c: c for c in active}
-    for a, b in aliases:
-        old, new = alias_representative[b], alias_representative[a]
-        alias_representative = {
-            c: new if representative == old else representative
-            for c, representative in alias_representative.items()
-        }
-    diverse = {}
-    for path in sorted(beam, key=lambda p: (measure(p)["score"], p)):
-        diverse.setdefault(frozenset(alias_representative[c] for c in path), path)
+    beam, evaluated = _beam_search(scorer, active, steering, width, max_candidates, beam_width)
+    alternatives = _alternatives(scorer, beam, active, aliases)
+    context = {"scope": scope, "missing": missing or {}, "table_id": table_id}
     base["paths"] = []
-    for path in list(diverse.values())[:n_paths]:
-        if not path:
-            continue
-        metrics = measure(path, True)
-        reasons, explanation = path_reasons(path, metrics, edges, aliases, target)
-        preview = census(
-            df,
-            path,
-            scope=scope,
-            missing=missing or {},
-            table_id=table_id,
-            max_nodes=display_budget,
-            max_levels=8,
-        ).to_dict()
-        base["paths"].append(
-            {
-                "dimensions": list(path),
-                "measurements": metrics,
-                "explanation": explanation,
-                "reasons": reasons,
-                "preview": preview,
-            }
-        )
-        finding(
-            base,
-            "census_path",
-            " → ".join(path),
-            path,
-            {**metrics, "explanation": explanation, "reasons": reasons},
-            positions,
-            example_limit=3,
-        )
+    for path in [p for p in alternatives[:n_paths] if p]:
+        _add_path(df, base, path, scorer, target, positions, context, display_budget)
     for a, b in aliases:
         finding(
             base,
@@ -539,7 +305,7 @@ def suggest_paths(
         "pairs_evaluated": tested_pairs,
         "pair_candidates": math.comb(len(active), 2),
         "paths_evaluated": evaluated,
-        "distinct_alternatives": len(diverse),
+        "distinct_alternatives": len(alternatives),
         "alternative_policy": "best_order_per_feature_set_collapsing_alias_substitutions",
         "search_exhausted_budget": evaluated >= max_candidates,
         "requested_depth": width,
@@ -547,10 +313,10 @@ def suggest_paths(
     }
     base["parameters"] = {
         "objective": objective,
-        "features": requested,
-        "start_with": starts,
-        "before": constraints,
-        "exclude": sorted(excluded),
+        "features": steering.requested,
+        "start_with": steering.starts,
+        "before": steering.constraints,
+        "exclude": sorted(steering.excluded),
         "target": target,
         "max_dimensions": max_dimensions,
         "max_candidates": max_candidates,
@@ -561,6 +327,256 @@ def suggest_paths(
         "display_budget": display_budget,
     }
     return Result("paths", base)
+
+
+# Hand-tuned costs of the path score (heuristics, not fitted or probabilistic).
+# The base cost is the prefix group counts relative to the display budget, plus
+# the groups beyond it; these weights add penalties on top.
+REDUNDANT_STEP = 2  # a dimension that adds no groups to its prefix
+ALIAS_STEP = 3  # both columns of an equivalent pair in one path
+NESTING_INVERSION = 8  # a finer column before a coarser one (structure, context)
+SEPARATION = 12  # summed nonmodal fraction of the target or availability patterns
+
+
+@dataclass(frozen=True)
+class _Steering:
+    requested: list[str]
+    excluded: set[str]
+    starts: list[str]
+    constraints: list[tuple[str, str]]
+    required: set[str]
+    pool: list[str]
+
+
+def _steering(df, features, exclude, start_with, before, target, objective) -> _Steering:
+    """Validate the steering arguments and list the columns a path may use."""
+    requested = columns(df, features)
+    excluded = set(columns(df, exclude or []))
+    starts = columns(df, start_with or [])
+    constraints = list(before or [])
+    for edge in constraints:
+        if len(edge) != 2:
+            raise ValueError("before entries must be pairs of columns")
+        columns(df, edge)
+    required = set(starts) | {c for edge in constraints for c in edge}
+    if required & excluded or not required <= set(requested):
+        raise ValueError("Steering columns must be included and not excluded")
+    if objective == "context" and not starts:
+        raise ValueError("context objective requires start_with")
+    if objective == "target" and target is None:
+        raise ValueError("target objective requires target")
+    if target is not None:
+        columns(df, [target])
+    pool = [c for c in requested if c not in excluded and (c != target or c in required)]
+    return _Steering(requested, excluded, starts, constraints, required, pool)
+
+
+def _nesting(encoded, active, cardinality, max_pairs):
+    """Observed coarse-to-fine nesting and equivalent (alias) column pairs."""
+    edges, aliases, tested = set(), [], 0
+    with phase("path nesting", min(math.comb(len(active), 2), max_pairs), "pairs") as tracker:
+        for a, b in combinations(active, 2):
+            if tested >= max_pairs:
+                break
+            tested += 1
+            pairs = pair_groups(encoded[a], encoded[b])
+            count = int(pairs.max()) + 1 if len(pairs) else 0
+            a_to_b, b_to_a = count == cardinality[a], count == cardinality[b]
+            if a_to_b and b_to_a:
+                aliases.append([a, b])
+            elif a_to_b:
+                edges.add((b, a))  # coarse before finer
+            elif b_to_a:
+                edges.add((a, b))
+            tracker.advance(detail=f"{a} / {b}")
+    return edges, aliases, tested
+
+
+def _check_constraints(steering: _Steering) -> None:
+    """User precedence must be acyclic and agree with start_with."""
+    constraints, starts = steering.constraints, steering.starts
+    if any(a == b for a, b in constraints):
+        raise ValueError("before constraints must be acyclic")
+    pending, emitted = set(steering.required), set()
+    while pending:
+        ready = {c for c in pending if all(a in emitted for a, b in constraints if b == c)}
+        if not ready:
+            raise ValueError("before constraints contain a cycle")
+        pending -= ready
+        emitted |= ready
+    for i, c in enumerate(starts):
+        if any(b == c and a not in starts[:i] for a, b in constraints):
+            raise ValueError("start_with conflicts with before constraints")
+
+
+class _Scorer:
+    """Heuristic costs of candidate paths, with cached prefix groupings."""
+
+    CACHE_BYTES = 32 * 1024 * 1024
+
+    def __init__(self, encoded, present, selected, edges, aliases, objective, budget, target):
+        self.encoded, self.present, self.selected = encoded, present, selected
+        self.edges, self.aliases, self.objective = edges, aliases, objective
+        self.budget, self.target = max(1, budget), target
+        self.prefixes: OrderedDict[tuple[str, ...], np.ndarray] = OrderedDict()
+        self.cached_bytes = 0
+        self.measured: dict[tuple[tuple[str, ...], bool], dict[str, Any]] = {}
+        self._availability: np.ndarray | None = None
+
+    def availability(self) -> np.ndarray:
+        """Each row's availability pattern over the candidate columns."""
+        if self._availability is None:
+            rows = len(next(iter(self.present.values()))) if self.present else 0
+            packed = np.zeros((rows, (len(self.selected) + 7) // 8), dtype=np.uint8)
+            for j, c in enumerate(self.selected):
+                packed[:, j // 8] |= self.present[c].astype(np.uint8) << (7 - j % 8)
+            self._availability = (
+                np.unique(packed, axis=0, return_inverse=True)[1]
+                if self.selected
+                else np.zeros(rows, dtype=np.int64)
+            )
+        return self._availability
+
+    def prefix(self, path: tuple[str, ...]) -> np.ndarray:
+        checkpoint()
+        if path in self.prefixes:
+            self.prefixes.move_to_end(path)
+            return self.prefixes[path]
+        ids = (
+            group_ids([self.encoded[path[0]]])
+            if len(path) == 1
+            else pair_groups(self.prefix(path[:-1]), self.encoded[path[-1]])
+        )
+        if ids.nbytes <= self.CACHE_BYTES:
+            self.prefixes[path] = ids
+            self.cached_bytes += ids.nbytes
+            while self.cached_bytes > self.CACHE_BYTES:
+                _, removed = self.prefixes.popitem(last=False)
+                self.cached_bytes -= removed.nbytes
+        return ids
+
+    def measure(self, path: tuple[str, ...], explain: bool = False) -> dict[str, Any]:
+        key = (path, explain)
+        if key not in self.measured:
+            self.measured[key] = self._measure(path, explain)
+        return self.measured[key]
+
+    def _measure(self, path: tuple[str, ...], explain: bool) -> dict[str, Any]:
+        prefixes, previous, redundancy = [], 1, 0
+        target_losses, availability_losses = [], []
+        for depth in range(1, len(path) + 1):
+            keys = self.prefix(path[:depth])
+            count = int(keys.max()) + 1 if len(keys) else 0
+            prefixes.append(count)
+            redundancy += count == previous
+            previous = count
+            if self.target is not None and (explain or self.objective == "target"):
+                target_losses.append(_impurity(self.target, keys))
+            if explain or self.objective == "availability":
+                availability_losses.append(_impurity(self.availability(), keys))
+        inversions = sum(
+            a in path and b in path and path.index(a) > path.index(b) for a, b in self.edges
+        )
+        alias_steps = sum(a in path and b in path for a, b in self.aliases)
+        prefix_cost = sum(prefixes) / self.budget
+        overflow = sum(max(0, n - self.budget) for n in prefixes) / self.budget
+        # Objective penalties use prefix behavior: early useful splits and nesting.
+        score = prefix_cost + overflow + REDUNDANT_STEP * redundancy + ALIAS_STEP * alias_steps
+        if self.objective in {"structure", "context"}:
+            score += NESTING_INVERSION * inversions
+        if self.objective == "target":
+            score += SEPARATION * sum(target_losses)
+        if self.objective == "availability":
+            score += SEPARATION * sum(availability_losses)
+        return {
+            "score": score,
+            "prefix_counts": prefixes,
+            "prefix_cost": prefix_cost,
+            "overflow": overflow,
+            "nesting_inversions": inversions,
+            "redundant_steps": redundancy,
+            "alias_steps": alias_steps,
+            "target_impurity_sum": sum(target_losses),
+            "target_impurity_by_depth": target_losses,
+            "availability_impurity_sum": sum(availability_losses),
+            "availability_impurity_by_depth": availability_losses,
+        }
+
+
+def _impurity(labels: np.ndarray, groups: np.ndarray) -> float:
+    """Share of rows not carrying their group's most common label."""
+    if not len(labels):
+        return 0.0
+    _, sizes, _, maxima, _ = modal_groups(groups, labels)
+    return int((sizes - maxima).sum()) / len(labels)
+
+
+def _beam_search(scorer, active, steering, width, max_candidates, beam_width):
+    """Extend paths depth by depth, keeping the best order of each column set."""
+    constraints, required = steering.constraints, steering.required
+    beam, evaluated = [tuple(steering.starts)], 0
+    with phase("path search", max_candidates, "extensions budget") as tracker:
+        for _ in range(len(steering.starts), width):
+            expanded = []
+            for path in beam:
+                for c in active:
+                    if c in path or any(b == c and a not in path for a, b in constraints):
+                        continue
+                    next_path = (*path, c)
+                    if len(required - set(next_path)) > width - len(next_path):
+                        continue
+                    if evaluated >= max_candidates:
+                        break
+                    evaluated += 1
+                    expanded.append((scorer.measure(next_path)["score"], next_path))
+                    tracker.advance(detail=" → ".join(next_path))
+                if evaluated >= max_candidates:
+                    break
+            if not expanded:
+                break
+            # Future extensions depend on the selected set, so keep its best order.
+            # This reserves beam slots for different feature choices, not permutations.
+            best_sets = {}
+            for _, path in sorted(expanded):
+                best_sets.setdefault(frozenset(path), path)
+            beam = list(best_sets.values())[:beam_width]
+    return [p for p in beam if required <= set(p)], evaluated
+
+
+def _alternatives(scorer, beam, active, aliases) -> list[tuple[str, ...]]:
+    """Paths in score order, one per column set once equivalent columns are merged."""
+    representative = {c: c for c in active}
+    for a, b in aliases:
+        old, new = representative[b], representative[a]
+        representative = {c: new if r == old else r for c, r in representative.items()}
+    diverse = {}
+    for path in sorted(beam, key=lambda p: (scorer.measure(p)["score"], p)):
+        diverse.setdefault(frozenset(representative[c] for c in path), path)
+    return list(diverse.values())
+
+
+def _add_path(df, base, path, scorer, target, positions, context, display_budget) -> None:
+    metrics = scorer.measure(path, True)
+    reasons, explanation = path_reasons(path, metrics, scorer.edges, scorer.aliases, target)
+    preview = census(df, path, max_nodes=display_budget, max_levels=8, **context).to_dict()
+    base["paths"].append(
+        {
+            "dimensions": list(path),
+            "measurements": metrics,
+            "explanation": explanation,
+            "reasons": reasons,
+            "preview": preview,
+        }
+    )
+    finding(
+        base,
+        "census_path",
+        " → ".join(path),
+        path,
+        {**metrics, "explanation": explanation, "reasons": reasons},
+        positions,
+        example_limit=3,
+    )
 
 
 def path_reasons(path, metrics, edges, aliases, target):

@@ -72,7 +72,11 @@ sum(prefix_counts) / display_budget
 + 3 * equivalent_pair_steps
 ```
 
-A redundant step leaves the prefix count unchanged. Lower scores rank first.
+A redundant step leaves the prefix count unchanged. Lower scores rank first. The
+weights (2, 3, and 8 and 12 below) are hand-tuned heuristics, named in
+`src/fieldwork/navigation.py` (`REDUNDANT_STEP`, `ALIAS_STEP`, `NESTING_INVERSION`,
+`SEPARATION`); they were chosen so that nesting and separation dominate prefix size,
+not fitted to data.
 Structure and context objectives add eight per reversed supported nesting edge.
 Compact uses the base score. Target adds twelve times summed within-prefix modal
 impurity of the target values. Availability adds twelve times the same impurity for
