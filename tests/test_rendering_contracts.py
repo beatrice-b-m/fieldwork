@@ -50,6 +50,7 @@ KINDS = {
         pairs={"pair_contexts": [{"site": "A"}], "include_absence": True},
     )["sections"]["pairs"],
     "joint_counts": lambda df: fw.joint_counts(df, ["side", "finding"]),
+    "schema_proposal": lambda df: fw.infer_schema(df, candidate_keys=["patient"]),
     "profile": lambda df: fw.profile(df, ["site", "exam"], candidate_keys=["patient"]),
     "missingness": lambda df: fw.missingness(df, by=["site"], entity="patient"),
     "entity_missingness": lambda df: fw.missingness(df, entity="patient", unit="entities"),

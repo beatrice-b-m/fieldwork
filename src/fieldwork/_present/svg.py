@@ -449,6 +449,18 @@ def _availability_bar(svg: SVG, row, y) -> int:
 
 def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[dict[str, Any]]]:
     """Cards to draw, and each list's total and shown count."""
+    if projection["kind"] == "schema_proposal":
+        proposals = projection["proposals"]
+        rows = [
+            {
+                "statement": f"{p['label']}: suggested {p['role']}",
+                "explanation": "; ".join(
+                    f"{r['code'].lower()}: {r['value']}" for r in p["reasons"]
+                ),
+            }
+            for p in proposals[:max_findings]
+        ]
+        return [("proposals", len(proposals), max_findings)], rows
     rows = list(projection["findings"][:max_findings])
     displayed = [("findings", len(projection["findings"]), max_findings)]
     full = projection["detail"] == "full"
@@ -471,17 +483,6 @@ def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[d
                 for d in tests[:max_findings]
             ]
         rows = cards + rows
-    if projection["kind"] == "schema_proposal":
-        rows = [
-            {
-                "statement": f"{p['label']}: suggested {p['role']}",
-                "explanation": "; ".join(
-                    f"{r['code'].lower()}: {r['value']}" for r in p["reasons"]
-                ),
-            }
-            for p in projection["proposals"][:max_findings]
-        ]
-        displayed = [("proposals", len(projection["proposals"]), max_findings)]
     return displayed, rows
 
 
