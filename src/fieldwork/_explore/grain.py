@@ -1,11 +1,11 @@
-"""Observed functional-dependency and grain evidence."""
+"""Exact observed dependencies of explicit candidate keys, and their grain graph."""
 
 from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Unpack
+from typing import TYPE_CHECKING, Any, Unpack
 
 import numpy as np
 import pandas as pd
@@ -13,16 +13,11 @@ import pandas as pd
 from .._runtime import checkpoint, operation, phase
 from ..result import Result
 from ..typing import Runtime
-from ._kernels import EncodedColumns, MaskPool, same_mask
-from .census import _scope, _source
-from .encoding import (
-    MissingCode,
-    encode_column,
-    labelled,
-    missing_code,
-    resolve_columns,
-)
+from ._kernels import FDCache, MaskPool, same_mask
 from .grain_graph import build_grain_graph
+
+if TYPE_CHECKING:
+    from ..evidence import Scope
 
 
 @dataclass(frozen=True)
@@ -32,36 +27,28 @@ class KeySpec:
     Parameters
     ----------
     name : str
-        Nonempty unique name within one candidate collection.
-    columns : tuple of column labels
-        Nonempty determinant columns, normalized to a tuple. Supported labels
-        are strings, non-boolean integers, or recursively nested tuples.
+        Nonempty name, unique among the candidates of one call.
+    columns : tuple of str
+        Nonempty determinant columns (non-string labels are named by str()).
 
     Attributes
     ----------
     name : str
         Candidate identifier used in evidence.
-    columns : tuple of column labels
+    columns : tuple of str
         Ordered determinant components; the record is frozen.
 
     Raises
     ------
     ValueError
-        The name or columns are empty. Analysis also rejects repeated or unknown
+        The name or columns are empty. Analyses also reject repeated or unknown
         components and duplicate candidate names.
-
-    Notes
-    -----
-    A bare tuple passed as a grain candidate names one tuple-labeled column.
-    Use KeySpec to make composite intent explicit. This Python object cannot be
-    persisted directly in a Recipe's strict JSON parameters.
 
     Examples
     --------
     >>> import fieldwork as fw
-    >>> key = fw.KeySpec('visit', ('site', 'participant', 'visit_number'))
-    >>> key.name
-    'visit'
+    >>> fw.KeySpec('visit', ('site', 'participant', 'visit_number')).columns
+    ('site', 'participant', 'visit_number')
     """
 
     name: str
@@ -76,16 +63,19 @@ class KeySpec:
         object.__setattr__(self, "columns", columns)
 
 
-def _key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec, ...]:
-    specs: list[KeySpec] = []
-    for index, item in enumerate(candidate_keys):
-        if isinstance(item, KeySpec):
-            spec = item
-        else:
-            resolved = resolve_columns(df, [item], argument="candidate_keys")
-            spec = KeySpec(str(item), (resolved[0],))
-        columns = resolve_columns(df, spec.columns, argument=f"key {spec.name!r}")
-        specs.append(KeySpec(spec.name, columns))
+def key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec, ...]:
+    """Validate candidates: a column name is a single-column key named after it.
+
+    A saved ``{"name", "columns"}`` record (as in result parameters) is a KeySpec.
+    """
+    from ..evidence import columns
+
+    specs = []
+    for item in candidate_keys:
+        if isinstance(item, Mapping):
+            item = KeySpec(item["name"], tuple(item["columns"]))
+        spec = item if isinstance(item, KeySpec) else KeySpec(str(item), (item,))
+        specs.append(KeySpec(spec.name, tuple(columns(df, spec.columns))))
     if not specs:
         raise ValueError("candidate_keys must contain at least one key")
     if len({spec.name for spec in specs}) != len(specs):
@@ -93,238 +83,102 @@ def _key_specs(df: pd.DataFrame, candidate_keys: Iterable[Any]) -> tuple[KeySpec
     return tuple(specs)
 
 
-def _fd_record(
-    df: pd.DataFrame,
+class Encoded:
+    """Row codes and the missing code of each column, plus reusable test results.
+
+    Grain never displays cell values, so it needs no value dictionaries.
+    """
+
+    def __init__(
+        self,
+        codes: Mapping[str, np.ndarray],
+        missing: Mapping[str, int | None],
+        cache: FDCache | None = None,
+    ):
+        self.codes, self.missing = codes, missing
+        self.cache = cache if cache is not None else FDCache()
+
+    def complete(self, columns: Iterable[str], mask: np.ndarray) -> np.ndarray:
+        """Rows of ``mask`` where none of ``columns`` is missing."""
+        mask = mask.copy()
+        for column in columns:
+            if self.missing[column] is not None:
+                mask &= self.codes[column] != self.missing[column]
+        return mask
+
+
+def check_dependency(
+    size: int,
     spec: KeySpec,
-    target: Any,
+    target: str,
     *,
     dropna: bool,
-    scope_prefix: str,
-    encoded: dict[Any, tuple[list[Any], np.ndarray]],
+    encoded: Encoded,
     row_mask: np.ndarray | None = None,
 ) -> tuple[dict[str, Any], np.ndarray]:
-    mask = np.ones(len(df), dtype=bool) if row_mask is None else row_mask.copy()
+    """Test spec -> target exactly, on complete cases when dropna; returns rows used."""
+    mask = np.ones(size, dtype=bool) if row_mask is None else np.asarray(row_mask).copy()
     if dropna:
-        for column in (*spec.columns, target):
-            values, codes = encoded[column]
-            absent = missing_code(values)
-            if absent is not None:
-                mask &= codes != absent
+        mask = encoded.complete((*spec.columns, target), mask)
     checkpoint()
-    cache = getattr(encoded, "fd_cache", None)
     cache_key = (spec.columns, target, dropna)
-    cached = cache.get(cache_key, mask) if cache is not None else None
-    if cached is None:
-        key_names = [f"k{index}" for index in range(len(spec.columns))]
-        table = pd.DataFrame(
-            {
-                **{name: encoded[column][1][mask] for name, column in zip(key_names, spec.columns)},
-                "target": encoded[target][1][mask],
-            }
-        )
-        if len(table):
-            grouped = table.groupby(key_names, sort=False, observed=True)["target"].agg(
-                ["nunique", "size"]
-            )
-            violations = grouped["nunique"] > 1
-            evaluated_groups = len(grouped)
-            violating_groups = int(violations.sum())
-            affected_rows = int(grouped.loc[violations, "size"].sum())
-            singleton_groups = int((grouped["size"] == 1).sum())
-        else:
-            evaluated_groups = violating_groups = affected_rows = singleton_groups = 0
-        cached = {
-            "evaluated_groups": evaluated_groups,
-            "violating_groups": violating_groups,
-            "affected_rows": affected_rows,
-            "singleton_groups": singleton_groups,
-            "evaluated_rows": int(mask.sum()),
-        }
-        if cache is not None:
-            cache.put(cache_key, mask, cached, global_population=row_mask is None)
-    evaluated_groups = cached["evaluated_groups"]
-    violating_groups = cached["violating_groups"]
-    affected_rows = cached["affected_rows"]
-    singleton_groups = cached["singleton_groups"]
-    evaluated_rows = cached["evaluated_rows"]
-    missing_excluded = len(df) - evaluated_rows
-    scope_id = f"{scope_prefix}:{spec.name}:{target}"
+    counts = encoded.cache.get(cache_key, mask)
+    if counts is None:
+        counts = _group_counts(encoded, spec.columns, target, mask)
+        encoded.cache.put(cache_key, mask, counts, global_population=row_mask is None)
+    groups, violating = counts["evaluated_groups"], counts["violating_groups"]
+    evaluated = counts["evaluated_rows"]
     record = {
         "key_name": spec.name,
         "key_columns": list(spec.columns),
         "target": target,
-        "scope_id": scope_id,
-        "holds": None if evaluated_groups == 0 else violating_groups == 0,
-        "undefined_reason": "no_evaluated_groups" if evaluated_groups == 0 else None,
-        "evaluated_groups": evaluated_groups,
-        "violating_groups": violating_groups,
-        "group_rate": violating_groups / evaluated_groups if evaluated_groups else None,
-        "affected_rows": affected_rows,
-        "evaluated_rows": evaluated_rows,
-        "row_rate": affected_rows / evaluated_rows if evaluated_rows else None,
-        "singleton_groups": singleton_groups,
-        "repeated_groups": evaluated_groups - singleton_groups,
-        "scope": _scope(scope_id, len(df), missing_excluded, 0, False),
+        "holds": None if groups == 0 else violating == 0,
+        "undefined_reason": "no_evaluated_groups" if groups == 0 else None,
+        "evaluated_groups": groups,
+        "violating_groups": violating,
+        "affected_rows": counts["affected_rows"],
+        "evaluated_rows": evaluated,
+        "missing_excluded_rows": size - evaluated,
+        "singleton_groups": counts["singleton_groups"],
+        "repeated_groups": groups - counts["singleton_groups"],
     }
     return record, mask
 
 
-def _grain(
-    df: pd.DataFrame,
-    candidate_keys: Iterable[Any],
-    *,
-    dropna: bool = False,
-    scope_metadata: Mapping[str, Any] | None = None,
-    _encoded=None,
-    _cache=None,
-) -> Result:
-    """Evaluate exact observed FDs for explicit determinant candidates."""
-
-    df = labelled(df)
-    specs = _key_specs(df, candidate_keys)
-    records: list[dict[str, Any]] = []
-    scopes: list[dict[str, Any]] = []
-    holds_by_target: dict[Any, list[str]] = defaultdict(list)
-    encoded = _encoded
-    if encoded is None:
-        encoded = {}
-        with phase("grain encoding", len(df.columns), "columns") as tracker:
-            for column in df.columns:
-                values, codes = encode_column(df, column)
-                encoded[column] = (MissingCode(missing_code(values)), codes)
-                tracker.advance(detail=str(column))
-    encoded = EncodedColumns(encoded, _cache)
-    pool = MaskPool()
-    known = {}
-    with phase(
-        "exact dependencies", sum(len(df.columns) - len(s.columns) for s in specs), "tests"
-    ) as tracker:
-        for spec in specs:
-            checkpoint()
-            for target in df.columns:
-                if target in spec.columns:
-                    continue
-                record, evaluated = _fd_record(
-                    df,
-                    spec,
-                    target,
-                    dropna=dropna,
-                    scope_prefix="s3",
-                    encoded=encoded,
-                )
-                records.append(record)
-                scope = record.pop("scope")
-                scopes.append(
-                    _scope(
-                        scope["scope_id"],
-                        len(df),
-                        scope["missing_excluded_rows"],
-                        0,
-                        bool((scope_metadata or {}).get("conditional")),
-                        parent_scope=(scope_metadata or {}).get("scope"),
-                    )
-                )
-                known[(spec.name, target)] = (record, pool.intern(evaluated))
-                if record["holds"] is True:
-                    holds_by_target[target].append(spec.name)
-                tracker.advance(detail=f"{spec.name} → {target}")
-    target_summaries: list[dict[str, Any]] = []
-    specs_by_name = {spec.name: spec for spec in specs}
-
-    def determines_key(left: str, right: str, mask: Any) -> bool:
-        # Key-to-key evidence must use the same rows as the target FDs.
-        spec = specs_by_name[left]
-        return all(
-            component in spec.columns
-            or _record_on(
-                df,
-                spec,
-                component,
-                mask,
-                known=known,
-                dropna=dropna,
-                encoded=encoded,
-                scope_prefix="comparison",
-            )[0]["holds"]
-            is True
-            for component in specs_by_name[right].columns
-        )
-
-    for target in df.columns:
-        relevant = [record for record in records if record["target"] == target]
-        if not relevant:
-            continue
-        determining = holds_by_target.get(target, [])
-        comparable = True
-        if dropna and len(specs) > 1:
-            sets = [known[(spec.name, target)][1] for spec in specs if (spec.name, target) in known]
-            comparable = all(same_mask(item, sets[0]) for item in sets[1:]) if sets else True
-        equivalent: list[list[str]] = []
-        incomparable: list[list[str]] = []
-        coarsest = list(determining)
-        for index, left in enumerate(determining):
-            if not comparable:
-                break
-            for right in determining[index + 1 :]:
-                mask = known[(left, target)][1]
-                left_right = determines_key(left, right, mask)
-                right_left = determines_key(right, left, mask)
-                if left_right and right_left:
-                    equivalent.append([left, right])
-                elif not left_right and not right_left:
-                    incomparable.append([left, right])
-                elif left_right and left in coarsest:
-                    coarsest.remove(left)
-                elif right_left and right in coarsest:
-                    coarsest.remove(right)
-        target_summaries.append(
-            {
-                "target": target,
-                "determining_keys": determining,
-                "assignment": "compatible" if determining else "undetermined",
-                "cross_key_comparison": "comparable" if comparable else "not_comparable",
-                "coarsest_candidates": coarsest if comparable else [],
-                "equivalent_determinants": equivalent if comparable else [],
-                "incomparable_candidates": incomparable if comparable else [],
-            }
-        )
-    payload: dict[str, Any] = {
-        "status": "empty" if len(df) == 0 else "computed",
-        "source": _source(df),
-        "scopes": scopes,
-        "keys": [
-            {
-                "name": spec.name,
-                "columns": list(spec.columns),
-            }
-            for spec in specs
-        ],
-        "dependencies": records,
-        "graph": build_grain_graph(
-            df,
-            specs,
-            encoded,
-            known,
-            dropna=dropna,
-            scope_metadata=scope_metadata,
-        ),
-        "targets": target_summaries,
-        "warnings": [],
-        "scope_metadata": scope_metadata,
+def _group_counts(
+    encoded: Encoded, key: tuple[str, ...], target: str, mask: np.ndarray
+) -> dict[str, int]:
+    names = [f"k{index}" for index in range(len(key))]
+    table = pd.DataFrame(
+        {
+            **{name: encoded.codes[column][mask] for name, column in zip(names, key)},
+            "target": encoded.codes[target][mask],
+        }
+    )
+    counts = {"evaluated_rows": int(mask.sum())}
+    if not len(table):
+        zero = ("evaluated_groups", "violating_groups", "affected_rows", "singleton_groups")
+        return {**counts, **dict.fromkeys(zero, 0)}
+    grouped = table.groupby(names, sort=False, observed=True)["target"].agg(["nunique", "size"])
+    violations = grouped["nunique"] > 1
+    return {
+        **counts,
+        "evaluated_groups": len(grouped),
+        "violating_groups": int(violations.sum()),
+        "affected_rows": int(grouped.loc[violations, "size"].sum()),
+        "singleton_groups": int((grouped["size"] == 1).sum()),
     }
-    return Result("grain", payload)
 
 
-def _record_on(
-    df: pd.DataFrame,
+def record_on(
+    size: int,
     spec: KeySpec,
-    target: Any,
+    target: str,
     mask: Any,
     *,
     known: dict,
     dropna: bool,
-    encoded: dict,
-    scope_prefix: str,
+    encoded: Encoded,
 ) -> tuple[dict[str, Any], Any]:
     """Test spec -> target on the rows of ``mask``, reusing a test on that population.
 
@@ -333,76 +187,54 @@ def _record_on(
     """
     saved = known.get((spec.name, target))
     if saved is not None and same_mask(saved[1], mask):
-        return dict(saved[0]), mask
-    record, evaluated = _fd_record(
-        df,
-        spec,
-        target,
-        dropna=dropna,
-        scope_prefix=scope_prefix,
-        encoded=encoded,
-        row_mask=np.asarray(mask),
+        return saved[0], mask
+    return check_dependency(
+        size, spec, target, dropna=dropna, encoded=encoded, row_mask=np.asarray(mask)
     )
-    record.pop("scope")
-    return record, evaluated
 
 
 @operation("grain")
 def grain(
     df: pd.DataFrame,
-    candidate_keys: Iterable[str | KeySpec],
+    candidate_keys: Iterable[str | KeySpec | Mapping[str, Any]],
     *,
     dropna: bool = False,
-    scope_metadata: Mapping[str, Any] | None = None,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
     **runtime: Unpack[Runtime],
 ) -> Result:
-    """Evaluate exact observed dependencies for explicitly supplied keys.
+    """Test which columns each candidate key determines, and relate the keys.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    candidate_keys : iterable of column labels or KeySpec
-        Nonempty determinant candidates. A label means a single-column key; use
-        KeySpec(name, columns) for composites. A tuple label denotes one column,
-        not a composite. Candidate names and each key's columns must be unique.
+        Source frame, read without mutation.
+    candidate_keys : iterable of str, KeySpec or mapping
+        Nonempty candidates. A column name is a single-column key; use
+        KeySpec(name, columns), or its JSON form ``{"name": ..., "columns": [...]}``,
+        for composite keys. Names must be unique.
     dropna : bool, optional
-        Default False treats missing values as a category. True evaluates each
-        determinant/target pair on its complete cases and records that population.
-    scope_metadata : mapping or None, optional
-        Optional descriptive lineage supplied by composition; default None. This
-        does not select rows. Use a Scope with census/explore for row selection.
+        Default False treats missing values as a category. True tests each
+        key/target pair on its complete cases, so populations can differ.
+    scope, missing, table_id
+        Source context shared by every analysis.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
     Result
-        Kind 'grain', with explicit keys, dependency evidence, target placements,
-        scopes, and a graph over compatible candidate populations. Graph aliases
-        indicate equivalent observed partitions.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
+        Kind 'grain': one exact test per key and non-key column (``dependencies``),
+        per-column placement summaries (``targets``), and ``graph``, a common-
+        population graph whose nodes are keys (equivalent keys merged), whose
+        edges run from coarser to finer groupings, and which places each column
+        at the coarsest keys that determine it.
 
     Notes
     -----
-    Exact dependencies describe the observed delivery, not future guarantees.
-    Singleton groups satisfy a dependency trivially; repeated and violating groups
-    are reported separately. Candidate key uniqueness and dependency accuracy are
-    different questions. Graph relationships use compatible populations rather
-    than composing dependencies across differing complete-case cohorts.
+    Exactness describes the observed delivery only. Singleton groups satisfy a
+    test trivially; repeated and violating groups are reported separately.
 
     Examples
     --------
@@ -410,12 +242,103 @@ def grain(
     >>> import fieldwork as fw
     >>> df = pd.DataFrame({"site": ["A", "A"], "visit": [1, 2], "value": [3, 4]})
     >>> result = fw.grain(df, ["site", fw.KeySpec("visit_key", ("site", "visit"))])
-    >>> result.kind
-    'grain'
+    >>> [t["determining_keys"] for t in result["targets"] if t["target"] == "value"]
+    [['visit_key']]
     """
-    return _grain(
-        df,
-        candidate_keys,
-        dropna=dropna,
-        scope_metadata=scope_metadata,
+    from ..evidence import columns, prepare_values
+
+    names = columns(df)
+    frame, _, values, base = prepare_values(
+        df, names, scope=scope, missing=missing, table_id=table_id
     )
+    specs = key_specs(frame, candidate_keys)
+    encoded = Encoded(
+        {c: codes for c, (_, codes) in values.items()},
+        {c: len(v) - 1 if v and v[-1] is None else None for c, (v, _) in values.items()},
+    )
+    base["parameters"] = {
+        "candidate_keys": [{"name": s.name, "columns": list(s.columns)} for s in specs],
+        "dropna": dropna,
+    }
+    base.update(evaluate(len(frame), names, specs, dropna=dropna, encoded=encoded))
+    return Result("grain", base)
+
+
+def evaluate(
+    size: int, names: list[str], specs: tuple[KeySpec, ...], *, dropna: bool, encoded: Encoded
+) -> dict[str, Any]:
+    """Grain payload fields: keys, dependency tests, target summaries and graph."""
+    pool, known, records = MaskPool(), {}, []
+    total = sum(len(names) - len(spec.columns) for spec in specs)
+    with phase("exact dependencies", total, "tests") as tracker:
+        for spec in specs:
+            for target in names:
+                if target in spec.columns:
+                    continue
+                record, evaluated = check_dependency(
+                    size, spec, target, dropna=dropna, encoded=encoded
+                )
+                records.append(record)
+                known[(spec.name, target)] = (record, pool.intern(evaluated))
+                tracker.advance(detail=f"{spec.name} → {target}")
+    return {
+        "keys": [{"name": s.name, "columns": list(s.columns)} for s in specs],
+        "dependencies": records,
+        "targets": _targets(size, names, specs, records, known, dropna, encoded),
+        "graph": build_grain_graph(size, names, specs, encoded, known, dropna=dropna),
+        "warnings": [],
+    }
+
+
+def _targets(size, names, specs, records, known, dropna, encoded) -> list[dict[str, Any]]:
+    """Per column: determining keys and how they compare on the same rows."""
+    by_name = {spec.name: spec for spec in specs}
+    determining = defaultdict(list)
+    for record in records:
+        if record["holds"] is True:
+            determining[record["target"]].append(record["key_name"])
+
+    def determines(left: str, right: str, mask: Any) -> bool:
+        # Key-to-key evidence must use the same rows as the target tests.
+        spec = by_name[left]
+        return all(
+            component in spec.columns
+            or record_on(size, spec, component, mask, known=known, dropna=dropna, encoded=encoded)[
+                0
+            ]["holds"]
+            is True
+            for component in by_name[right].columns
+        )
+
+    summaries = []
+    for target in names:
+        sets = [known[(spec.name, target)][1] for spec in specs if (spec.name, target) in known]
+        if not sets:
+            continue
+        keys = determining[target]
+        comparable = not dropna or all(same_mask(item, sets[0]) for item in sets[1:])
+        equivalent, incomparable, coarsest = [], [], list(keys)
+        for index, left in enumerate(keys if comparable else []):
+            for right in keys[index + 1 :]:
+                mask = known[(left, target)][1]
+                left_right = determines(left, right, mask)
+                right_left = determines(right, left, mask)
+                if left_right and right_left:
+                    equivalent.append([left, right])
+                elif not left_right and not right_left:
+                    incomparable.append([left, right])
+                elif left_right and left in coarsest:
+                    coarsest.remove(left)
+                elif right_left and right in coarsest:
+                    coarsest.remove(right)
+        summaries.append(
+            {
+                "target": target,
+                "determining_keys": keys,
+                "cross_key_comparison": "comparable" if comparable else "not_comparable",
+                "coarsest_candidates": coarsest if comparable else [],
+                "equivalent_determinants": equivalent,
+                "incomparable_candidates": incomparable,
+            }
+        )
+    return summaries

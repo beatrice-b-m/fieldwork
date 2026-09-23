@@ -1,4 +1,4 @@
-"""Context adaptation preserves graph references and shared population records."""
+"""Source context (scope, sentinels, table_id) applies alike to every analysis."""
 
 import json
 from xml.etree import ElementTree
@@ -12,7 +12,7 @@ import fieldwork as fw
 @pytest.mark.parametrize("label", [1, ("visit", (2, "code"))])
 @pytest.mark.parametrize("context_kind", ["identity", "scope", "missing"])
 @pytest.mark.parametrize("operation", [fw.census, fw.explore])
-def test_foundation_context_preserves_typed_columns(label, context_kind, operation):
+def test_source_context_applies_to_foundation_analyses(label, context_kind, operation):
     df = pd.DataFrame({label: [1, -999, 2], "value": [4, 5, 6]})
     original = df.copy(deep=True)
     context = {"table_id": "delivery"}
@@ -28,13 +28,13 @@ def test_foundation_context_preserves_typed_columns(label, context_kind, operati
     census = result if operation == fw.census else result["sections"]["census"]
     expected_census = baseline if operation == fw.census else baseline["sections"]["census"]
     assert census["tree"] == expected_census["tree"]
-    assert census["scopes"][0]["input_rows"] == 3
-    assert census["scopes"][0]["restriction_excluded_rows"] == int(context_kind == "scope")
+    assert census["scope"]["input_rows"] == 3
+    assert census["scope"]["restriction_excluded_rows"] == int(context_kind == "scope")
     saved = json.loads(json.dumps(result.to_dict(), allow_nan=False))
-    assert saved["analysis_context"]["source"]["table_id"] == "delivery"
+    assert saved["source"]["table_id"] == "delivery"
     # Columns are named by str(label) everywhere, including sentinel conventions.
-    sentinels = saved["analysis_context"]["missing_convention"]["sentinels"]
-    assert sentinels[str(label)] == ([-999] if context_kind == "missing" else [])
+    sentinels = saved["missing_convention"]["sentinels"]
+    assert sentinels.get(str(label), []) == ([-999] if context_kind == "missing" else [])
     assert fw.render_plaintext(saved)
     ElementTree.fromstring(fw.render_svg(saved, section="census"))
     pd.testing.assert_frame_equal(df, original)
@@ -79,7 +79,7 @@ def test_contextualized_grain_edges_render_and_resolve(operation):
 
 @pytest.mark.parametrize("applies_to", ["census", "both"])
 @pytest.mark.parametrize("dropna", [False, True])
-def test_scoped_pre_filter_rebases_shared_populations_once(applies_to, dropna):
+def test_scoped_pre_selection_cohort_counts_rows_once(applies_to, dropna):
     df = pd.DataFrame({"site": ["A", "B", None, "C"], "exam": [1, 2, 3, 4]})
     scope = fw.Scope.from_positions(df, [0, 1, 2], name="selected")
     result = fw.explore(
@@ -92,53 +92,38 @@ def test_scoped_pre_filter_rebases_shared_populations_once(applies_to, dropna):
         top_n_applies_to=applies_to,
         dropna=dropna,
     )
-    census = result["sections"]["census"]["scopes"][0]
+    census = result["sections"]["census"]
     pairs = result["sections"]["pairs"]
     grain = result["sections"]["grain"]
-    # Pairs (and grain, when the cohort applies to both) record the census cohort.
-    assert pairs["scope_metadata"]["scope"] == census
-    if applies_to == "both":
-        assert grain["scope_metadata"]["scope"] == census
-    assert census["input_rows"] == 4
-    assert census["evaluated_rows"] == census["retained_rows"] == 1
-    assert census["missing_excluded_rows"] == int(dropna)
-    assert census["restriction_excluded_rows"] == 3 - int(dropna)
-    assert census["lineage"] == [
-        "selected",
-        "input",
-        "dropna" if dropna else "include_missing",
-        "pre",
-    ]
-    pair = pairs["pairs"][0]["scope"]
-    assert pair["evaluated_rows"] == 1
-    assert pair["missing_excluded_rows"] == census["missing_excluded_rows"]
-    assert pair["restriction_excluded_rows"] == census["restriction_excluded_rows"]
-    graph_scope = grain["graph"]["scope"]
-    assert graph_scope["evaluated_rows"] == (1 if applies_to == "both" else 3 - int(dropna))
-    assert graph_scope["missing_excluded_rows"] == int(dropna)
-    assert graph_scope["restriction_excluded_rows"] == (
-        3 - int(dropna) if applies_to == "both" else 1
-    )
+    # The census analyzes the selected scope; its pre-selection keeps one row.
+    assert census["scope"]["name"] == "selected"
+    assert census["scope"]["restriction_excluded_rows"] == 1
+    assert census["tree"]["evaluated_rows"] == 1
+    assert census["tree"]["missing_excluded_rows"] == int(dropna)
+    assert census["tree"]["restriction_excluded_rows"] == 2 - int(dropna)
+    # Pairs (and grain, when the cohort applies to both) analyze that one row,
+    # as a scope refining the selection.
+    cohorts = [pairs, grain] if applies_to == "both" else [pairs]
+    for section in cohorts:
+        assert section["scope"]["name"] == "census top_n cohort"
+        assert section["scope"]["parent"] == "selected"
+        assert (section["scope"]["input_rows"], section["scope"]["evaluated_rows"]) == (4, 1)
+    if applies_to == "census":
+        assert grain["scope"]["name"] == "selected"
+    assert pairs["pairs"][0]["evaluated_rows"] == 1
+    assert grain["graph"]["evaluated_rows"] == (1 if applies_to == "both" else 3 - int(dropna))
 
-    def check_populations(value):
-        if isinstance(value, dict):
-            if "scope_id" in value and "input_rows" in value:
-                assert value["input_rows"] == len(df)
-                assert value["input_rows"] == sum(
-                    value[k]
-                    for k in (
-                        "evaluated_rows",
-                        "missing_excluded_rows",
-                        "restriction_excluded_rows",
-                    )
-                )
-                assert value["lineage"].count("selected") == 1
-            for child in value.values():
-                check_populations(child)
-        elif isinstance(value, list):
-            for child in value:
-                check_populations(child)
+    def check_partitions(section):
+        # Every record counts evaluated and excluded rows within its section's scope.
+        records = [*section.get("pairs", []), *section.get("dependencies", [])]
+        records += [section["graph"]] if "graph" in section else []
+        for record in records:
+            assert section["scope"]["evaluated_rows"] == (
+                record["evaluated_rows"]
+                + record["missing_excluded_rows"]
+                + record.get("restriction_excluded_rows", 0)
+            )
 
-    # Check both shared in-memory records and the independently saved copies.
-    check_populations(result.to_dict())
-    check_populations(json.loads(json.dumps(result.to_dict(), allow_nan=False)))
+    for data in (result.to_dict(), json.loads(json.dumps(result.to_dict(), allow_nan=False))):
+        for name in ("pairs", "grain"):
+            check_partitions(data["sections"][name])

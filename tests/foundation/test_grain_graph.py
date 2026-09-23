@@ -52,7 +52,7 @@ def test_composite_example_support_and_unplaced():
     graph = grain(frame, ["exam", KeySpec("exam_side", ("exam", "side"))])["graph"]
     nodes = _nodes(graph)
     assert _edges(graph) == {(nodes["exam"], nodes["exam_side"])}
-    evidence = [r for r in graph["dependencies"] if r["target"] == "finding"]
+    evidence = [r for r in graph["tests"] if r["target"] == "finding"]
     assert [
         (
             r["holds"],
@@ -87,16 +87,16 @@ def test_missing_targets_do_not_merge_global_nodes():
     assert len(graph["nodes"]) == 2
     assert len(graph["edges"]) == 1
     assert graph["unplaced"][0]["reason"] == "different_target_population"
-    evidence = [r for r in graph["dependencies"] if r["target"] == "target"]
-    assert all(r["holds"] and not r["scope_compatible"] for r in evidence)
-    assert all(r["scope"]["evaluated_rows"] == 2 for r in evidence)
-    assert graph["scope"]["evaluated_rows"] == 4
+    evidence = [r for r in graph["tests"] if r["target"] == "target"]
+    assert all(r["holds"] and not r["compatible"] for r in evidence)
+    assert all(r["evaluated_rows"] == 2 for r in evidence)
+    assert graph["evaluated_rows"] == 4
 
 
 def test_common_key_missingness_and_empty_are_explicit():
     frame = pd.DataFrame({"a": [1, 2, None], "b": [1, None, 2], "target": ["x"] * 3})
     graph = grain(frame, ["a", "b"], dropna=True)["graph"]
-    assert graph["scope"]["evaluated_rows"] == 1
+    assert graph["evaluated_rows"] == 1
     assert len(graph["nodes"]) == 1
     empty = grain(frame.iloc[:0], ["a", "b"])["graph"]
     assert len(empty["nodes"]) == 2
@@ -105,15 +105,16 @@ def test_common_key_missingness_and_empty_are_explicit():
     assert empty["unplaced"]
 
 
-def test_graph_conditional_scope_lineage():
+def test_graph_scope_is_the_census_cohort():
     frame = pd.DataFrame({"a": ["x", "x", "y"], "key": [1, 2, 3], "value": [1, 2, 3]})
-    graph = explore(
+    section = explore(
         frame, ["a"], candidate_keys=["key"], top_n=1, top_n_mode="pre", top_n_applies_to="both"
-    )["sections"]["grain"]["graph"]
-    assert graph["scope"]["conditional"]
-    assert graph["scope"]["input_rows"] == 3
-    assert graph["scope"]["restriction_excluded_rows"] == 1
-    assert "s2" in graph["scope"]["lineage"]
+    )["sections"]["grain"]
+    # The grain graph evaluates only the census pre-selection's rows.
+    assert section["scope"]["name"] == "census top_n cohort"
+    assert section["scope"]["input_rows"] == 3
+    assert section["scope"]["restriction_excluded_rows"] == 1
+    assert section["graph"]["evaluated_rows"] == 2
 
 
 def test_key_refinement_matches_row_partition_oracle():

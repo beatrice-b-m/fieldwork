@@ -102,9 +102,9 @@
   "scope": {
     "name": "MR export slots",
     "parent": "input",
+    "input_rows": 12,
     "evaluated_rows": 8,
     "restriction_excluded_rows": 4,
-    "positions_are": "zero_based_source_positions",
     "selection_positions": [
       0,
       1,

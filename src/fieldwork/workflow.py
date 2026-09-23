@@ -17,7 +17,7 @@ from ._explore.orchestration import explore as explicit_explore
 from ._runtime import operation, phase
 from .availability import missingness
 from .discovery import discover_dependencies
-from .evidence import Scope, finding, foundation_context, prepare, result
+from .evidence import Scope, finding, prepare, result
 from .families import feature_network
 from .leads import rank
 from .navigation import suggest_paths
@@ -267,11 +267,7 @@ def explore(
         duplicate = config.keys() & options.keys()
         if duplicate:
             raise ValueError(f"Configuration supplied twice: {sorted(duplicate)}")
-        options = {**config, **options}
-        context = {k: options.pop(k) for k in ("scope", "missing", "table_id") if k in options}
-        if context:
-            return foundation_context(df, explicit_explore, dimensions, **context, **options)
-        return explicit_explore(df, dimensions, **options)
+        return explicit_explore(df, dimensions, **{**config, **options})
     if options.keys() - {"scope", "missing", "table_id", "features"}:
         raise TypeError("With omitted dimensions, configure search with discovery dictionary")
     # Run-time population overrides retain all other configured search settings.
@@ -377,8 +373,8 @@ class Recipe:
     ----------
     operation : str
         One of 'missingness', 'dependencies', 'paths', 'value_patterns', 'explore',
-        'census', 'grain', 'levels', or 'joint_counts'. Use 'dependencies' for
-        discover_dependencies and 'paths' for suggest_paths.
+        'census', 'grain', 'levels', 'pairs', 'joint_counts' or 'infer_schema'.
+        Use 'dependencies' for discover_dependencies and 'paths' for suggest_paths.
     parameters : dict[str, Any], optional
         Operation keyword arguments; default is a new empty dictionary. Must be
         strict JSON. Source-bound scope and progress/cancel/timeout controls
@@ -452,7 +448,7 @@ class Recipe:
             New mapping from persisted operation names to public callables. Editing
             this returned dictionary does not register or replace operations.
         """
-        from ._explore import census, grain, joint_counts, levels
+        from ._explore import census, grain, infer_schema, joint_counts, levels, pairs
 
         return {
             "missingness": missingness,
@@ -463,7 +459,9 @@ class Recipe:
             "census": census,
             "grain": grain,
             "levels": levels,
+            "pairs": pairs,
             "joint_counts": joint_counts,
+            "infer_schema": infer_schema,
         }
 
     @operation("recipe")

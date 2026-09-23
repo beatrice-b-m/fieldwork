@@ -66,11 +66,20 @@ def _quantity(number: int, noun: str) -> str:
     return f"{number} {noun}{'' if number == 1 else 's'}"
 
 
-def _scope_text(scope: Mapping[str, Any]) -> str:
+def _scope_text(record: Mapping[str, Any], scope: Mapping[str, Any]) -> str:
+    """Population of a record within the analysis scope, relative to the source."""
+    restricted = record.get("restriction_excluded_rows", 0) + scope["restriction_excluded_rows"]
     return (
-        f"rows: {scope['evaluated_rows']} evaluated / {scope['input_rows']} input; "
-        f"excluded: {scope['missing_excluded_rows']} missing, "
-        f"{scope['restriction_excluded_rows']} restricted"
+        f"rows: {record['evaluated_rows']} evaluated / {scope['input_rows']} input; "
+        f"excluded: {record.get('missing_excluded_rows', 0)} missing, {restricted} restricted"
+    )
+
+
+def _excluded(record: Mapping[str, Any], scope: Mapping[str, Any]) -> bool:
+    return bool(
+        record.get("missing_excluded_rows")
+        or record.get("restriction_excluded_rows")
+        or scope["restriction_excluded_rows"]
     )
 
 
@@ -98,9 +107,11 @@ def _section_lines(
             else:
                 yield f"{indent}... child branches omitted ({reasons})"
 
-    scopes = {scope["scope_id"]: scope for scope in data.get("scopes", [])}
-    metadata = data.get("scope_metadata") or {}
-    conditional = metadata.get("conditional") or any(s.get("conditional") for s in scopes.values())
+    scope = data.get("scope") or {"restriction_excluded_rows": 0, "input_rows": 0, "name": "input"}
+    conditional = bool(scope["restriction_excluded_rows"]) or any(
+        record.get("restriction_excluded_rows")
+        for record in [data.get("tree", {}), data, *data.get("pairs", [])]
+    )
     titles = {
         "levels": "Levels",
         "census": "Census",
@@ -116,10 +127,8 @@ def _section_lines(
     yield f"{titles[kind]} ({state}{', conditional' if conditional else ''})"
     if state == "not_requested":
         return
-    if metadata.get("scope"):
-        yield f"  cohort from {metadata['source_scope']}"
-        if show_quantities:
-            yield f"    {_scope_text(metadata['scope'])}"
+    if scope["restriction_excluded_rows"]:
+        yield f"  scope: {scope['name']}"
     for warning in data.get("warnings", []):
         if not show_quantities and warning["code"] == "LOW_RETAINED_FRACTION":
             continue
@@ -136,19 +145,16 @@ def _section_lines(
 
     if kind == "levels":
         for feature in data.get("per_feature", []):
-            scope = scopes[feature["scope_id"]]
             column = label(feature["column"], column=True)
             if show_quantities:
                 yield (
                     f"  {column}: {feature['levels_reported']}/{feature['levels_total']} levels; "
-                    f"{feature['reported_rows']}/{scope['evaluated_rows']} evaluated rows reported"
+                    f"{feature['reported_rows']}/{feature['evaluated_rows']} evaluated rows reported"
                 )
             else:
                 yield f"  {column}"
-            if show_quantities and (
-                scope["missing_excluded_rows"] or scope["restriction_excluded_rows"]
-            ):
-                yield f"    {_scope_text(scope)}"
+            if show_quantities and _excluded(feature, scope):
+                yield f"    {_scope_text(feature, scope)}"
             levels = feature.get("levels", [])
             if not show_quantities:
                 levels = sorted(levels, key=lambda level: json_order(level["value"]))
@@ -169,9 +175,8 @@ def _section_lines(
                     yield "    ... additional levels not reported (analysis limits)"
     elif kind == "census":
         tree = data.get("tree", {})
-        scope = scopes.get(tree.get("scope_id"))
-        if scope and show_quantities:
-            yield f"  {_scope_text(scope)}"
+        if show_quantities:
+            yield f"  {_scope_text(tree, scope)}"
         yield "  path: " + " > ".join(label(c, column=True) for c in tree["dimensions"])
         root = tree["root"]
         if show_quantities:
@@ -232,13 +237,8 @@ def _section_lines(
                     f"{dependency['singleton_groups']} singleton, "
                     f"{dependency['repeated_groups']} repeated groups"
                 )
-            scope = scopes.get(dependency["scope_id"])
-            if (
-                show_quantities
-                and scope
-                and (scope["missing_excluded_rows"] or scope["restriction_excluded_rows"])
-            ):
-                yield f"    {_scope_text(scope)}"
+            if show_quantities and _excluded(dependency, scope):
+                yield f"    {_scope_text(dependency, scope)}"
         for target in data.get("targets", []):
             name = label(target["target"], column=True)
             if target["cross_key_comparison"] == "not_comparable":
@@ -277,7 +277,7 @@ def _section_lines(
             )
             yield f"  {names[0]} / {names[1]} [{context}]"
             if show_quantities:
-                yield f"    {_scope_text(pair['scope'])}"
+                yield f"    {_scope_text(pair, scope)}"
             relation = pair["relation"]
             meanings = {
                 "1:1": "one-to-one",
@@ -332,8 +332,7 @@ def _section_lines(
                         yield "    ... additional unobserved examples not reported"
     elif kind == "joint_counts":
         if show_quantities:
-            for scope in scopes.values():
-                yield f"  {_scope_text(scope)}"
+            yield f"  {_scope_text(data, scope)}"
         names = [label(c, column=True) for c in data["columns"]]
         context = (
             ", ".join(

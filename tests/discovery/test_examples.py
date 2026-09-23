@@ -46,7 +46,7 @@ def test_notebook_executes():
         ["S01", 2],
     ]
     # The census evaluates the eight MR rows of 12, restricting out four CT rows.
-    population = namespace["tree"]["scopes"][0]
+    population = namespace["population"]
     assert (population["input_rows"], population["evaluated_rows"]) == (12, 8)
     assert (population["restriction_excluded_rows"], population["missing_excluded_rows"]) == (4, 0)
     # The corrected delivery raises image_2 from 3/4 to 4/4 exams (+0.25).

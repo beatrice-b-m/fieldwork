@@ -1,43 +1,50 @@
-"""Combined explorer orchestration without alternate analysis implementations."""
+"""Explicit composition of levels, census, grain and pairs for chosen dimensions."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 
 from ..result import Result
-from .census import _preselect, _source, census, levels
-from .encoding import encode_column, labelled, missing_code, resolve_columns
+from .census import _complete, _preselect, census, levels
 from .grain import grain
 from .relations import pairs
 
+if TYPE_CHECKING:
+    from ..evidence import Scope
 
-def _pre_cohort(
+
+def _cohort(
     df: pd.DataFrame,
-    dimensions: tuple[Any, ...],
+    dimensions: list[str],
     *,
     top_n: int,
-    top_n_per_parent: bool,
+    per_parent: bool,
     dropna: bool,
-) -> pd.DataFrame:
-    """The census pre-selection cohort, shared by pairs and grain."""
-    encoded = [encode_column(df, column) for column in dimensions]
-    eligible = np.ones(len(df), dtype=bool)
-    for values, codes in encoded:
-        absent = missing_code(values)
-        if dropna and absent is not None:
-            eligible &= codes != absent
-    mask, _ = _preselect(
-        [codes for _, codes in encoded],
-        [values for values, _ in encoded],
-        np.flatnonzero(eligible),
-        top_n,
-        top_n_per_parent,
+    scope: Scope | None,
+    missing: Mapping[str, Iterable[Any]] | None,
+    table_id: str,
+) -> Scope:
+    """The census pre-selection as a Scope, so other analyses share its rows."""
+    from ..evidence import Scope, prepare_values
+
+    frame, positions, encoded, base = prepare_values(
+        df, dimensions, scope=scope, missing=missing, table_id=table_id
     )
-    return df.iloc[np.flatnonzero(mask)]
+    encoded_list = [encoded[c] for c in dimensions]
+    eligible = _complete(encoded_list, len(frame)) if dropna else np.ones(len(frame), bool)
+    mask, _ = _preselect(
+        [codes for _, codes in encoded_list], np.flatnonzero(eligible), top_n, per_parent
+    )
+    return Scope(
+        base["source"]["dataset_id"],
+        tuple(positions[mask].tolist()),
+        "census top_n cohort",
+        scope.name if scope else None,
+    )
 
 
 def explore(
@@ -64,9 +71,15 @@ def explore(
     max_absence_cells: int | None = 1000,
     max_contexts: int | None = 32,
     max_pairs: int | None = 15,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
 ) -> Result:
-    df = labelled(df)
-    selected = resolve_columns(df, dimensions, argument="dimensions")
+    from ..evidence import columns
+
+    selected = columns(df, dimensions)
+    if not selected:
+        raise ValueError("dimensions must contain at least one column")
     active = selected[:max_depth] if max_depth is not None else selected
     if top_n_applies_to not in {"census", "both"}:
         raise ValueError("top_n_applies_to must be 'census' or 'both'")
@@ -74,6 +87,7 @@ def explore(
         raise ValueError("include_absence=True requires include_pairs=True")
     if top_n_applies_to == "both" and (top_n_mode != "pre" or top_n is None):
         raise ValueError("top_n_applies_to='both' requires pre mode with top_n")
+    context = {"missing": missing, "table_id": table_id}
     level_result = levels(
         df,
         features=features if features is not None else selected,
@@ -82,6 +96,8 @@ def explore(
         min_count=min_count,
         dropna=dropna,
         schema=schema,
+        scope=scope,
+        **context,
     )
     census_result = census(
         df,
@@ -96,36 +112,34 @@ def explore(
         min_count=min_count,
         dropna=dropna,
         schema=schema,
+        scope=scope,
+        **context,
     )
-    cohort = df
-    lineage = None
+    cohort = scope
     if top_n_mode == "pre" and top_n is not None:
-        cohort = _pre_cohort(
+        cohort = _cohort(
             df,
             active,
             top_n=top_n,
-            top_n_per_parent=top_n_per_parent,
+            per_parent=top_n_per_parent,
             dropna=dropna,
+            scope=scope,
+            **context,
         )
-        lineage = {
-            "source_scope": "s2",
-            "conditional": len(cohort) != len(df),
-            "scope": census_result["scopes"][0],
-        }
-    grain_frame = cohort if top_n_applies_to == "both" else df
-    grain_data = (
-        grain(
-            grain_frame,
+    sections = {
+        "levels": level_result.to_dict(),
+        "census": census_result.to_dict(),
+        "grain": grain(
+            df,
             candidate_keys,
             dropna=dropna,
-            scope_metadata=lineage if top_n_applies_to == "both" else None,
+            scope=cohort if top_n_applies_to == "both" else scope,
+            **context,
         ).to_dict()
         if candidate_keys is not None
-        else {"status": "not_requested"}
-    )
-    pair_data = (
-        pairs(
-            cohort,
+        else {"status": "not_requested"},
+        "pairs": pairs(
+            df,
             active,
             dropna=dropna,
             include_absence=include_absence,
@@ -134,23 +148,16 @@ def explore(
             max_absence_cells=max_absence_cells,
             max_contexts=max_contexts,
             max_pairs=max_pairs,
-            scope_metadata=lineage,
+            scope=cohort,
+            **context,
         ).to_dict()
         if include_pairs
-        else {"status": "not_requested"}
-    )
-    payload: dict[str, Any] = {
-        "status": "empty" if len(df) == 0 else "computed",
-        "source": _source(df),
-        "sections": {
-            "levels": level_result.to_dict(),
-            "census": census_result.to_dict(),
-            "grain": grain_data,
-            "pairs": pair_data,
-        },
-        "warnings": [
-            *level_result.payload.get("warnings", []),
-            *census_result.payload.get("warnings", []),
-        ],
+        else {"status": "not_requested"},
     }
+    payload = {
+        key: census_result.payload[key]
+        for key in ("status", "source", "scope", "missing_convention")
+    }
+    payload["sections"] = sections
+    payload["warnings"] = [*level_result["warnings"], *census_result["warnings"]]
     return Result("explore", payload)

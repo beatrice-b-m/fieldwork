@@ -42,9 +42,18 @@ invalidates inspection. Identical rows are analytically interchangeable.
 
 Use `Scope.from_positions(df, positions, name=...)`; positions are unique,
 nonnegative, in bounds, and normalized to source order. `refine` requires a subset
-of its parent's source positions and records the parent name. Saved scopes include selected source positions, not source cell values. Analysis reports
-input rows, evaluated rows and restrictions separately. A scope is not an implicit
+of its parent's source positions and records the parent name. Saved scopes include selected source positions, not source cell values. A scope is not an implicit
 sample: search budgets and display limits never change its row population.
+
+Every analysis accepts `scope`, `missing` and `table_id` and records one population
+shape. The result's `source` names the dataset (`dataset_id`, `table_id`, `rows`,
+`columns`); its `scope` (`name`, `parent`, `input_rows`, `evaluated_rows`,
+`restriction_excluded_rows`, `selection_positions`) accounts for the rows a Scope
+removed. Each nested measurement (a level record, the census `tree`, a pair or
+dependency test, a grain graph) carries flat `evaluated_rows` and
+`missing_excluded_rows`, plus `restriction_excluded_rows` where a context or a
+census pre-selection removes rows; together they partition `scope.evaluated_rows`.
+Discovery dependency records keep their documented per-context populations.
 
 Examples and exceptions contain at most `example_limit` positions (default 5),
 selected in source order. `total`, `omitted`, `limit`, and selection method accompany
@@ -122,14 +131,11 @@ Use `paths.best.census(df)` (or `paths.path(i).census(df)`) to retain the exact
 source, scope and sentinel conventions of a recommendation, including after JSON
 restoration. `path.dimensions` is only an ordered tuple: it does not carry context.
 The handoff validates source identity and rejects context overrides. To choose a
-new population, rerun discovery. `census(df, dimensions, scope=..., missing=...)`
-also supports explicit context. Derived foundation scopes account against the
-original source, separating scope restrictions from missing-value exclusions.
-Context adaptation updates dataset metadata only at result roots and analytical
-section roots; graph `source`/`target` references retain their node identities.
-Shared population records are rebased once by object identity. In pre-filter
-exploration, census scopes reused by pair or grain lineage retain the original
-input total, disjoint exclusions, and a single added scope-lineage entry.
+new population, rerun discovery. In explicit exploration with `top_n_mode="pre"`,
+the census pre-selection becomes a Scope named "census top_n cohort" (parent: the
+caller's scope), which pairs, and with `top_n_applies_to="both"` grain, analyze;
+the census `tree` records how many rows the pre-selection and missing values
+removed.
 
 With explicit dimensions, `explore` accepts common `scope`, `missing`, `table_id`
 and `features` settings in `discovery`; search-only settings raise `ValueError`.

@@ -45,9 +45,7 @@
         "violating_groups": 0,
         "affected_rows": 0,
         "group_violation_rate": 0.0,
-        "repeated_groups": 0,
-        "exception_groups": [],
-        "omitted_exception_groups": 0
+        "repeated_groups": 0
       },
       "examples": {
         "positions": [
@@ -111,9 +109,7 @@
         "violating_groups": 0,
         "affected_rows": 0,
         "group_violation_rate": 0.0,
-        "repeated_groups": 0,
-        "exception_groups": [],
-        "omitted_exception_groups": 0
+        "repeated_groups": 0
       },
       "examples": {
         "positions": [
@@ -138,9 +134,9 @@
   "scope": {
     "name": "input",
     "parent": null,
+    "input_rows": 4,
     "evaluated_rows": 4,
     "restriction_excluded_rows": 0,
-    "positions_are": "zero_based_source_positions",
     "selection_positions": null
   },
   "coverage": {

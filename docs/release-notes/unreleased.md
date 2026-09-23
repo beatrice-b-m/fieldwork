@@ -65,3 +65,45 @@ public API without migration shims.
   section). The new `section(name)` returns one part of an overview as a
   `Result`, replacing `Result.from_dict(overview["sections"][name])`.
 - `KeySpec` now lives with `grain`; import it as `fieldwork.KeySpec` as before.
+
+## One scope and population record
+
+- Every analysis, including `levels`, `census`, `grain`, `pairs`,
+  `joint_counts` and `infer_schema`, accepts `scope`, `missing` and `table_id`,
+  and records `source` (`dataset_id`, `table_id`, `rows`, `columns`),
+  `scope` (`name`, `parent`, `input_rows`, `evaluated_rows`,
+  `restriction_excluded_rows`, `selection_positions`), `missing_convention`
+  and `parameters`. Foundation results therefore carry a fingerprint and can be
+  inspected, recomputed and reapplied like discovery results;
+  `Result.recompute` and `Recipe` now also cover `levels`, `census`, `grain`,
+  `pairs`, `joint_counts` and `infer_schema` (`Recipe("infer_schema")`, and
+  the new `"pairs"` operation).
+- Nested measurements carry flat `evaluated_rows`, `missing_excluded_rows`
+  and, where a context or pre-selection restricts rows,
+  `restriction_excluded_rows`, counted within `scope.evaluated_rows`. The
+  foundation `scopes` lists, `scope_id`, `lineage`, `conditional`,
+  `retained_rows`, `scope_metadata`, `analysis_context` and
+  `effective_limits` are removed; census accounting lives on `tree`, pair and
+  joint accounting on each record, and parameters in `parameters`.
+- In explicit exploration with `top_n_mode="pre"`, the census pre-selection is
+  a `Scope` named "census top_n cohort" that pairs (and grain with
+  `top_n_applies_to="both"`) analyze, instead of a lineage annotation.
+- `missing_convention` lists only columns with declared sentinels, and drops
+  the constant `native_missing` and `numeric_sentinel_equality` fields; the
+  scope drops `positions_are`. Discovery results drop the `features` list of
+  every source column (see `source.columns`).
+- Grain dependency records gain `missing_excluded_rows` and drop `scope_id`,
+  `group_rate` and `row_rate` (derivable). The grain graph replaces its
+  `dependencies` copy of every test (with per-test scopes) by a compact
+  `tests` table (key, target, holds, compatible, counts) and reports its
+  population as flat `evaluated_rows`/`missing_excluded_rows`. Target
+  summaries drop the derivable `assignment` field. Census and level records
+  drop `share_reason`, `feature_id`, `level_id`, and pair records drop `pair`.
+- Discovery grain views embed their grain result directly (no deep copy), and
+  their `population` keeps `evaluated_rows`, `missing_excluded_rows`,
+  `anchor_candidate_id`, `examples` and `rule`.
+- Dependency findings' `measurements` omit the test's `exception_groups`
+  (still in `dependencies`); each finding samples its own exceptions.
+- Saved candidate keys (`{"name": ..., "columns": [...]}`) are accepted
+  wherever `KeySpec` is, so grain parameters can be saved in recipes.
+- Lab-table overview export: 2.56 MB → 1.78 MB.

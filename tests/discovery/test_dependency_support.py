@@ -11,6 +11,14 @@ def sparse_frame():
     return pd.DataFrame({"X": [1, 1, 2, 2], "Y": ["a", None, "b", None]}, index=[0] * 4)
 
 
+EXCEPTION_FIELDS = {"exception_groups", "omitted_exception_groups"}
+
+
+def measured(record):
+    """A dependency test as its finding measures it: exception groups stay in the test."""
+    return {k: v for k, v in record.items() if k not in EXCEPTION_FIELDS}
+
+
 def dependency(result, key=("X",), target="Y", context=None):
     return next(
         d
@@ -60,7 +68,7 @@ def test_singletons_do_not_inflate_repeat_consistency():
     assert d["repeated_rows"] == 2
     assert d["repeat_coverage"] == 0.02
     assert d["repeat_modal_accuracy"] == 0.5
-    assert any(f["measurements"] == d for f in result["findings"])
+    assert any(f["measurements"] == measured(d) for f in result["findings"])
 
 
 def test_empty_denominators_and_missing_category():
@@ -118,7 +126,7 @@ def test_scoped_composite_contexts_and_global_counts():
     assert all(
         c["global_targets_tested"] == c["global_targets_possible"] for c in result["candidates"]
     )
-    f = next(f for f in result["findings"] if f["measurements"] == local)
+    f = next(f for f in result["findings"] if f["measurements"] == measured(local))
     assert result.select(df, f["id"]).positions == (0, 1)
     # Conditional exactness alone must never enter the global exact lists.
     conditional = fw.discover_dependencies(

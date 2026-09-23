@@ -90,8 +90,8 @@ def investigate():
         missing=MISSING,
     )
     tree = paths.best.census(df)
-    assert tree["scopes"][0]["input_rows"] == 12
-    assert tree["scopes"][0]["evaluated_rows"] == 8
+    assert tree["scope"]["input_rows"] == 12
+    assert tree["tree"]["evaluated_rows"] == 8
     recipe = fw.Recipe(
         "missingness",
         {

@@ -57,7 +57,7 @@ def test_generated_counts_match_independent_oracle(frame) -> None:
     dropped = census(frame, columns, max_levels=None, max_nodes=None, dropna=True)
     complete = sum(all(token != MISSING for token in path) for path in _paths(frame, columns))
     assert dropped["tree"]["root"]["count"] == complete
-    assert dropped["scopes"][0]["missing_excluded_rows"] == len(frame) - complete
+    assert dropped["tree"]["missing_excluded_rows"] == len(frame) - complete
 
 
 def _paths(frame, columns):

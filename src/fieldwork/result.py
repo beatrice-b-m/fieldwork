@@ -391,13 +391,14 @@ class Result(Mapping[str, Any]):
         from .evidence import fingerprint, saved_context
         from .workflow import Recipe
 
+        name = {"schema_proposal": "infer_schema"}.get(self.kind, self.kind)
         operations = Recipe.operations()
-        if self.kind not in operations or "parameters" not in self.payload:
+        if name not in operations or "parameters" not in self.payload:
             raise ValueError(f"A {self.kind} result cannot be recomputed; recompute its sections")
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs; use a Recipe for a new delivery")
         parameters = {**self.payload["parameters"], **saved_context(self.payload), **overrides}
-        return operations[self.kind](df, **parameters)
+        return operations[name](df, **parameters)
 
     def __repr__(self) -> str:
         from .presentation import render_plaintext

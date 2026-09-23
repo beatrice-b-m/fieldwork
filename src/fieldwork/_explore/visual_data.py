@@ -16,13 +16,15 @@ def label(value: Any, *, column: bool = False) -> str:
     return _CONTROL.sub(lambda match: f"\\u{ord(match.group()):04x}", text)
 
 
-def _scope(scope: Mapping, full: bool) -> str:
-    text = "Conditional cohort" if scope.get("conditional") else "Input population"
+def _scope(record: Mapping, scope: Mapping, full: bool) -> str:
+    """Population of a record within the analysis scope, relative to the source."""
+    restricted = record.get("restriction_excluded_rows", 0) + scope["restriction_excluded_rows"]
+    text = "Conditional cohort" if restricted else "Input population"
     if full:
         text += (
-            f" · {scope['evaluated_rows']} evaluated / {scope['input_rows']} input rows"
-            f" · {scope['missing_excluded_rows']} missing, "
-            f"{scope['restriction_excluded_rows']} restricted exclusions"
+            f" · {record['evaluated_rows']} evaluated / {scope['input_rows']} input rows"
+            f" · {record.get('missing_excluded_rows', 0)} missing, "
+            f"{restricted} restricted exclusions"
         )
     return text
 
@@ -52,13 +54,14 @@ def visualization_data(
         raise ValueError("Requested visualization section was not computed")
     kind = data.get("kind")
     full = detail == "full"
+    scope = data.get("scope") or {"restriction_excluded_rows": 0, "input_rows": 0}
     output = {"kind": kind, "detail": detail}
     if kind == "grain":
         if "graph" not in data:
             raise ValueError("Grain graph evidence is missing; recompute grain() with schema 0.3+")
         graph = data["graph"]
         output["caption"] = "Observed groupings among tested keys."
-        output["scope"] = _scope(graph["scope"], full)
+        output["scope"] = _scope(graph, scope, full)
         output["missingness"] = graph["missingness"].replace("_", " ")
         names = {key["name"]: key for key in data["keys"]}
         feature_ids = {a["target"]: f"f{i}" for i, a in enumerate(graph["assignments"])}
@@ -98,10 +101,10 @@ def visualization_data(
             output["nodes"].append(projected)
         output["edges"] = [{"source": e["source"], "target": e["target"]} for e in graph["edges"]]
         output["evidence"] = []
-        for record in graph["dependencies"]:
+        for record in graph["tests"]:
             projected = {
                 "feature": feature_ids[record["target"]],
-                "key": record["key_name"],
+                "key": record["key"],
                 "state": (
                     "undefined"
                     if record["holds"] is None
@@ -109,8 +112,8 @@ def visualization_data(
                     if record["holds"]
                     else "varying"
                 ),
-                "compatible": record["scope_compatible"],
-                "scope": _scope(record["scope"], full),
+                "compatible": record["compatible"],
+                "scope": _scope(record, scope, full),
             }
             if full:
                 projected.update(
@@ -120,7 +123,6 @@ def visualization_data(
                             "evaluated_rows",
                             "evaluated_groups",
                             "violating_groups",
-                            "group_rate",
                             "singleton_groups",
                             "repeated_groups",
                             "affected_rows",
@@ -141,7 +143,6 @@ def visualization_data(
         for record in output["evidence"]:
             record["feature_label"] = feature_labels[record["feature"]]
     elif kind == "levels":
-        scopes = {s["scope_id"]: s for s in data["scopes"]}
         output["features"] = []
         for feature in data["per_feature"]:
             rows = feature["levels"]
@@ -149,7 +150,7 @@ def visualization_data(
                 rows = sorted(rows, key=lambda r: json_order(r["value"]))
             projected = {
                 "label": label(feature["column"], column=True),
-                "scope": _scope(scopes[feature["scope_id"]], full),
+                "scope": _scope(feature, scope, full),
                 "rows": [],
             }
             for row in rows:
@@ -160,7 +161,7 @@ def visualization_data(
             if feature["omitted_levels"]:
                 item = {"label": "Omitted levels", "omitted": True}
                 if full:
-                    total = scopes[feature["scope_id"]]["evaluated_rows"]
+                    total = feature["evaluated_rows"]
                     item.update(
                         count=feature["unreported_rows"],
                         share=feature["unreported_rows"] / total if total else None,
@@ -168,7 +169,7 @@ def visualization_data(
                 projected["rows"].append(item)
             output["features"].append(projected)
     elif kind == "census":
-        output["scope"] = _scope(data["scopes"][0], full)
+        output["scope"] = _scope(data["tree"], scope, full)
         output["caption"] = "Observed paths; omitted branches retain their original mass."
         children = defaultdict(list)
         for node in data["tree"]["nodes"]:
@@ -256,7 +257,7 @@ def visualization_data(
                 "a_label": label(record["columns"][0], column=True),
                 "b_label": label(record["columns"][1], column=True),
                 "relation": record["relation"] or "undefined",
-                "scope": _scope(record["scope"], full),
+                "scope": _scope(record, scope, full),
             }
             if full:
                 item.update(
@@ -266,7 +267,7 @@ def visualization_data(
         output["omitted"] = bool(data["omitted_pairs"] or data["omitted_contexts"])
         output["caption"] = "Row grouping → column grouping. Mapping and association are separate."
     elif kind == "joint_counts":
-        output["scope"] = _scope(data["scopes"][0], full)
+        output["scope"] = _scope(data, scope, full)
         output["columns"] = [label(c, column=True) for c in data["columns"]]
         output["a"] = [label(v) for v in data["a"]]
         output["b"] = [label(v) for v in data["b"]]

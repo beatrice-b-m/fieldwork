@@ -16,13 +16,13 @@ def test_recommendation_census_preserves_context_and_original_population():
     paths = fw.Result.from_dict(json.loads(json.dumps(paths.to_dict())))
     tree = paths.best.census(df, dropna=True)
     assert tree["source"]["rows"] == 4
-    assert tree["scopes"][0]["input_rows"] == 4
-    assert tree["scopes"][0]["evaluated_rows"] == 2
-    assert tree["scopes"][0]["missing_excluded_rows"] == 1
-    assert tree["scopes"][0]["restriction_excluded_rows"] == 1
+    assert tree["scope"]["input_rows"] == 4
+    assert tree["tree"]["evaluated_rows"] == 2
+    assert tree["tree"]["missing_excluded_rows"] == 1
+    assert tree["scope"]["restriction_excluded_rows"] == 1
     preview = paths["paths"][0]["preview"]
-    assert preview["scopes"][0]["input_rows"] == 4
-    assert preview["scopes"][0]["evaluated_rows"] == 3
+    assert preview["scope"]["input_rows"] == 4
+    assert preview["tree"]["evaluated_rows"] == 3
     assert None in [node["value"] for node in preview["tree"]["nodes"]]
     assert paths.best.census(df)["tree"] == preview["tree"]
     with pytest.raises(ValueError, match="differs"):
@@ -33,9 +33,8 @@ def test_recommendation_census_preserves_context_and_original_population():
         df, ["value"], discovery={"scope": scope, "missing": {"value": [-999]}}, dropna=True
     )
     for name in ("levels", "census", "pairs"):
-        for population in explicit["sections"][name]["scopes"]:
-            assert population["input_rows"] == 4
-            assert population["restriction_excluded_rows"] == 1
+        assert explicit["sections"][name]["scope"]["input_rows"] == 4
+        assert explicit["sections"][name]["scope"]["restriction_excluded_rows"] == 1
     with pytest.raises(ValueError, match="search options"):
         fw.explore(df, ["site"], discovery={"objective": "compact"})
 
@@ -52,7 +51,7 @@ def test_sparse_candidates_keep_compatible_grain_views():
     )
     analysis = fw.discover_dependencies(df, max_key_size=1)
     assert "exact_grain" not in analysis
-    assert analysis["grain_views"][0]["grain"]["graph"]["scope"]["evaluated_rows"] == 4
+    assert analysis["grain_views"][0]["grain"]["graph"]["evaluated_rows"] == 4
     assert analysis["graph_selection"]["excluded"] == [
         {
             "candidate_id": "key4",
@@ -62,10 +61,7 @@ def test_sparse_candidates_keep_compatible_grain_views():
     ]
     assert len(analysis["grain_views"]) == 3
     for view in analysis["grain_views"]:
-        assert (
-            view["grain"]["graph"]["scope"]["evaluated_rows"]
-            == view["population"]["evaluated_rows"]
-        )
+        assert view["grain"]["graph"]["evaluated_rows"] == view["population"]["evaluated_rows"]
     assert any(
         d["exact"]
         for d in analysis["dependencies"]
@@ -74,8 +70,8 @@ def test_sparse_candidates_keep_compatible_grain_views():
     assert all(c["graph_views"] for c in analysis["candidates"] if c["columns"] != ["never"])
     scoped = fw.discover_dependencies(df, scope=fw.Scope.from_positions(df, [0, 1]), max_key_size=1)
     primary = scoped["grain_views"][0]["grain"]
-    assert primary["graph"]["scope"]["input_rows"] == 4
-    assert primary["graph"]["scope"]["restriction_excluded_rows"] == 2
+    assert primary["scope"]["input_rows"] == 4
+    assert primary["scope"]["restriction_excluded_rows"] == 2
 
 
 def test_typed_contexts_survive_saved_presentations():
@@ -404,7 +400,4 @@ def test_incompatible_grain_views_remain_separate():
     )
     for view in overlapping["grain_views"]:
         assert not {"key1", "key2"}.issubset(view["candidate_ids"])
-        assert (
-            view["population"]["evaluated_rows"]
-            == view["grain"]["graph"]["scope"]["evaluated_rows"]
-        )
+        assert view["population"]["evaluated_rows"] == view["grain"]["graph"]["evaluated_rows"]

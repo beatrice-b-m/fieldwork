@@ -8,6 +8,7 @@ import pytest
 from fieldwork import (
     KeySpec,
     Result,
+    Scope,
     census,
     explore,
     grain,
@@ -54,7 +55,10 @@ def test_exported_values_keep_types_and_str_column_names(make):
     )
     assert column_name == str(column)
     assert data == json.loads(json.dumps(data, allow_nan=False))
-    assert data == make(frame.iloc[::-1]).to_dict()
+    reversed_data = make(frame.iloc[::-1]).to_dict()
+    # Row order changes the source identity, never the evidence.
+    assert data.pop("source") != reversed_data.pop("source")
+    assert data == reversed_data
 
 
 @pytest.mark.parametrize("per_parent", [False, True])
@@ -182,3 +186,28 @@ def test_empty_results_have_readable_displays_and_resolved_exports():
         assert "Unsupported" not in repr(result)
         assert "empty" in repr(result)
         json.dumps(result.to_dict(), allow_nan=False)
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda df, **context: levels(df, ["site"], dropna=True, **context),
+        lambda df, **context: census(df, ["site", "id"], top_n=1, top_n_mode="pre", **context),
+        lambda df, **context: grain(df, ["site", KeySpec("both", ("site", "id"))], **context),
+        lambda df, **context: joint_counts(df, ["site", "finding"], context={"id": 1}, **context),
+        lambda df, **context: infer_schema(df, candidate_keys=["id"], **context),
+    ],
+    ids=["levels", "census", "grain", "joint_counts", "infer_schema"],
+)
+def test_saved_foundation_results_recompute_with_their_source_context(make):
+    frame = pd.DataFrame(
+        {"site": ["N", "N", "S", "-"], "id": [1, 2, 1, 2], "finding": ["x", "y", "x", "x"]}
+    )
+    context = {
+        "scope": Scope.from_positions(frame, [0, 1, 2], name="kept"),
+        "missing": {"site": ["-"]},
+        "table_id": "delivery",
+    }
+    result = make(frame, **context)
+    saved = Result.from_dict(json.loads(json.dumps(result.to_dict(), allow_nan=False)))
+    assert saved.recompute(frame).to_dict() == result.to_dict()

@@ -128,12 +128,18 @@ def same_json(left: Any, right: Any) -> bool:
 
 
 def code_of(values: list[Any], value: Any) -> int | None:
-    """Dictionary code of a raw value, or None when it is not observed."""
-    wanted = python_value(value)
+    """Dictionary code of a value, or None when it is not observed.
+
+    Values match by exported form, so a saved value (a timestamp saved as ISO
+    text, say) finds the code of the original cell.
+    """
+    wanted = json_value(python_value(value))
     if wanted is None:
         return missing_code(values)
-    key = value_key(wanted)
-    return next((i for i, v in enumerate(values) if v is not None and value_key(v) == key), None)
+    return next(
+        (i for i, v in enumerate(values) if v is not None and same_json(json_value(v), wanted)),
+        None,
+    )
 
 
 _LOOKALIKES = {"true", "false", "none", "null", "na", "n/a", "nan", "nat", "<na>"}

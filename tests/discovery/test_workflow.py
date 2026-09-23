@@ -399,13 +399,10 @@ def test_overview_recipe_reapplies_configuration_to_selected_population(tmp_path
     assert paths["parameters"]["max_candidates"] == 1
     assert paths["parameters"]["start_with"] == ["site"]
     assert paths["coverage"]["paths_evaluated"] == 1
-    assert overview["sections"]["census"]["analysis_context"]["scope"]["selection_positions"] == [
-        0,
-        1,
-    ]
+    assert overview["sections"]["census"]["scope"]["selection_positions"] == [0, 1]
     overridden = loaded.run(df, scope=scope, missing={}, features=["site"])
     assert overridden["sections"]["missingness"]["parameters"]["features"] == ["site"]
-    assert overridden["missing_convention"]["sentinels"]["a"] == []
+    assert overridden["missing_convention"]["sentinels"].get("a", []) == []
     assert loaded.to_dict() == configured
     assert fw.Recipe("explore").run(df, scope=scope)["scope"]["selection_positions"] == [0, 1]
     with pytest.raises(TypeError, match="discovery dictionary"):

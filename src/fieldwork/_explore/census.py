@@ -1,15 +1,11 @@
-"""Independent level counts and bounded nested census."""
+"""Independent level counts and a bounded tree of observed dimension prefixes."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Unpack
-
-if TYPE_CHECKING:
-    from ..evidence import Scope
-
 from collections import deque
 from collections.abc import Iterable, Mapping
-from typing import Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, Unpack
 
 import numpy as np
 import pandas as pd
@@ -17,70 +13,10 @@ import pandas as pd
 from .._runtime import checkpoint, operation, phase
 from ..result import Result
 from ..typing import Runtime, SchemaRole
-from .encoding import (
-    encode_column,
-    json_value,
-    labelled,
-    missing_code,
-    resolve_columns,
-    validate_limit,
-    validate_schema,
-    value_key,
-)
+from .encoding import json_value, validate_limit, validate_schema, value_key
 
-
-def _source(df: pd.DataFrame) -> dict[str, Any]:
-    return {
-        "table_id": "table",
-        "rows": len(df),
-        "columns": len(df.columns),
-        "dtypes": [
-            {
-                "column": column,
-                "dtype": str(df[column].dtype),
-            }
-            for column in df.columns
-        ],
-    }
-
-
-def _scope(
-    scope_id: str,
-    input_rows: int,
-    missing_excluded_rows: int,
-    restriction_excluded_rows: int,
-    conditional: bool,
-    lineage: list[str] | None = None,
-    *,
-    parent_scope: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    if parent_scope is not None:
-        input_rows = parent_scope["input_rows"]
-        missing_excluded_rows += parent_scope["missing_excluded_rows"]
-        restriction_excluded_rows += parent_scope["restriction_excluded_rows"]
-        conditional = conditional or parent_scope["conditional"]
-        lineage = [*parent_scope["lineage"], parent_scope["scope_id"], *(lineage or [])]
-    evaluated = input_rows - missing_excluded_rows - restriction_excluded_rows
-    return {
-        "scope_id": scope_id,
-        "input_rows": input_rows,
-        "missing_excluded_rows": missing_excluded_rows,
-        "restriction_excluded_rows": restriction_excluded_rows,
-        "evaluated_rows": evaluated,
-        "retained_rows": evaluated,
-        "conditional": conditional,
-        "lineage": lineage or [],
-    }
-
-
-def _ranked(codes: np.ndarray) -> list[tuple[int, int]]:
-    """(code, count) pairs, most frequent first; ties follow canonical value order."""
-    if not len(codes):
-        return []
-    observed, counts = np.unique(codes, return_counts=True)
-    order = np.lexsort((observed, -counts))
-    return list(zip(observed[order].tolist(), counts[order].tolist()))
-
+if TYPE_CHECKING:
+    from ..evidence import Scope
 
 _FAMILIES = (
     "boolean",
@@ -94,22 +30,33 @@ _FAMILIES = (
 )
 
 
+def _ranked(codes: np.ndarray) -> list[tuple[int, int]]:
+    """(code, count) pairs, most frequent first; ties follow canonical value order."""
+    if not len(codes):
+        return []
+    observed, counts = np.unique(codes, return_counts=True)
+    order = np.lexsort((observed, -counts))
+    return list(zip(observed[order].tolist(), counts[order].tolist()))
+
+
 def _feature_warnings(column: str, values: Iterable[Any], role: str | None) -> list[dict[str, Any]]:
     """Mixed value types, and advisory roles unsuited to categorical counting."""
     warnings = []
-    label = column
     families = [_FAMILIES[f] for f in sorted({value_key(v)[0] for v in values if v is not None})]
     if len(families) > 1:
-        warnings.append(
-            {
-                "code": "MIXED_LEVEL_TYPES",
-                "column": label,
-                "families": families,
-            }
-        )
+        warnings.append({"code": "MIXED_LEVEL_TYPES", "column": column, "families": families})
     if role in {"id", "continuous"}:
-        warnings.append({"code": "EXPLICIT_ROLE_SELECTION", "column": label, "role": role})
+        warnings.append({"code": "EXPLICIT_ROLE_SELECTION", "column": column, "role": role})
     return warnings
+
+
+def _complete(encoded: list[tuple[list[Any], np.ndarray]], size: int) -> np.ndarray:
+    """Rows where no given column is missing."""
+    mask = np.ones(size, dtype=bool)
+    for values, codes in encoded:
+        if values and values[-1] is None:
+            mask &= codes != len(values) - 1
+    return mask
 
 
 @operation("levels")
@@ -122,7 +69,9 @@ def levels(
     min_count: int = 1,
     dropna: bool = False,
     schema: dict[str, SchemaRole] | None = None,
-    scope_metadata: dict[str, Any] | None = None,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
     **runtime: Unpack[Runtime],
 ) -> Result:
     """Count observed values independently for each requested column.
@@ -130,144 +79,105 @@ def levels(
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    features : iterable of column labels or None, optional
-        Nonempty unique columns to count; default None counts every column.
+        Source frame, read without mutation.
+    features : iterable of str or None, optional
+        Columns to count; default None counts every column.
     top_n : int or None, optional
-        Positive number of most frequent levels per feature; default None.
-        Limits output only, never the counting population.
+        Report only the top_n most frequent levels; default None. Output only.
     max_levels : int or None, optional
-        Nonnegative displayed levels per feature; default 100. None is unbounded;
-        zero hides all levels while preserving totals and omission metadata.
+        Displayed levels per feature; default 100, None is unbounded.
     min_count : int, optional
-        Nonnegative minimum displayed count; default 1. Does not filter input rows.
+        Minimum displayed count; default 1. Output only.
     dropna : bool, optional
-        Default False includes missing values as a level. True excludes missing
-        values independently for each feature, so denominators can differ.
+        Default False counts missing values as a level; True excludes them per
+        feature, so denominators can differ between features.
     schema : dict or None, optional
-        Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
-        Default None. Roles annotate evidence and warnings; they do not cast values.
-    scope_metadata : mapping or None, optional
-        Optional descriptive lineage supplied by composition; default None. This
-        does not select rows. Use a Scope with census/explore for row selection.
+        Advisory roles ('id', 'categorical', 'continuous', 'unknown') by column;
+        'id' and 'continuous' roles add a warning. Values are never cast.
+    scope, missing, table_id
+        Source context shared by every analysis: a Scope restricting rows,
+        extra missing sentinels per column, and a source label.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
     Result
-        Kind 'levels', with features, feature/level dictionaries, per-feature
-        scopes, omitted mass, and warnings. Ranking uses count then typed value
-        order for deterministic ties.
-
-    Raises
-    ------
-    KeyError
-        A requested column is unknown.
-    ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    This is independent univariate counting, not a joint distribution. Each
-    reported share uses its feature's evaluated row count. schema is advisory;
-    ID/continuous roles can warn about unsuitable categorical interpretation.
+        Kind 'levels': one record per feature with ranked levels (count, then
+        value order), evaluated and missing-excluded rows, and omitted mass.
 
     Examples
     --------
     >>> import pandas as pd
     >>> import fieldwork as fw
     >>> result = fw.levels(pd.DataFrame({"site": ["A", "A", "B"]}), top_n=1)
-    >>> result.kind
-    'levels'
+    >>> result["per_feature"][0]["levels"][0]["value"]
+    'A'
     """
+    from ..evidence import columns, prepare_values
 
-    df = labelled(df)
-    selected = resolve_columns(df, features, argument="features", default_all=True)
-    roles = validate_schema(df, schema)
+    selected = columns(df, features)
     validate_limit("top_n", top_n, zero=False)
     validate_limit("max_levels", max_levels)
     validate_limit("min_count", min_count)
-    records: list[dict[str, Any]] = []
-    warnings: list[dict[str, Any]] = []
-    scopes: list[dict[str, Any]] = []
+    frame, _, encoded, base = prepare_values(
+        df, selected, scope=scope, missing=missing, table_id=table_id
+    )
+    roles = validate_schema(frame, schema)
+    limits = {"top_n": top_n, "max_levels": max_levels, "min_count": min_count}
+    records, warnings = [], []
     with phase("level counts", len(selected), "columns") as tracker:
-        for position, column in enumerate(selected):
-            feature_id = f"f{position}"
-            values, codes = encode_column(df, column)
-            absent_code = missing_code(values)
-            eligible = np.arange(len(df), dtype=np.int64)
-            missing_excluded = 0
-            if dropna and absent_code is not None:
-                keep = codes != absent_code
-                missing_excluded = int((~keep).sum())
-                eligible = eligible[keep]
-            ranked = _ranked(codes[eligible])
-            semantic = ranked[:top_n] if top_n is not None else ranked
-            semantic = [item for item in semantic if item[1] >= min_count]
-            reported = semantic[:max_levels] if max_levels is not None else semantic
-            evaluated_rows = len(eligible)
-            output_levels = [
-                {
-                    "rank": rank,
-                    "value": json_value(values[code]),
-                    "count": count,
-                    "share_of_feature": count / evaluated_rows if evaluated_rows else None,
-                    "share_reason": None if evaluated_rows else "empty_population",
-                }
-                for rank, (code, count) in enumerate(reported, 1)
-            ]
-            reported_rows = sum(item[1] for item in reported)
-            scope_id = f"s1:{feature_id}"
-            scopes.append(_scope(scope_id, len(df), missing_excluded, 0, False))
-            records.append(
-                {
-                    "feature_id": feature_id,
-                    "column": column,
-                    "role": roles.get(column),
-                    "scope_id": scope_id,
-                    "status": "empty" if evaluated_rows == 0 else "computed",
-                    "levels_total": len(ranked),
-                    "levels_reported": len(reported),
-                    "omitted_levels": len(ranked) - len(reported),
-                    "reported_rows": reported_rows,
-                    "unreported_rows": evaluated_rows - reported_rows,
-                    "levels": output_levels,
-                }
-            )
+        for column in selected:
+            values, codes = encoded[column]
+            records.append(_level_record(column, values, codes, roles.get(column), dropna, limits))
             warnings += _feature_warnings(column, values, roles.get(column))
-            tracker.advance(detail=str(column))
-    payload: dict[str, Any] = {
-        "status": "empty" if len(df) == 0 else "computed",
-        "source": _source(df),
-        "scopes": scopes,
-        "effective_limits": {
-            "top_n": top_n,
-            "max_levels": max_levels,
-            "min_count": min_count,
-            "dropna": dropna,
-        },
-        "per_feature": records,
-        "warnings": warnings,
+            tracker.advance(detail=column)
+    base["parameters"] = {"features": selected, **limits, "dropna": dropna, "schema": roles}
+    base["per_feature"] = records
+    base["warnings"] = warnings
+    return Result("levels", base)
+
+
+def _level_record(
+    column: str,
+    values: list[Any],
+    codes: np.ndarray,
+    role: str | None,
+    dropna: bool,
+    limits: Mapping[str, Any],
+) -> dict[str, Any]:
+    eligible = codes[_complete([(values, codes)], len(codes))] if dropna else codes
+    ranked = _ranked(eligible)
+    shown = ranked[: limits["top_n"]] if limits["top_n"] is not None else ranked
+    shown = [item for item in shown if item[1] >= limits["min_count"]]
+    shown = shown[: limits["max_levels"]] if limits["max_levels"] is not None else shown
+    evaluated = len(eligible)
+    reported = sum(count for _, count in shown)
+    return {
+        "column": column,
+        "role": role,
+        "status": "computed" if evaluated else "empty",
+        "evaluated_rows": evaluated,
+        "missing_excluded_rows": len(codes) - evaluated,
+        "levels_total": len(ranked),
+        "levels_reported": len(shown),
+        "omitted_levels": len(ranked) - len(shown),
+        "reported_rows": reported,
+        "unreported_rows": evaluated - reported,
+        "levels": [
+            {
+                "rank": rank,
+                "value": json_value(values[code]),
+                "count": count,
+                "share_of_feature": count / evaluated if evaluated else None,
+            }
+            for rank, (code, count) in enumerate(shown, 1)
+        ],
     }
-    if scope_metadata:
-        payload["scope_metadata"] = scope_metadata
-    return Result("levels", payload)
 
 
 def _preselect(
-    codes: list[np.ndarray],
-    values: list[list[Any]],
-    eligible: np.ndarray,
-    top_n: int,
-    per_parent: bool,
+    codes: list[np.ndarray], eligible: np.ndarray, top_n: int, per_parent: bool
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     """Rows keeping only the top_n levels of every dimension, and the kept levels.
 
@@ -275,11 +185,11 @@ def _preselect(
     parent, each prefix keeps the top_n levels among its own rows.
     """
     if per_parent:
-        return _preselect_per_parent(codes, values, eligible, top_n)
+        return _preselect_per_parent(codes, eligible, top_n)
     mask = np.zeros(codes[0].shape[0] if codes else 0, dtype=bool)
     mask[eligible] = True
     retained = []
-    for depth, (dimension, dictionary) in enumerate(zip(codes, values)):
+    for depth, dimension in enumerate(codes):
         chosen = sorted(code for code, _ in _ranked(dimension[eligible])[:top_n])
         retained.append({"depth": depth + 1, "level_codes": chosen})
         mask &= np.isin(dimension, chosen)
@@ -287,264 +197,32 @@ def _preselect(
 
 
 def _preselect_per_parent(
-    codes: list[np.ndarray],
-    values: list[list[Any]],
-    eligible: np.ndarray,
-    top_n: int,
+    codes: list[np.ndarray], eligible: np.ndarray, top_n: int
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     surviving = np.zeros(codes[0].shape[0], dtype=bool)
     retained: list[dict[str, Any]] = []
     queue: deque[tuple[int, np.ndarray, tuple[int, ...]]] = deque([(0, eligible, ())])
     while queue:
         depth, rows, path = queue.popleft()
-        chosen = _ranked(codes[depth][rows])[:top_n]
-        retained.append(
-            {
-                "path": list(path),
-                "depth": depth + 1,
-                "level_codes": [code for code, _ in chosen],
-            }
-        )
-        for code, _ in chosen:
+        chosen = [code for code, _ in _ranked(codes[depth][rows])[:top_n]]
+        retained.append({"path": list(path), "depth": depth + 1, "level_codes": chosen})
+        for code in chosen:
             child_rows = rows[codes[depth][rows] == code]
-            child_path = (*path, code)
             if depth + 1 == len(codes):
                 surviving[child_rows] = True
             else:
-                queue.append((depth + 1, child_rows, child_path))
+                queue.append((depth + 1, child_rows, (*path, code)))
     return surviving, retained
 
 
-def _census(
-    df: pd.DataFrame,
-    dimensions: Iterable[str],
-    *,
-    top_n: int | None = None,
-    top_n_mode: str = "post",
-    top_n_per_parent: bool = False,
-    min_retained_fraction: float = 0.01,
-    max_depth: int | None = None,
-    max_levels: int | None = 100,
-    max_nodes: int | None = 10000,
-    min_count: int = 1,
-    dropna: bool = False,
-    schema: dict[str, SchemaRole] | None = None,
-    _encoded=None,
-) -> Result:
-    """Build a deterministic, ancestor-closed observed-prefix census."""
-
-    df = labelled(df)
-    selected = resolve_columns(df, dimensions, argument="dimensions")
-    roles = validate_schema(df, schema)
-    validate_limit("top_n", top_n, zero=False)
-    validate_limit("max_depth", max_depth, zero=False)
-    validate_limit("max_levels", max_levels)
-    validate_limit("max_nodes", max_nodes)
-    validate_limit("min_count", min_count)
-    if top_n_mode not in {"pre", "post"}:
-        raise ValueError("top_n_mode must be 'pre' or 'post'")
-    if (
-        not isinstance(min_retained_fraction, (int, float))
-        or isinstance(min_retained_fraction, bool)
-        or not 0 <= min_retained_fraction <= 1
-    ):
-        raise ValueError("min_retained_fraction must be between 0 and 1")
-    active = selected[:max_depth] if max_depth is not None else selected
-    dictionaries: list[list[Any]] = []
-    code_arrays: list[np.ndarray] = []
-    missing_codes: list[int | None] = []
-    for column in active:
-        checkpoint()
-        values, codes = _encoded[column] if _encoded is not None else encode_column(df, column)
-        dictionaries.append(values)
-        code_arrays.append(codes)
-        missing_codes.append(missing_code(values))
-    eligible_mask = np.ones(len(df), dtype=bool)
-    if dropna:
-        for codes, absent_code in zip(code_arrays, missing_codes):
-            if absent_code is not None:
-                eligible_mask &= codes != absent_code
-    eligible = np.flatnonzero(eligible_mask)
-    missing_excluded = len(df) - len(eligible)
-    retained_metadata: list[dict[str, Any]] = []
-    evaluated = eligible
-    warnings: list[dict[str, Any]] = []
-    if top_n_mode == "pre" and top_n is not None and len(eligible):
-        final_mask, retained_metadata = _preselect(
-            code_arrays, dictionaries, eligible, top_n, top_n_per_parent
-        )
-        evaluated = np.flatnonzero(final_mask)
-        if not len(evaluated):
-            raise ValueError(
-                "DEGENERATE_TOP_N: pre selection removed every eligible row "
-                f"({len(eligible)} eligible rows)"
-            )
-        fraction = len(evaluated) / len(eligible)
-        if fraction < min_retained_fraction:
-            warnings.append(
-                {
-                    "code": "LOW_RETAINED_FRACTION",
-                    "retained_fraction": fraction,
-                    "eligible_rows": len(eligible),
-                    "retained_rows": len(evaluated),
-                }
-            )
-    restriction_excluded = len(eligible) - len(evaluated)
-    scope = _scope(
-        "s2",
-        len(df),
-        missing_excluded,
-        restriction_excluded,
-        top_n_mode == "pre" and restriction_excluded > 0,
-        ["input", "dropna" if dropna else "include_missing", top_n_mode],
-    )
-    features = [
-        {
-            "column": column,
-            "role": roles.get(column),
-            "dictionary_cardinality": len(dictionaries[index]),
-        }
-        for index, column in enumerate(active)
-    ]
-    for index, values in enumerate(dictionaries):
-        warnings += _feature_warnings(active[index], values, roles.get(active[index]))
-    global_chosen: list[set[int] | None] = []
-    for codes, values in zip(code_arrays, dictionaries):
-        if top_n is not None and not top_n_per_parent and top_n_mode == "post":
-            global_chosen.append({code for code, _ in _ranked(codes[evaluated])[:top_n]})
-        else:
-            global_chosen.append(None)
-    nodes: list[dict[str, Any]] = []
-    queue: deque[tuple[str, int, np.ndarray, int]] = deque()
-    queue.append(("root", 0, evaluated, len(evaluated)))
-    root = {
-        "node_id": "root",
-        "parent_id": None,
-        "column": None,
-        "value": None,
-        "depth": 0,
-        "count": len(evaluated),
-        "share_of_parent": None,
-        "share_of_total": 1.0 if len(evaluated) else None,
-        "share_reason": None if len(evaluated) else "empty_population",
-        "expansion_state": "unexpanded" if active else "complete",
-        "omitted_child_rows": 0,
-        "omitted_child_levels": 0,
-        "stop_reasons": [],
-    }
-    node_lookup: dict[str, dict[str, Any]] = {"root": root}
-    next_id = 0
-    with phase("census tree", unit="parents") as tracker:
-        while queue:
-            parent_id, depth, rows, parent_count = queue.popleft()
-            checkpoint()
-            parent = node_lookup[parent_id]
-            if depth >= len(active):
-                parent["expansion_state"] = "complete"
-                tracker.advance()
-                continue
-            ranked = _ranked(code_arrays[depth][rows])
-            chosen = ranked
-            if top_n is not None:
-                if top_n_per_parent and top_n_mode == "post":
-                    chosen = chosen[:top_n]
-                elif global_chosen[depth] is not None:
-                    chosen = [item for item in chosen if item[0] in global_chosen[depth]]
-            chosen = [item for item in chosen if item[1] >= min_count]
-            if max_levels is not None:
-                chosen = chosen[:max_levels]
-            remaining_budget = None if max_nodes is None else max_nodes - len(nodes)
-            budget_truncated = remaining_budget is not None and len(chosen) > max(
-                0, remaining_budget
-            )
-            if remaining_budget is not None:
-                chosen = chosen[: max(0, remaining_budget)]
-            chosen_codes = {code for code, _ in chosen}
-            omitted_rows = sum(count for code, count in ranked if code not in chosen_codes)
-            parent["omitted_child_rows"] = omitted_rows
-            parent["omitted_child_levels"] = len(ranked) - len(chosen)
-            parent["expansion_state"] = "expanded"
-            reasons: list[str] = []
-            if len(chosen) < len(ranked):
-                if top_n is not None:
-                    reasons.append("top_n")
-                if max_levels is not None and len(ranked) > max_levels:
-                    reasons.append("max_levels")
-                if budget_truncated or (max_nodes is not None and len(nodes) >= max_nodes):
-                    reasons.append("max_nodes")
-                if any(count < min_count for _, count in ranked):
-                    reasons.append("min_count")
-            parent["stop_reasons"] = sorted(set(reasons))
-            for code, count in chosen:
-                node_id = f"n{next_id}"
-                next_id += 1
-                child_rows = rows[code_arrays[depth][rows] == code]
-                node = {
-                    "node_id": node_id,
-                    "parent_id": parent_id,
-                    "column": active[depth],
-                    "value": json_value(dictionaries[depth][code]),
-                    "depth": depth + 1,
-                    "count": count,
-                    "share_of_parent": count / parent_count if parent_count else None,
-                    "share_of_total": count / len(evaluated) if len(evaluated) else None,
-                    "share_reason": None if len(evaluated) else "empty_population",
-                    "expansion_state": "complete" if depth + 1 == len(active) else "unexpanded",
-                    "omitted_child_rows": 0,
-                    "omitted_child_levels": 0,
-                    "stop_reasons": [],
-                }
-                nodes.append(node)
-                node_lookup[node_id] = node
-                if depth + 1 < len(active):
-                    queue.append((node_id, depth + 1, child_rows, count))
-            tracker.advance()
-    # Kept levels are reported by value, whether or not a node survives display limits.
-    retained_sets = []
-    for retained in retained_metadata:
-        record = {
-            "depth": retained["depth"],
-            "column": active[retained["depth"] - 1],
-            "values": [
-                json_value(dictionaries[retained["depth"] - 1][code])
-                for code in retained["level_codes"]
-            ],
-        }
-        if "path" in retained:
-            record["path"] = [
-                json_value(dictionaries[depth][code]) for depth, code in enumerate(retained["path"])
-            ]
-        retained_sets.append(record)
-    status = "empty" if not len(evaluated) else "computed"
-    if any(node["omitted_child_rows"] for node in [root, *nodes]):
-        status = "partial" if len(evaluated) else status
-    payload: dict[str, Any] = {
-        "status": status,
-        "source": _source(df),
-        "scopes": [scope],
-        "features": features,
-        "tree": {
-            "status": status,
-            "scope_id": "s2",
-            "dimensions": list(active),
-            "requested_depth": len(active),
-            "root": root,
-            "nodes": nodes,
-            "retained_sets": retained_sets,
-        },
-        "effective_limits": {
-            "top_n": top_n,
-            "top_n_mode": top_n_mode,
-            "top_n_per_parent": top_n_per_parent,
-            "max_depth": max_depth,
-            "max_levels": max_levels,
-            "max_nodes": max_nodes,
-            "min_count": min_count,
-            "dropna": dropna,
-        },
-        "warnings": warnings,
-    }
-    return Result("census", payload)
+@dataclass(frozen=True)
+class _Limits:
+    top_n: int | None
+    per_parent: bool
+    post: bool
+    max_levels: int | None
+    max_nodes: int | None
+    min_count: int
 
 
 @operation("census")
@@ -552,9 +230,6 @@ def census(
     df: pd.DataFrame,
     dimensions: Iterable[str],
     *,
-    scope: Scope | None = None,
-    missing: Mapping[str, Iterable[Any]] | None = None,
-    table_id: str = "table",
     top_n: int | None = None,
     top_n_mode: Literal["pre", "post"] = "post",
     top_n_per_parent: bool = False,
@@ -565,97 +240,113 @@ def census(
     min_count: int = 1,
     dropna: bool = False,
     schema: dict[str, SchemaRole] | None = None,
+    scope: Scope | None = None,
+    missing: Mapping[str, Iterable[Any]] | None = None,
+    table_id: str = "table",
     **runtime: Unpack[Runtime],
 ) -> Result:
-    """Build a bounded tree of observed dimension prefixes.
+    """Build a bounded tree of observed dimension prefixes with exact counts.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Source frame, read without mutation. Column labels must be unique strings,
-        non-boolean integers, or recursively tuple-valued labels. Native missing
-        scalars share one identity; integer and float values remain distinct.
-        Unsupported column labels or scalar objects raise TypeError.
-    dimensions : iterable of column labels
-        Nonempty ordered columns defining the census prefixes. Order changes the
-        tree; use KeySpec only for grain candidates, not for dimensions.
-    scope : Scope or None, optional
-        Source-bound population selection; default None uses all rows. The scope
-        must match the ordered source. Fingerprinting still scans the full frame.
-    missing : mapping or None, optional
-        Additional missing sentinels per column; default None. Native missing
-        values are always absent. Numeric sentinels match integer/float values
-        numerically; booleans remain distinct. The source is not modified.
-    table_id : str, optional
-        Nonempty source label; default 'table'. Does not replace the fingerprint.
+        Source frame, read without mutation.
+    dimensions : iterable of str
+        Nonempty ordered columns; order changes the tree.
     top_n : int or None, optional
-        Positive number of leading levels; default None keeps all eligible levels.
-        With pre mode this selects a cohort; with post mode it only limits output.
-    top_n_mode : {'pre', 'post'}, optional
-        Default 'post' counts the full eligible population before limiting output.
-        'pre' restricts rows to selected levels before counting, records exclusions,
-        and can warn about low retention.
+        Keep the top_n levels per dimension; default None keeps all.
+    top_n_mode : {'post', 'pre'}, optional
+        'post' (default) counts every row and limits output; 'pre' keeps only
+        rows whose levels are all kept, recording the excluded rows.
     top_n_per_parent : bool, optional
-        Default False chooses leading levels globally for each dimension. True
-        chooses them separately within each parent prefix.
+        Choose leading levels within each parent prefix instead of globally.
     min_retained_fraction : float, optional
-        Retention warning threshold in [0, 1]; default 0.01. Does not reject or
-        change the selected population.
+        Warn when pre-selection keeps less than this share of rows; default 0.01.
     max_depth : int or None, optional
-        Positive number of active dimensions; default None uses all dimensions.
-    max_levels : int or None, optional
-        Nonnegative displayed child-level limit per parent; default 100. None is
-        unbounded; zero omits all child levels. Omitted mass remains reported.
-    max_nodes : int or None, optional
-        Nonnegative total non-root node budget; default 10000. None is unbounded;
-        zero keeps only the root and omission evidence.
-    min_count : int, optional
-        Nonnegative minimum displayed count; default 1. Does not filter input rows.
+        Use only the first max_depth dimensions; default None uses all.
+    max_levels, max_nodes, min_count : optional
+        Display limits (children per node, total nodes, minimum count); defaults
+        100, 10000 and 1. Omitted children keep their mass in the parent.
     dropna : bool, optional
-        Default False includes missing values as levels. True excludes rows
-        missing any active dimension before census counting.
+        True excludes rows missing any active dimension; default False keeps
+        missing values as a level.
     schema : dict or None, optional
-        Advisory roles by column: 'id', 'categorical', 'continuous', or 'unknown'.
-        Default None. Roles annotate evidence and warnings; they do not cast values.
+        Advisory roles by column, as in levels.
+    scope, missing, table_id
+        Source context shared by every analysis.
     **runtime : Unpack[Runtime]
         Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
     Result
-        Kind 'census', with tree nodes, feature and level dictionaries, scopes,
-        and warnings. Nodes record parent/total shares, omitted child mass, and
-        stop reasons. No unobserved Cartesian branches are invented.
+        Kind 'census': ``tree`` with its evaluated, missing-excluded and
+        pre-selection-excluded rows, parent-linked nodes naming their column and
+        value, kept levels of a pre-selection, and warnings. No unobserved
+        combinations are invented.
 
     Raises
     ------
-    KeyError
-        A requested column is unknown.
     ValueError
-        Columns, limits, thresholds, constraints, or source scope are invalid.
-    TypeError
-        The frame, column labels, or scalar values are unsupported.
-    AnalysisCancelled
-        Cancellation or the cooperative timeout stops analysis.
-
-    Notes
-    -----
-    Counts are exact for the evaluated population. Display budgets preserve
-    ancestor closure and report omissions; preselection explicitly changes the
-    population and records its exclusions. Native and declared missing values
-    share a level. When source context is supplied, scopes retain original-source
-    row accounting and distinguish restrictions from missing exclusions.
+        Pre-selection removes every row, or options are invalid.
 
     Examples
     --------
     >>> import pandas as pd
     >>> import fieldwork as fw
     >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, 1]})
-    >>> tree = fw.census(df, ["site", "visit"], max_nodes=10)
-    >>> tree.kind
-    'census'
+    >>> fw.census(df, ["site", "visit"])["tree"]["nodes"][0]["count"]
+    2
     """
-    options = {
+    from ..evidence import columns, prepare_values
+
+    selected = columns(df, dimensions)
+    if not selected:
+        raise ValueError("dimensions must contain at least one column")
+    for name, value, zero in [
+        ("top_n", top_n, False),
+        ("max_depth", max_depth, False),
+        ("max_levels", max_levels, True),
+        ("max_nodes", max_nodes, True),
+        ("min_count", min_count, True),
+    ]:
+        validate_limit(name, value, zero=zero)
+    if top_n_mode not in {"pre", "post"}:
+        raise ValueError("top_n_mode must be 'pre' or 'post'")
+    if isinstance(min_retained_fraction, bool) or not 0 <= min_retained_fraction <= 1:
+        raise ValueError("min_retained_fraction must be between 0 and 1")
+    active = selected[:max_depth] if max_depth is not None else selected
+    frame, _, encoded, base = prepare_values(
+        df, active, scope=scope, missing=missing, table_id=table_id
+    )
+    roles = validate_schema(frame, schema)
+    values = [encoded[c][0] for c in active]
+    codes = [encoded[c][1] for c in active]
+    eligible = (
+        np.flatnonzero(_complete(list(zip(values, codes)), len(frame)))
+        if dropna
+        else np.arange(len(frame))
+    )
+    evaluated, retained, warnings = eligible, [], []
+    if top_n_mode == "pre" and top_n is not None and len(eligible):
+        evaluated, retained, warning = _cohort(codes, eligible, top_n, top_n_per_parent)
+        if warning["retained_fraction"] < min_retained_fraction:
+            warnings.append(warning)
+    for column, dictionary in zip(active, values):
+        warnings += _feature_warnings(column, dictionary, roles.get(column))
+    limits = _Limits(
+        top_n, top_n_per_parent, top_n_mode == "post", max_levels, max_nodes, min_count
+    )
+    tree = _tree(active, values, codes, evaluated, limits)
+    tree.update(
+        evaluated_rows=len(evaluated),
+        missing_excluded_rows=len(frame) - len(eligible),
+        restriction_excluded_rows=len(eligible) - len(evaluated),
+        retained_sets=[_retained(record, active, values) for record in retained],
+    )
+    base["status"] = tree.pop("status")
+    base["parameters"] = {
+        "dimensions": selected,
         "top_n": top_n,
         "top_n_mode": top_n_mode,
         "top_n_per_parent": top_n_per_parent,
@@ -665,12 +356,171 @@ def census(
         "max_nodes": max_nodes,
         "min_count": min_count,
         "dropna": dropna,
-        "schema": schema,
+        "schema": roles,
     }
-    if scope is None and missing is None and table_id == "table":
-        return _census(df, dimensions, **options)
-    from ..evidence import foundation_context
+    base["features"] = [
+        {"column": c, "role": roles.get(c), "dictionary_cardinality": len(v)}
+        for c, v in zip(active, values)
+    ]
+    base["tree"] = tree
+    base["warnings"] = warnings
+    return Result("census", base)
 
-    return foundation_context(
-        df, _census, dimensions, scope=scope, missing=missing, table_id=table_id, **options
-    )
+
+def _cohort(
+    codes: list[np.ndarray], eligible: np.ndarray, top_n: int, per_parent: bool
+) -> tuple[np.ndarray, list[dict[str, Any]], dict[str, Any]]:
+    """Rows kept by a pre-selection, the kept levels, and the retention record."""
+    mask, retained = _preselect(codes, eligible, top_n, per_parent)
+    evaluated = np.flatnonzero(mask)
+    if not len(evaluated):
+        raise ValueError(
+            "DEGENERATE_TOP_N: pre selection removed every eligible row "
+            f"({len(eligible)} eligible rows)"
+        )
+    warning = {
+        "code": "LOW_RETAINED_FRACTION",
+        "retained_fraction": len(evaluated) / len(eligible),
+        "eligible_rows": len(eligible),
+        "retained_rows": len(evaluated),
+    }
+    return evaluated, retained, warning
+
+
+def _retained(record: dict[str, Any], active: list[str], values: list[list[Any]]) -> dict:
+    """Kept levels of a pre-selection, reported by value."""
+    depth = record["depth"] - 1
+    output = {
+        "depth": record["depth"],
+        "column": active[depth],
+        "values": [json_value(values[depth][code]) for code in record["level_codes"]],
+    }
+    if "path" in record:
+        output["path"] = [json_value(values[i][code]) for i, code in enumerate(record["path"])]
+    return output
+
+
+def _tree(
+    active: list[str],
+    values: list[list[Any]],
+    codes: list[np.ndarray],
+    evaluated: np.ndarray,
+    limits: _Limits,
+) -> dict[str, Any]:
+    """Expand prefixes breadth first under the display limits."""
+    total = len(evaluated)
+    root = _node("root", None, None, None, 0, total, total, active)
+    # Global post-selection keeps the same top_n levels under every parent.
+    global_top = [
+        {code for code, _ in _ranked(dimension[evaluated])[: limits.top_n]}
+        if limits.top_n is not None and limits.post and not limits.per_parent
+        else None
+        for dimension in codes
+    ]
+    nodes: list[dict[str, Any]] = []
+    queue = deque([(root, 0, evaluated)])
+    with phase("census tree", unit="parents") as tracker:
+        while queue:
+            parent, depth, rows = queue.popleft()
+            checkpoint()
+            ranked = _ranked(codes[depth][rows])
+            chosen, truncated = _children(ranked, global_top[depth], limits, len(nodes))
+            _record_omissions(parent, ranked, chosen, limits, truncated)
+            for code, count in chosen:
+                node = _node(
+                    f"n{len(nodes)}",
+                    parent["node_id"],
+                    active[depth],
+                    json_value(values[depth][code]),
+                    depth + 1,
+                    count,
+                    parent["count"],
+                    active,
+                    total,
+                )
+                nodes.append(node)
+                if depth + 1 < len(active):
+                    queue.append((node, depth + 1, rows[codes[depth][rows] == code]))
+            tracker.advance()
+    status = "empty" if not total else "computed"
+    if total and any(node["omitted_child_rows"] for node in [root, *nodes]):
+        status = "partial"
+    return {
+        "status": status,
+        "dimensions": list(active),
+        "requested_depth": len(active),
+        "root": root,
+        "nodes": nodes,
+    }
+
+
+def _node(
+    node_id: str,
+    parent_id: str | None,
+    column: str | None,
+    value: Any,
+    depth: int,
+    count: int,
+    parent_count: int,
+    active: list[str],
+    total: int | None = None,
+) -> dict[str, Any]:
+    total = count if total is None else total
+    return {
+        "node_id": node_id,
+        "parent_id": parent_id,
+        "column": column,
+        "value": value,
+        "depth": depth,
+        "count": count,
+        "share_of_parent": count / parent_count if parent_id and parent_count else None,
+        "share_of_total": count / total if total else None,
+        "expansion_state": "complete" if depth == len(active) else "unexpanded",
+        "omitted_child_rows": 0,
+        "omitted_child_levels": 0,
+        "stop_reasons": [],
+    }
+
+
+def _children(
+    ranked: list[tuple[int, int]], global_top: set[int] | None, limits: _Limits, emitted: int
+) -> tuple[list[tuple[int, int]], bool]:
+    """Children shown under a parent, and whether the node budget cut them."""
+    chosen = ranked
+    if limits.top_n is not None and limits.post and limits.per_parent:
+        chosen = chosen[: limits.top_n]
+    elif global_top is not None:
+        chosen = [item for item in chosen if item[0] in global_top]
+    chosen = [item for item in chosen if item[1] >= limits.min_count]
+    if limits.max_levels is not None:
+        chosen = chosen[: limits.max_levels]
+    if limits.max_nodes is None:
+        return chosen, False
+    remaining = max(0, limits.max_nodes - emitted)
+    return chosen[:remaining], len(chosen) > remaining or remaining == 0
+
+
+def _record_omissions(
+    parent: dict[str, Any],
+    ranked: list[tuple[int, int]],
+    chosen: list[tuple[int, int]],
+    limits: _Limits,
+    truncated: bool,
+) -> None:
+    """Keep omitted children's mass and the limits that omitted them on the parent."""
+    shown = {code for code, _ in chosen}
+    parent["omitted_child_rows"] = sum(count for code, count in ranked if code not in shown)
+    parent["omitted_child_levels"] = len(ranked) - len(chosen)
+    parent["expansion_state"] = "expanded"
+    if len(chosen) == len(ranked):
+        return
+    reasons = set()
+    if limits.top_n is not None:
+        reasons.add("top_n")
+    if limits.max_levels is not None and len(ranked) > limits.max_levels:
+        reasons.add("max_levels")
+    if truncated:
+        reasons.add("max_nodes")
+    if any(count < limits.min_count for _, count in ranked):
+        reasons.add("min_count")
+    parent["stop_reasons"] = sorted(reasons)

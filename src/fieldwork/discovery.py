@@ -10,10 +10,9 @@ from typing import Any, Unpack
 import numpy as np
 import pandas as pd
 
-from ._explore import KeySpec
 from ._explore._kernels import FDCache, first_indices, group_ids, modal_groups
-from ._explore.encoding import MissingCode, cell
-from ._explore.grain import _grain
+from ._explore.encoding import cell
+from ._explore.grain import Encoded, KeySpec, evaluate
 from ._runtime import checkpoint, operation, phase
 from .evidence import (
     Scope,
@@ -21,7 +20,6 @@ from .evidence import (
     bounded_rows,
     columns,
     context_statement,
-    contextual_result,
     finding,
     limit,
     prepare,
@@ -342,7 +340,9 @@ def discover_dependencies(
                             f"{', '.join(key)} determines {target}"
                             + (" within " + context_statement(context) if context else ""),
                             list(dict.fromkeys([*key, target, *(context or {})])),
-                            record,
+                            # The finding samples its own exceptions; the saved
+                            # test keeps the exception groups once.
+                            {k: v for k, v in record.items() if "exception_groups" not in k},
                             bounded_rows(positions[eligible], good, example_limit),
                             exceptions=bounded_rows(positions[eligible], ~good, example_limit),
                             example_limit=example_limit,
@@ -356,11 +356,10 @@ def discover_dependencies(
                             },
                         )
                     tracker.advance(detail=f"{', '.join(key)} → {target}")
-    graph_frame = frame[selected] if include_grain and max_grain_views != 0 else None
-    graph_codes = (
-        {c: (MissingCode(-1 if not present[c].all() else None), codes[c]) for c in selected}
-        if include_grain
-        else {}
+    graph_codes = Encoded(
+        {c: codes[c] for c in selected},
+        {c: None if present[c].all() else -1 for c in selected},
+        graph_cache,
     )
     # Each supported candidate supplies a population anchor. Candidates with a
     # superset of those rows can be compared on that anchor without shrinking it.
@@ -374,22 +373,19 @@ def discover_dependencies(
     with phase("grain views", len(chosen_anchors), "views") as tracker:
         for anchor, mask in chosen_anchors:
             members = [i for i, eligible in enumerate(candidate_masks) if np.all(eligible[mask])]
-            analysis = _grain(
-                graph_frame,
-                [KeySpec(f"key{i}", candidates[i]) for i in members],
-                dropna=dropna,
-                _encoded=graph_codes,
-                _cache=graph_cache,
-            )
+            specs = tuple(KeySpec(f"key{i}", candidates[i]) for i in members)
+            view = {key: base[key] for key in ("status", "source", "scope", "missing_convention")}
+            view["parameters"] = {
+                "candidate_keys": [{"name": s.name, "columns": list(s.columns)} for s in specs],
+                "dropna": dropna,
+            }
+            view.update(evaluate(len(frame), selected, specs, dropna=dropna, encoded=graph_codes))
             views.append(
                 {
                     "id": f"g{len(views)}",
                     "candidate_ids": [f"key{i}" for i in members],
                     "population": {
-                        "input_rows": len(df),
-                        "scope_rows": len(frame),
                         "evaluated_rows": int(mask.sum()),
-                        "restriction_excluded_rows": len(df) - len(frame),
                         "missing_excluded_rows": int((~mask).sum()),
                         # The anchor's complete cases define the population, so
                         # only bounded examples are stored, not every position.
@@ -399,7 +395,7 @@ def discover_dependencies(
                         if dropna
                         else "missing_as_category",
                     },
-                    "grain": contextual_result(analysis, df, base).to_dict(),
+                    "grain": Result("grain", view).to_dict(),
                 }
             )
             tracker.advance()

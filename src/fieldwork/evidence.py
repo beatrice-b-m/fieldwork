@@ -326,7 +326,7 @@ def prepare_context(
     sentinel_keys = {
         c: sorted({_sentinel_key(python_value(v)) for v in declared.get(c, [])}) for c in source
     }
-    conventions = {c: [value for _, value in keys] for c, keys in sentinel_keys.items()}
+    conventions = {c: [value for _, value in keys] for c, keys in sentinel_keys.items() if keys}
     cache_key = (
         id(df),
         scope.positions if scope else None,
@@ -383,25 +383,39 @@ def prepare_context(
     available = {c: all_available[c] for c in presence_columns if c not in skipped}
     base = {
         "status": "computed" if len(frame) else "empty",
-        "source": {"dataset_id": identity, "table_id": table_id, "input_rows": len(df)},
+        "source": {
+            "dataset_id": identity,
+            "table_id": table_id,
+            "rows": len(df),
+            "columns": len(df.columns),
+        },
+        # The one population record: nested measurements count evaluated and
+        # excluded rows within scope["evaluated_rows"].
         "scope": {
             "name": scope.name if scope else "input",
             "parent": scope.parent if scope else None,
+            "input_rows": len(df),
             "evaluated_rows": len(frame),
             "restriction_excluded_rows": len(df) - len(frame),
-            "positions_are": "zero_based_source_positions",
             "selection_positions": list(scope.positions) if scope else None,
         },
-        "missing_convention": {
-            "native_missing": True,
-            "sentinels": conventions,
-            "numeric_sentinel_equality": True,
-        },
-        "features": [{"table": table_id, "column": c} for c in source],
+        "missing_convention": {"sentinels": conventions},
         "skipped_features": [{"feature": c, "value_type": kind} for c, kind in skipped.items()],
         "findings": [],
     }
     return frame, positions, encoded, available, base
+
+
+def prepare_values(df, columns, *, scope=None, missing=None, table_id="table"):
+    """Prepare named columns as dictionaries whose sentinels share the missing level.
+
+    Returns the scoped frame, source positions, ``{column: (values, codes)}`` and
+    the base payload. Unsupported cells in these columns raise TypeError.
+    """
+    frame, positions, codes, present, base = prepare(
+        df, scope=scope, missing=missing, table_id=table_id, features=list(columns)
+    )
+    return frame, positions, normalized_encoding(frame, codes, present), base
 
 
 def _unsupported_type(series):
@@ -542,77 +556,6 @@ def saved_context(base):
         "missing": {c: values for c, values in base["missing_convention"]["sentinels"].items()},
         "table_id": base["source"]["table_id"],
     }
-
-
-def foundation_context(df, operation, *args, scope=None, missing=None, table_id="table", **options):
-    """Normalize a private frame and retain original-source accounting in every derived scope."""
-    from ._explore.census import _census
-
-    if operation is _census:
-        # Consume a dimensions generator once, before both preparation and census.
-        args = (tuple(columns(df, args[0])), *args[1:])
-    frame, _, codes, present, base = prepare_context(
-        df,
-        scope=scope,
-        missing=missing,
-        table_id=table_id,
-        features=args[0] if operation is _census else None,
-    )
-    if operation is _census:
-        analysis = operation(
-            frame, *args, _encoded=normalized_encoding(frame, codes, present), **options
-        )
-    else:
-        normalized = frame.copy()
-        for c in normalized:
-            checkpoint()
-            normalized[c] = normalized[c].astype(object).where(present[c], None)
-        analysis = operation(normalized, *args, **options)
-    return contextual_result(analysis, df, base)
-
-
-def contextual_result(analysis, df, base):
-    """Attach discovery lineage to a foundation result computed on its prepared frame."""
-    from copy import deepcopy
-
-    from ._explore.census import _source
-
-    payload = deepcopy(analysis.payload)
-    excluded = base["scope"]["restriction_excluded_rows"]
-    source = {**_source(labelled(df)), **base["source"]}
-
-    def rebase_sources(result_payload):
-        # Only result roots and their analytical sections own dataset metadata.
-        # Elsewhere, `source` can be a graph node reference or a feature name.
-        if "source" in result_payload:
-            result_payload["source"] = deepcopy(source)
-        for section in result_payload.get("sections", {}).values():
-            rebase_sources(section)
-
-    visited = set()
-
-    def rebase(value):
-        if not isinstance(value, (dict, list)) or id(value) in visited:
-            return
-        # deepcopy preserves aliases, including the census scope shared by pair
-        # and grain lineage metadata. Rebase each container once, not each path.
-        visited.add(id(value))
-        if isinstance(value, dict):
-            if "scope_id" in value and "input_rows" in value:
-                value["input_rows"] += excluded
-                value["restriction_excluded_rows"] += excluded
-                value["conditional"] = value["conditional"] or bool(excluded)
-                value["lineage"] = [base["scope"]["name"], *value["lineage"]]
-            for child in value.values():
-                rebase(child)
-        else:
-            for child in value:
-                rebase(child)
-
-    rebase_sources(payload)
-    rebase(payload)
-    payload["analysis_context"] = {k: base[k] for k in ("source", "scope", "missing_convention")}
-    return Result(analysis.kind, payload)
 
 
 def context_statement(context):

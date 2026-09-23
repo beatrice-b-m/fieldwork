@@ -10,13 +10,12 @@ requirements only. Python 3.11–3.14 are supported, with a committed universal 
 dependency search, plus bounded value-pattern analysis. It returns an overview containing individual saved results and
 a census preview. Its compact text view presents families, signatures, candidate
 grains and recommended paths together. `explore(df, dimensions)` delegates to the original composition
-API; explicit dimension order remains authoritative. Common context settings are
-applied to a private normalized frame and source accounting is retained in all
-derived scopes; incompatible search options are rejected. `discovery={...}` steers the
+API; explicit dimension order remains authoritative. Every component receives the
+same scope, sentinels and table ID; incompatible search options are rejected. `discovery={...}` steers the
 implicit path search; common `features`, `scope`, `missing`, and `table_id` parameters
 also flow into overview evidence.
 
-Discovery modules call `evidence.prepare` to identify the ordered dataset, apply a
+Every analysis calls `evidence.prepare` to identify the ordered dataset, apply a
 scope, encode needed values, and compute native/sentinel availability without modifying
 source values. A private call-scoped runtime shares prepared data and fingerprints
 across nested components, reports optional progress, and checks cancellation.

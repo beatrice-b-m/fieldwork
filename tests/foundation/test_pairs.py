@@ -98,7 +98,7 @@ def test_missing_values_are_a_category_unless_dropped():
     assert kept["relation"] == "n:1"
     (dropped,) = only_pair(frame, dropna=True)
     assert dropped["evaluated_rows"] == 2
-    assert dropped["scope"]["missing_excluded_rows"] == 2
+    assert dropped["missing_excluded_rows"] == 2
     # x -> 1 and y -> 1 remain: b is constant, so V has no denominator.
     assert dropped["relation"] == "n:1"
     assert dropped["cramers_v_reason"] == "constant_dimension"
@@ -110,7 +110,7 @@ def test_contexts_restrict_rows_and_keep_global_evidence():
     assert global_pair["context"] == []
     assert global_pair["cramers_v"] == pytest.approx(math.sqrt(1 / 3))
     assert local["evaluated_rows"] == 2
-    assert local["scope"]["restriction_excluded_rows"] == 2
+    assert local["restriction_excluded_rows"] == 2
     assert local["relation"] == "1:1"
     assert local["cramers_v_reason"] == "constant_dimension"
     (unmatched_global, unmatched) = only_pair(frame, pair_contexts=[{"g": "absent"}])
@@ -163,7 +163,7 @@ def test_pair_and_context_budgets_are_reported():
         1,
     )
     assert result["processed_contexts"] == 3 and result["omitted_contexts"] == 0
-    assert [r["pair"] for r in result["pairs"]] == [["f0", "f1"]] * 3 + [["f0", "f2"]] * 3
+    assert [r["columns"] for r in result["pairs"]] == [["a", "b"]] * 3 + [["a", "c"]] * 3
     limited = pairs(frame, ["a", "b", "c"], max_contexts=1, pair_contexts=[{"g": "p"}])
     assert limited["omitted_contexts"] == 1
     assert all(r["context"] == [] for r in limited["pairs"])
