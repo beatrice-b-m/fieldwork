@@ -18,7 +18,9 @@ co-absence and is reported separately. A implies B has conditional presence
 both-present / A-present, an exception rate, and B's baseline presence. No antecedent
 support means no implication finding. Implications are omitted when they are
 vacuous: B is present in every analysis unit, or A and B have identical
-availability (their family finding already states it). Similarity and implication thresholds default
+availability (their family finding already states it). Similarity findings are
+likewise omitted when either feature is always present, since the similarity then
+only restates the other feature's populated fraction. Similarity and implication thresholds default
 to 0.8 and 0.9. Mutually exclusive pairs require each field to have observed support
 and no co-presence; exact families let users interpret exclusive field groups.
 

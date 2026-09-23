@@ -390,7 +390,12 @@ def missingness(
                 "presence_jaccard": similarity,
                 "agreement": float((x == y).mean()) if n else None,
             }
-            if similarity is not None and similarity >= min_similarity and not np.array_equal(x, y):
+            if (
+                similarity is not None
+                and similarity >= min_similarity
+                and not np.array_equal(x, y)
+                and not (x.all() or y.all())
+            ):
                 emit(
                     "similar_availability",
                     f"{a} and {b} have similar presence",

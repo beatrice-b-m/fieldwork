@@ -29,3 +29,4 @@ between releases without migration.
   have identical availability. The `availability` table still lists every
   feature. On a complete 43-column table this removes about 440 findings and
   lets the feature network separate into meaningful components.
+- Similar-presence findings are omitted when either feature is always present.

@@ -486,3 +486,9 @@ def test_availability_omits_vacuous_findings_but_keeps_measurements():
     implications = {cols for pattern, cols in found if pattern == "presence_implication"}
     assert implications == {("left", "mostly"), ("twin", "mostly")}
     assert [f["features"] for f in result["families"]] == [["left", "twin"]]
+
+
+def test_similarity_with_an_always_present_feature_is_not_reported():
+    df = pd.DataFrame({"complete": range(10), "nearly": [1] * 9 + [None]})
+    result = fw.missingness(df, min_similarity=0.8)
+    assert not [f for f in result["findings"] if f["pattern"] == "similar_availability"]
