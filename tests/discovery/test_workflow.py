@@ -455,6 +455,34 @@ def test_availability_omits_vacuous_findings_but_keeps_measurements():
     assert [f["features"] for f in result["families"]] == [["left", "twin"]]
 
 
+def test_column_availability_and_families_keep_their_state_in_topology():
+    df = pd.DataFrame(
+        {
+            "partial": [1, None, 3],
+            "empty": [None, None, None],
+            "blank": [None, None, None],
+            "full": [1, 2, 3],
+        }
+    )
+    topology = fw.visualization_data(fw.missingness(df), detail="topology")["findings"]
+    columns = {
+        f["features"][0]["column"]: f["structure"]["presence"]
+        for f in topology
+        if f["pattern"] == "availability"
+    }
+    assert columns == {"partial": "some", "empty": "none", "blank": "none"}
+    families = [
+        ([c["column"] for c in f["features"]], f["structure"]["presence"])
+        for f in topology
+        if f["pattern"] == "availability_family"
+    ]
+    assert families == [(["empty", "blank"], "none")]
+    twins = fw.missingness(df.assign(twin=df["partial"]), features=["partial", "twin"])
+    assert [f["structure"] for f in twins["findings"] if f["pattern"] == "availability_family"] == [
+        {"presence": "some"}
+    ]
+
+
 def test_context_and_entity_availability_keep_their_state_in_topology():
     df = pd.DataFrame(
         {
