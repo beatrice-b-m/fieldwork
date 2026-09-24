@@ -279,14 +279,16 @@ def _availability(analysis, units, masks) -> list[dict[str, Any]]:
         }
         records.append({"feature": c, **metrics})
         if not mask.all():  # A complete column's finding would say nothing.
+            presence = _presence(metrics["populated"], n)
             analysis.emit(
                 units,
                 "availability",
-                f"{c}: populated values",
+                f"{c}: populated in {_QUANTIFIERS[presence]} {analysis.unit}",
                 [c],
                 metrics,
                 mask,
                 exceptions=~mask,
+                structure={"presence": presence},
                 selector={"operation": "presence", "feature": c},
             )
     return records
@@ -341,7 +343,7 @@ def _signatures(analysis, units, masks, max_signatures) -> tuple[np.ndarray, np.
 
 
 def _families(analysis, units, masks) -> list[dict[str, Any]]:
-    """Groups of partially populated columns with identical availability."""
+    """Groups of partially populated or always-missing columns with identical availability."""
     groups = defaultdict(list)
     for c in analysis.selected:
         groups[np.packbits(masks[c]).tobytes()].append(c)
@@ -350,13 +352,16 @@ def _families(analysis, units, masks) -> list[dict[str, Any]]:
         mask = masks[group[0]]
         if len(group) < 2 or mask.all():
             continue
+        presence = _presence(int(mask.sum()), len(units))
         found = analysis.emit(
             units,
             "availability_family",
-            "Same availability: " + ", ".join(group),
+            f"Same availability (populated in {_QUANTIFIERS[presence]} {analysis.unit}): "
+            + ", ".join(group),
             group,
             {"denominator": len(units), "populated": int(mask.sum())},
             mask,
+            structure={"presence": presence},
         )
         families.append(
             {

@@ -107,6 +107,10 @@ controls.
   availability is reported as a family. Signatures count units and report
   omitted units with their source rows. Vacuous evidence (always-present
   targets, identical columns) is not reported as a finding.
+- Each column availability finding and each availability family states whether
+  some or none of the units are populated (`structure["presence"]`), so
+  topology exports keep that state. A complete column is not a finding; its
+  count stays in `availability`.
 - Context analyses aggregate within each joint context value; a missing context
   value is its own category. Each context availability finding states whether
   all, some or none of the context's units are populated

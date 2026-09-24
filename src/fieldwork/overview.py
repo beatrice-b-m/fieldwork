@@ -98,7 +98,7 @@ def explore(
     >>> df = pd.DataFrame({"site": ["A", "A", "B"], "visit": [1, 2, None]})
     >>> overview = fw.explore(df, sections=["missingness"])
     >>> overview.findings[0]["statement"]
-    'visit: populated values'
+    'visit: populated in some rows'
     """
     requested = _requested(sections)
     shared = {"features": features, "by": by}

@@ -4,14 +4,16 @@
   "findings": [
     {
       "pattern": "availability",
-      "statement": "dose: populated values",
+      "statement": "dose: populated in some rows",
       "features": [
         {
           "table": "table",
           "column": "dose"
         }
       ],
-      "structure": {},
+      "structure": {
+        "presence": "some"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
@@ -21,14 +23,16 @@
     },
     {
       "pattern": "availability",
-      "statement": "image_1: populated values",
+      "statement": "image_1: populated in some rows",
       "features": [
         {
           "table": "table",
           "column": "image_1"
         }
       ],
-      "structure": {},
+      "structure": {
+        "presence": "some"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
@@ -38,14 +42,16 @@
     },
     {
       "pattern": "availability",
-      "statement": "image_2: populated values",
+      "statement": "image_2: populated in some rows",
       "features": [
         {
           "table": "table",
           "column": "image_2"
         }
       ],
-      "structure": {},
+      "structure": {
+        "presence": "some"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
