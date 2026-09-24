@@ -20,7 +20,15 @@ from ..evidence import context_statement, qualitative_analysis_unit
 from ..result import overview_findings
 from .common import controls, label, predicate
 
-FINDING_KINDS = {"missingness", "dependencies", "paths", "value_patterns", "overview", "comparison"}
+FINDING_KINDS = {
+    "missingness",
+    "dependencies",
+    "paths",
+    "value_patterns",
+    "overview",
+    "comparison",
+    "relation",
+}
 COMPOSITES = {"overview", "profile"}
 
 
@@ -528,7 +536,7 @@ _PROJECTORS: dict[str, Callable[[Mapping[str, Any], Context], dict[str, Any]]] =
 
 
 # Findings-based kinds: missingness, dependencies, paths, value patterns,
-# comparisons and overviews.
+# comparisons, relations and overviews.
 
 
 def structural_evidence(structure: Mapping[str, Any]) -> dict[str, Any]:
@@ -546,6 +554,12 @@ def structural_evidence(structure: Mapping[str, Any]) -> dict[str, Any]:
             "repeated_support",
             "formats",
             "formats_omitted",
+            "direction",
+            "coverage",
+            "agreement",
+            "ambiguity",
+            "reciprocity",
+            "self_references",
         )
         if k in structure
     }
@@ -688,6 +702,10 @@ def structure_notes(row: Mapping[str, Any]) -> list[str]:
     if "formats" in structure:
         formats = ", ".join(structure["formats"]) or "none reported"
         notes.append("Formats: " + formats + (", ..." if structure["formats_omitted"] else ""))
+    if structure.get("ambiguity") == "some":
+        notes.append("Some matched keys have several values on one side and are not compared")
+    if structure.get("self_references") == "some":
+        notes.append("Some references point to their own row's key and are not tested")
     return notes
 
 
@@ -712,6 +730,7 @@ def _findings_kind(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
     if data.get("skipped_features"):
         output["skipped_features"] = data["skipped_features"]
     output.update(_comparison_sides(data, context))
+    output.update(_relation_sides(data, context))
     if context.full:
         if unit is not None:
             output["analysis_unit"] = unit
@@ -772,6 +791,10 @@ def _finding_row(data, record, context) -> dict[str, Any]:
         )
         if "lead" in record:
             row["lead"] = record["lead"]
+        if data.get("kind") == "relation":
+            row["side"] = record["selector"]["side"]
+        if "other_side" in record:
+            row["other_side"] = record["other_side"]
         if record["pattern"] in {"exact_dependency", "approximate_dependency"}:
             owner = data.get("sections", {}).get("dependencies", data)
             row["explanation"] = dependency_explanation(
@@ -791,6 +814,36 @@ def _comparison_sides(data, context) -> dict[str, Any]:
         if unit is not None:
             output[f"{side}_analysis_unit"] = unit if context.full else qualitative_unit(unit)
     return output
+
+
+_WARNING_FIELDS = ("code", "role", "column", "right_column", "left_kinds", "right_kinds")
+
+
+def _relation_sides(data, context) -> dict[str, Any]:
+    """Each table's identity, key and compared columns; counts only in full detail."""
+    if data["kind"] != "relation":
+        return {}
+    sides = {}
+    for name in ("left", "right"):
+        side = data["sides"][name]
+        scope = side["scope"]
+        sides[name] = {
+            "table": side["source"]["table_id"],
+            "key": side["key"],
+            "compare": side["compare"],
+            "scope": scope if context.full else {k: scope[k] for k in ("name", "parent")},
+        }
+        if context.full:
+            sides[name].update(rows=side["rows"], keys=side["keys"])
+    return {
+        "sides": sides,
+        "self_reference": data["self_reference"],
+        # Warnings name columns and value kinds, never values or counts.
+        "warnings": [
+            {k: warning[k] for k in _WARNING_FIELDS if k in warning}
+            for warning in data.get("warnings", [])
+        ],
+    }
 
 
 _NETWORK_FIELDS = (

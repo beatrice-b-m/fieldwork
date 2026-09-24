@@ -1,6 +1,7 @@
 # What you can rely on
 
-Fieldwork describes one delivery of a table. Its results are observations about
+Fieldwork describes one delivery of a table, or how two tables relate through a
+key. Its results are observations about
 the rows it was given, not claims about the process that produced them. This page
 lists what every result guarantees; [algorithms](algorithms.md) defines each
 measurement and [performance controls](performance.md) the budgets and runtime
@@ -139,6 +140,32 @@ controls.
 - Topology exports keep candidates' and grain keys' structural roles and these
   qualitative flags, without measurements. Standalone dependency exports list
   candidates in search order; overviews order them canonically.
+
+## Relating two tables
+
+- `relate(left, right, on=..., compare=...)` returns kind `relation`. Its
+  `source`, `scope` and `missing_convention` describe the left table;
+  `sides["left"]` and `sides["right"]` each record their own source, scope,
+  sentinels, key and compared columns, and row and key accounting. `scopes`,
+  `missing` and `table_ids` are `(left, right)` pairs. With `right=None`, both
+  sides read `left` (a self-reference), each with its own scope.
+- Coverage, relation and agreement count distinct keys; reciprocity counts
+  distinct resolved references. Rows with an incomplete key are excluded and
+  counted per side. Each finding's `structure` keeps its state (`coverage`,
+  `relation`, `agreement` and `ambiguity`, `reciprocity` and `self_references`)
+  for topology exports; finding features are qualified by each side's table ID
+  ([definitions](algorithms.md#relations-across-tables)).
+- Values match across tables by an explicit, saved rule (`match="typed"` or
+  `"text"`), not by the within-table identity above. Key and compared columns
+  whose value kinds do not overlap produce a `VALUE_KIND_MISMATCH` warning, so a
+  type mismatch is never reported only as "no key is found".
+- `inspect` and `select` take `side="left"` (default) or `"right"` and the
+  right frame as `right=`, which is needed for right rows and for every complete
+  selection, since matching needs both tables. Both frames are verified against
+  their fingerprints; a self-reference takes no `right`. A selection is a Scope
+  of the chosen side's table. `recompute(left, right=right)` and
+  `Recipe("relate", ...).run(left, right=right)` pass the right frame as an
+  override; a recipe saves neither frame nor scope.
 
 ## Reusing settings on a new delivery
 

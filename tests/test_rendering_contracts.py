@@ -61,6 +61,16 @@ KINDS = {
     "comparison": lambda df: fw.compare(
         fw.missingness(df), fw.missingness(df, scope=fw.Scope.from_positions(df, range(12)))
     ),
+    "relation": lambda df: fw.relate(
+        df,
+        df[df["modality"] == "CT"],
+        on={"exam": "exam"},
+        compare={"patient": "patient", "side": "side"},
+        table_ids=("exams", "ct"),
+    ),
+    "self_relation": lambda df: fw.relate(
+        df.assign(prior=df["exam"] - 1), on={"prior": "exam"}, compare={"patient": "patient"}
+    ),
 }
 
 

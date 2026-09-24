@@ -40,6 +40,7 @@ positions. Presentation consumes saved evidence, never the original dataframe.
 | `navigation.py` | Deterministic beam search and objective-specific prefix costs |
 | `families.py`, `leads.py` | Typed feature relationships and lead ranking |
 | `patterns.py` | Populated strings/numbers, indexed families, context constancy |
+| `relate.py` | `relate`: key coverage, cardinality, agreement and self-references across two tables |
 | `overview.py` | `explore`: overview sections, ranked leads, feature network |
 | `workflow.py` | Recipes and delivery comparisons |
 | `presentation.py` | Public renderers: project once, then draw |
@@ -54,10 +55,13 @@ operation to the explicit Recipe allowlist only when its arguments serialize to
 JSON and can be safely reapplied to a new frame. No arbitrary Python evaluation is
 used for recipes.
 
-Related-table automatic discovery, adaptive branch-specific census orders, persistent user-managed
+Automatic discovery of related tables and join keys, attribute placement across a
+join, adaptive branch-specific census orders, persistent user-managed
 sessions, and external discovery engines remain future extensions. Table identity
 is present in new feature references; foundation references are local to the
-source's `table_id`. The current public APIs analyze one dataframe at a time.
+source's `table_id`. `relate` compares two tables through a key the caller
+names, preparing each side separately and never joining them; every other public
+API analyzes one dataframe at a time.
 
 ## Extraction
 

@@ -33,7 +33,8 @@ class Recipe:
         One of the names in Recipe.operations(): 'missingness', 'dependencies'
         (discover_dependencies), 'paths' (suggest_paths), 'value_patterns',
         'explore', 'profile', 'census', 'grain', 'levels', 'pairs',
-        'joint_counts' or 'infer_schema'.
+        'joint_counts', 'infer_schema' or 'relate' (whose right frame is a run
+        override: ``run(left, right=right)``).
     parameters : dict[str, Any], optional
         The operation's keyword arguments; default empty. A scope and runtime
         controls are not saved: pass them to run.
@@ -71,7 +72,7 @@ class Recipe:
             raise ValueError(
                 "Runtime controls belong in Recipe.run overrides, not saved parameters"
             )
-        if "scope" in self.parameters:
+        if {"scope", "scopes"} & self.parameters.keys():
             raise ValueError(
                 "Recipes reapply to deliveries; pass a scope when running, not in the recipe"
             )
@@ -82,6 +83,7 @@ class Recipe:
         """A new mapping from recipe operation names to the public analyses."""
         from ._explore import census, grain, infer_schema, joint_counts, levels, pairs, profile
         from .overview import explore
+        from .relate import relate
 
         return {
             "missingness": missingness,
@@ -96,6 +98,7 @@ class Recipe:
             "pairs": pairs,
             "joint_counts": joint_counts,
             "infer_schema": infer_schema,
+            "relate": relate,
         }
 
     @operation("recipe")

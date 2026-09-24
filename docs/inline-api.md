@@ -47,7 +47,8 @@ are separate functions with explicit keyword arguments; both return a `Result`.
 Reusable dictionaries can be annotated with `SectionOptions` (the overview's
 per-section `options`), the individual operation option types, or the `limits`
 types (`PathLimits`, `MissingnessLimits`, `DependencyLimits`, `PatternLimits`,
-`PairLimits`) from `fieldwork.typing`. These are ordinary dictionaries, not
+`PairLimits`, `RelateLimits`) from `fieldwork.typing`. `MatchMode` and `Side` name
+the choices of `relate` and of a relation's row access. These are ordinary dictionaries, not
 runtime validation models. Optional keys inherit the operation defaults. Option field docstrings are present
 in source for editor hovers. Flexible serialized evidence remains a versioned
 mapping; its field meanings are documented on result classes and producer methods.

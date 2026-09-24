@@ -11,6 +11,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from collections.abc import Iterable, Sequence
+from fractions import Fraction
 from itertools import combinations
 from typing import Any
 
@@ -152,3 +153,105 @@ def determinants(features: Sequence[str], max_key_size: int) -> Iterable[tuple[s
     """Candidate determinants in documented order: size, then input column order."""
     for size in range(1, max_key_size + 1):
         yield from combinations(features, size)
+
+
+def match_token(value: Any, mode: str = "typed") -> tuple[str, Any]:
+    """Cross-table identity: numbers compare exactly as fractions, never as booleans.
+
+    'text' mode writes integer-valued numbers as decimal strings.
+    """
+    if token(value) == MISSING:
+        return MISSING
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if mode == "text" and math.isfinite(value) and value == int(value):
+            return ("string", str(int(value)))
+        return ("number", Fraction(value) if math.isfinite(value) else value)
+    return token(value)
+
+
+def _keys(frame: pd.DataFrame, columns: Sequence[str], mode: str) -> list[tuple | None]:
+    rows = []
+    for values in zip(*(frame[c].tolist() for c in columns), strict=True):
+        key = tuple(match_token(value, mode) for value in values)
+        rows.append(None if MISSING in key else key)
+    return rows
+
+
+def relation(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    on: dict[str, str],
+    compare: dict[str, str],
+    *,
+    mode: str = "typed",
+    dropna: bool = True,
+) -> dict[str, Any]:
+    """Enumerate keys, coverage, cardinality and agreement of two frames row by row.
+
+    Row lists hold positions within each frame, as [left, right]; ``agreement``
+    maps each compared pair to its per-key state counts and rows per side.
+    """
+    keys = (_keys(left, list(on), mode), _keys(right, list(on.values()), mode))
+    counts = [Counter(k for k in side if k is not None) for side in keys]
+    matched = counts[0].keys() & counts[1].keys()
+
+    def rows(keep) -> list[list[int]]:
+        return [
+            [i for i, key in enumerate(keys[s]) if key is not None and keep(s, key)] for s in (0, 1)
+        ]
+
+    output: dict[str, Any] = {
+        "keys": [set(c) for c in counts],
+        "matched": matched,
+        "incomplete": [sum(k is None for k in side) for side in keys],
+        "found_rows": rows(lambda s, k: k in matched),
+        "unfound_rows": rows(lambda s, k: k not in matched),
+        "many": [any(c[k] > 1 for k in matched) for c in counts],
+        "joined_rows": sum(counts[0][k] * counts[1][k] for k in matched),
+        "repeated_rows": rows(lambda s, k: k in matched and counts[s][k] > 1),
+        "single_rows": rows(lambda s, k: k in matched and counts[s][k] == 1),
+        "agreement": {},
+    }
+    for pair in compare.items():
+        values: list[dict[tuple, set]] = [{}, {}]
+        for side, (frame, column) in enumerate(((left, pair[0]), (right, pair[1]))):
+            for key, value in zip(keys[side], frame[column].tolist(), strict=True):
+                item = match_token(value, mode)
+                if key in matched and not (dropna and item == MISSING):
+                    values[side].setdefault(key, set()).add(item)
+        state: dict[tuple, str] = {}
+        for key in matched:
+            a, b = values[0].get(key, set()), values[1].get(key, set())
+            if not a or not b:
+                state[key] = "unavailable"
+            elif len(a) > 1 or len(b) > 1:
+                state[key] = "ambiguous"
+            else:
+                state[key] = "agree" if a == b else "disagree"
+        output["agreement"][pair] = {
+            "counts": Counter(state.values()),
+            "agree_rows": rows(lambda s, k, state=state: state.get(k) == "agree"),
+            "disagree_rows": rows(lambda s, k, state=state: state.get(k) == "disagree"),
+        }
+    return output
+
+
+def reciprocity(frame: pd.DataFrame, reference: str, key: str) -> dict[str, Any]:
+    """Self-reference edges own key → reference, reciprocated edges and self-loops."""
+    edges_by_row = list(
+        zip(_keys(frame, [key], "typed"), _keys(frame, [reference], "typed"), strict=True)
+    )
+    targets = {own for own, _ in edges_by_row if own is not None}
+    edges = {(o, r) for o, r in edges_by_row if o is not None and r is not None and r in targets}
+    loops = {edge for edge in edges if edge[0] == edge[1]}
+    tested = edges - loops
+    reciprocated = {(o, r) for o, r in tested if (r, o) in edges}
+    return {
+        "edges": tested,
+        "reciprocated": reciprocated,
+        "loops": loops,
+        "reciprocated_rows": [i for i, e in enumerate(edges_by_row) if e in reciprocated],
+        "unreciprocated_rows": [
+            i for i, e in enumerate(edges_by_row) if e in tested - reciprocated
+        ],
+    }

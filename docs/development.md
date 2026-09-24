@@ -48,6 +48,10 @@ suite and every docstring example in `src/fieldwork` in under about 10 seconds;
 - **Known answers and properties.** `foundation/test_pairs.py` (relation classes,
   Cramér's V, absence classes), `foundation/test_census.py` (all census options as
   properties), `discovery/test_value_patterns.py` and `discovery/test_compare.py`.
+- **Relations across tables.** `discovery/test_relate.py` checks coverage,
+  cardinality, joined rows, agreement and both sides' selections against the
+  enumeration oracle in `tests/oracle.py`, over Hypothesis frames with mixed key
+  types, composite keys and both match modes. Reciprocity has its own edge oracle.
 - **Invariances.** `discovery/test_native_dtypes.py` requires categorical,
   nullable, pyarrow-backed, tz-aware and float32 columns to give the same evidence
   as their object equivalents. `discovery/test_permutation.py` requires row order

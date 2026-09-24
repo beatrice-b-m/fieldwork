@@ -46,6 +46,22 @@ def consume(df: pd.DataFrame) -> None:
     missingness = fw.missingness(df, unit="entities", entity="site")
     assert_type(missingness, fw.Result)
     assert_type(fw.compare(missingness, missingness), fw.Result)
+    relation = fw.relate(
+        df,
+        df,
+        on={"site": "site"},
+        compare={"visit": "visit"},
+        match="text",
+        scopes=(scope, None),
+        missing=({"visit": [-1]}, None),
+        table_ids=("images", "clinical"),
+        limits={"example_limit": 2},
+        progress=True,
+    )
+    assert_type(relation, fw.Result)
+    assert_type(relation.select(df, "f0", side="right", right=df), fw.Scope)
+    assert_type(relation.inspect(df, "f0", side="right", right=df), pd.DataFrame)
+    assert_type(fw.relate(df, on={"linked": "site"}), fw.Result)
     assert_type(fw.discover_dependencies(df), fw.Result)
     assert_type(fw.value_patterns(df, min_count=5), fw.Result)
     paths = fw.suggest_paths(df, objective="structure")
@@ -77,4 +93,7 @@ def consume(df: pd.DataFrame) -> None:
     fw.render_svg(overview, view="bogus")  # pyright: ignore[reportArgumentType]
     fw.suggest_paths(df, max_candidates=2)  # pyright: ignore[reportCallIssue]
     fw.suggest_paths(df, limits={"max_candidate": 2})  # pyright: ignore[reportArgumentType]
+    fw.relate(df, df, on={"site": "site"}, match="loose")  # pyright: ignore[reportArgumentType]
+    fw.relate(df, df, on={"site": "site"}, limits={"max_pairs": 1})  # pyright: ignore[reportArgumentType]
+    relation.select(df, "f0", side="both")  # pyright: ignore[reportArgumentType]
     fw.profile(df, ["site"], census={"max_pair": 2})  # pyright: ignore[reportArgumentType]

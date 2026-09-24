@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, Unpack
 import pandas as pd
 
 from ._runtime import operation
-from .typing import Runtime
+from .typing import Runtime, Side
 
 if TYPE_CHECKING:
     from .evidence import Scope
@@ -60,7 +60,7 @@ class Result(Mapping[str, Any]):
     kind : str
         Producing analysis: 'levels', 'census', 'grain', 'pairs', 'joint_counts',
         'schema_proposal', 'profile', 'missingness', 'dependencies', 'paths',
-        'value_patterns', 'overview' or 'comparison'.
+        'value_patterns', 'overview', 'comparison' or 'relation'.
     payload : dict, optional
         JSON-compatible evidence (source identity, scope, parameters and
         kind-specific records); default empty. Analyses and from_dict build it.
@@ -69,7 +69,8 @@ class Result(Mapping[str, Any]):
     -----
     Indexing reads payload keys (``result["scope"]``); ``schema_version`` is the
     export format, '2.0'. Methods that read source rows (inspect, select,
-    recompute) first verify the identical ordered source. Overviews and profiles
+    recompute) first verify the identical ordered source; a relation's left
+    source is ``df`` and its right source is passed as ``right``. Overviews and profiles
     hold their parts in ``sections``; ``section(name)`` returns one as a Result.
     See docs/contracts.md for the payload fields.
 
@@ -243,9 +244,19 @@ class Result(Mapping[str, Any]):
             return self.section("paths").payload
         raise ValueError(f"A {self.kind} result has no census path recommendations")
 
-    def _finding(self, df: pd.DataFrame, finding: str | int) -> dict[str, Any]:
+    def _finding(
+        self,
+        df: pd.DataFrame,
+        finding: str | int,
+        side: str = "left",
+        right: pd.DataFrame | None = None,
+    ) -> dict[str, Any]:
         from .evidence import fingerprint
 
+        if self.kind != "relation" and (side != "left" or right is not None):
+            raise ValueError("side and right apply to relation results only")
+        if side not in ("left", "right"):
+            raise ValueError("side must be 'left' or 'right'")
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs from the ordered analysis source")
         records = self.findings
@@ -266,6 +277,8 @@ class Result(Mapping[str, Any]):
         *,
         exceptions: bool = False,
         all_matches: bool = False,
+        side: Side = "left",
+        right: pd.DataFrame | None = None,
         **runtime: Unpack[Runtime],
     ) -> pd.DataFrame:
         """Return a finding's source rows, as a copy of the original frame's rows.
@@ -281,6 +294,12 @@ class Result(Mapping[str, Any]):
         all_matches : bool, optional
             Default False returns the saved examples (at most example_limit);
             True recovers the complete matching population.
+        side : {'left', 'right'}, optional
+            Relation results only: the table whose rows are returned; default
+            'left'.
+        right : pandas.DataFrame or None, optional
+            Relation results between two tables only: the identical right
+            source, needed for right rows and for ``all_matches``.
         **runtime : Unpack[Runtime]
             Optional runtime controls; see fieldwork.typing.Runtime.
 
@@ -296,7 +315,15 @@ class Result(Mapping[str, Any]):
         KeyError, IndexError
             The finding ID or position does not exist.
         """
-        record = self._finding(df, finding)
+        record = self._finding(df, finding, side, right)
+        if self.kind == "relation":
+            from .relate import right_source, saved_rows
+
+            source = df if side == "left" else right_source(self.payload, df, right)
+            if all_matches:
+                selected = self.select(df, finding, exceptions=exceptions, side=side, right=right)
+                return source.iloc[list(selected.positions)].copy()
+            return source.iloc[saved_rows(record, side, exceptions)].copy()
         if all_matches:
             return df.iloc[list(self.select(df, finding, exceptions=exceptions).positions)].copy()
         return df.iloc[record["exceptions" if exceptions else "examples"]["positions"]].copy()
@@ -309,6 +336,8 @@ class Result(Mapping[str, Any]):
         *,
         exceptions: bool = False,
         name: str = "finding selection",
+        side: Side = "left",
+        right: pd.DataFrame | None = None,
         **runtime: Unpack[Runtime],
     ) -> Scope:
         """Recover a finding's complete matching source population as a Scope.
@@ -323,6 +352,12 @@ class Result(Mapping[str, Any]):
             Default False selects supporting rows; True selects counterexamples.
         name : str, optional
             Name of the returned scope; default 'finding selection'.
+        side : {'left', 'right'}, optional
+            Relation results only: the table to select from; default 'left'.
+            The Scope belongs to that table.
+        right : pandas.DataFrame or None, optional
+            Relation results between two tables only: the identical right
+            source, required because matching needs both tables.
         **runtime : Unpack[Runtime]
             Optional runtime controls; see fieldwork.typing.Runtime.
 
@@ -350,7 +385,16 @@ class Result(Mapping[str, Any]):
         from ._selection import select_rows
         from .evidence import Scope
 
-        record = self._finding(df, finding)
+        record = self._finding(df, finding, side, right)
+        if self.kind == "relation":
+            from .relate import matching_rows, right_source
+
+            other = right_source(self.payload, df, right)
+            source = self.payload["sides"][side]
+            positions = matching_rows(self.payload, record, df, other, side, exceptions)
+            return Scope(
+                source["source"]["dataset_id"], tuple(positions), name, source["scope"]["name"]
+            )
         selector = record["selector"]
         analysis = self
         if self.kind == "overview":
@@ -399,7 +443,8 @@ class Result(Mapping[str, Any]):
         **overrides : Any
             Options replacing saved parameters, such as
             ``limits={"example_limit": 20}`` (budgets merge with the saved ones),
-            and the runtime controls of fieldwork.typing.Runtime.
+            and the runtime controls of fieldwork.typing.Runtime. A relation
+            between two tables also needs ``right``, its identical right source.
 
         Returns
         -------
@@ -418,14 +463,23 @@ class Result(Mapping[str, Any]):
         from .evidence import fingerprint, saved_context
         from .workflow import Recipe
 
-        name = {"schema_proposal": "infer_schema"}.get(self.kind, self.kind)
+        name = {"schema_proposal": "infer_schema", "relation": "relate"}.get(self.kind, self.kind)
         operations = Recipe.operations()
         if name not in operations or "parameters" not in self.payload:
             raise ValueError(f"A {self.kind} result cannot be recomputed; recompute its sections")
         if fingerprint(df) != self.payload["source"]["dataset_id"]:
             raise ValueError("Source dataset differs; use a Recipe for a new delivery")
         saved = self.payload["parameters"]
-        parameters = {**saved, **saved_context(self.payload), **overrides}
+        if self.kind == "relation":
+            from .relate import right_source
+            from .relate import saved_context as relation_context
+
+            right = right_source(self.payload, df, overrides.pop("right", None))
+            own = None if self.payload["self_reference"] else right
+            context = {**relation_context(self.payload), "right": own}
+        else:
+            context = saved_context(self.payload)
+        parameters = {**saved, **context, **overrides}
         if isinstance(saved.get("limits"), Mapping) and isinstance(
             overrides.get("limits"), Mapping
         ):
