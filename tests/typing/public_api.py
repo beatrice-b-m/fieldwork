@@ -41,7 +41,7 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(fw.levels(df, ["site"], timeout=2), fw.Result)
     assert_type(fw.grain(df, [fw.KeySpec("site", ("site",))]), fw.Result)
     assert_type(fw.pairs(df, ["site", "visit"], limits={"max_pairs": 1}), fw.Result)
-    assert_type(fw.joint_counts(df, ["site", "visit"]), fw.Result)
+    assert_type(fw.joint_counts(df, ["site", "visit"], min_count=5), fw.Result)
     assert_type(fw.infer_schema(df), fw.Result)
     missingness = fw.missingness(df, unit="entities", entity="site")
     assert_type(missingness, fw.Result)

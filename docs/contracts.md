@@ -158,5 +158,10 @@ controls.
   identifiers and scope counts. It is a disclosure filter, not anonymization:
   names and value labels can still identify people or sites.
 - Display truncation is reported separately from search coverage.
+- For small-cell control, `levels`, `census` and `joint_counts` accept
+  `min_count`: rarer levels, branches or joint cells are omitted, full output
+  reports their mass and topology marks the omission. `joint_counts` also drops
+  axis values that only omitted cells support; the evaluated population is
+  unchanged.
 - Fieldwork's own error messages name columns, arguments and value types, never
   source cell values.

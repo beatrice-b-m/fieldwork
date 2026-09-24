@@ -438,10 +438,15 @@ def _joint_counts(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
     a = [context.value(v) for v in data["a"]]
     b = [context.value(v) for v in data["b"]]
     predicates = [context.predicate(p["column"], p["value"]) for p in data.get("context", [])]
-    caption = "Observed joint cells; blank cells are unobserved in this scope."
+    omitted = data.get("omitted_cells", 0)
+    caption = (
+        "Observed joint cells; blank cells are unobserved or below min_count in this scope."
+        if omitted
+        else "Observed joint cells; blank cells are unobserved in this scope."
+    )
     if predicates:
         caption += " Context: " + ", ".join(predicates)
-    return {
+    output = {
         "status": data["status"],
         "scope": context.population(data),
         "columns": [label(c, column=True) for c in data["columns"]],
@@ -458,8 +463,12 @@ def _joint_counts(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
             }
             for c in data["cells"]
         ],
+        "omitted": bool(omitted),
         "caption": caption,
     }
+    if context.full:
+        output["omitted_counts"] = {"cells": omitted, "rows": data.get("omitted_rows", 0)}
+    return output
 
 
 def _schema_proposal(data: Mapping[str, Any], context: Context) -> dict[str, Any]:

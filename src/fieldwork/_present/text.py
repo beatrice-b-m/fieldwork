@@ -238,6 +238,14 @@ def _joint_counts(projection, full, max_nodes) -> Lines:
     for cell in projection["cells"]:
         text = f"    {a}={cell['a_label']}, {b}={cell['b_label']}"
         yield text + (f": {quantity(cell['count'], 'row')}" if full else "")
+    if projection["omitted"]:
+        counts = projection.get("omitted_counts")
+        yield (
+            f"    ... {quantity(counts['rows'], 'row')} in {quantity(counts['cells'], 'cell')} "
+            "below min_count omitted"
+            if full
+            else "    ... cells below min_count omitted"
+        )
 
 
 def _schema_proposal(projection, full, max_nodes) -> Lines:
