@@ -1,9 +1,11 @@
 # Design: relating two tables (`fw.relate`)
 
-Status: in progress on branch `worktree-cross-table-relate`, for
-[issue #23](https://github.com/beatrice-b-m/fieldwork/issues/23). Retire this
-page once `docs/contracts.md` and `docs/algorithms.md` describe the shipped
-behavior.
+Status: implemented on branch `worktree-cross-table-relate`, for
+[issue #23](https://github.com/beatrice-b-m/fieldwork/issues/23).
+`docs/contracts.md#relating-two-tables` and
+`docs/algorithms.md#relations-across-tables` now describe the behavior; retire
+this page when the branch merges. The user guide in fieldwork-docs still needs a
+relate page.
 
 ## Goal
 
@@ -148,7 +150,7 @@ render it. The projection adds each side's table ID, key columns and scope
 (name and parent only in topology), plus the warnings. Topology statements use
 only table IDs, column names and states.
 
-## Plan
+## Plan (all steps done)
 
 1. Design doc (this page).
 2. `relate` implementation in `src/fieldwork/relate.py`, exported from

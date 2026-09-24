@@ -269,3 +269,67 @@ and global tests completed/possible. Standalone full dependency projections and
 renderings expose all completed per-target records within display limits, including
 below-threshold tests; the overview stays compact. Use `to_frame('dependencies')`
 for the complete table or render the overview's dependency section for detail.
+
+## Relations across tables
+
+`relate(left, right, on=..., compare=...)` never joins the tables. Each side is
+prepared under its own scope and sentinels, the key and compared columns are
+mapped into identities shared by both sides, and every measurement comes from
+per-key row counts, so the work is linear in rows plus distinct values.
+
+**Matching values.** With `match="typed"` (default), booleans, numbers, strings,
+dates, naive datetimes, aware datetimes (as UTC instants) and timedeltas never
+match each other, and numbers match numerically (`1` matches `1.0`, also within
+one side). Within one table these stay distinct levels, but across tables an
+integer key often arrives as floats, because a missing value turns a pandas
+integer column into a float column. `match="text"` also writes integer-valued
+numbers as decimal text, so `123` matches `"123"`. Text is compared exactly:
+`"0123"` does not match `123`, and non-integral numbers keep typed identity.
+Compared attributes use the same rule as keys. When the value kinds seen on the
+two sides of a key or compared pair do not overlap, the result carries a
+`VALUE_KIND_MISMATCH` warning naming both columns and their kinds.
+
+**Keys.** A row's key is its tuple of `on` columns. Rows with any missing key
+column (native or declared sentinel) are excluded and counted per side as
+`incomplete_key`. Keys are distinct complete tuples. A key is matched when it
+occurs on both sides.
+
+**Coverage** (each direction). Of the source side's distinct keys, `found` are
+matched. The state is `all`, `some`, `none`, or `empty` when the source side has
+no complete key. Row counts (`found_rows`, `not_found_rows`) are reported
+alongside; the unit is keys.
+
+**Relation.** Over matched keys, a side is "many" when any matched key has more
+than one row on it, giving `1:1`, `1:n` (one left row, several right rows), `n:1`
+or `n:m`. Unmatched keys do not affect the type. `joined_rows` is
+the sum over matched keys of left rows × right rows, the size of an inner join.
+With no matched key, the type is null and there is no finding.
+
+**Agreement** (per compared pair, over matched keys). Collect each side's
+distinct compared values for the key, ignoring missing values when
+`dropna=True` or treating missing as one shared value when `False`. A key is
+`unavailable` when a side has no value, `ambiguous` when a side has several, and
+otherwise agrees or disagrees. The state is taken over agreeing plus disagreeing
+keys (`empty` when there are none); `ambiguity` is `some` when any key is
+ambiguous. Keeping ambiguity apart means that variation within one table is
+never reported as disagreement between the tables.
+
+**Self-references.** With `right=None`, both sides read `left`: the left
+columns of `on` are references and the right columns are the key each row is
+referenced by. Coverage then reads as "references resolve" and "keys are
+referenced". Each left row with a complete reference and a complete own key
+forms an edge own → reference. Edges whose target key exists on the right side
+are resolved; self-loops (own = reference) are counted and excluded. A resolved
+edge a → b is reciprocated when some right-side row with key b references a.
+Reciprocity counts distinct edges, and its state is `empty` when every resolved
+edge is a self-loop.
+
+**Row samples.** Each finding's examples and exceptions belong to one side
+(`selector["side"]`), and two-sided findings add `other_side`:
+
+| Finding | Sides | Examples | Exceptions |
+| --- | --- | --- | --- |
+| Coverage | source side | rows whose key is found | rows with a complete key not found |
+| Relation | both | rows of matched keys repeated on that side | rows of matched keys that occur once on that side |
+| Agreement | both | rows of agreeing keys | rows of disagreeing keys |
+| Reciprocity | left | rows whose edge is reciprocated | rows whose resolved edge is not |

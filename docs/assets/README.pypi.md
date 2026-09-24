@@ -33,6 +33,8 @@ from synthetic data.
   exceptions that need explaining.
 - **Narrow your focus.** Explore a particular site, group, or subset to understand
   how it differs from the rest of the data.
+- **Connect related tables.** Check whether identifiers in one export appear in
+  another, how their records correspond, and whether shared details agree.
 - **Build on what you learn.** Share findings and figures, save an investigation,
   and revisit it when the next delivery arrives.
 
