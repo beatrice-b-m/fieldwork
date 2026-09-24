@@ -14,3 +14,10 @@ Changes merged since 0.3.1. At release, complete these notes and rename the file
   Complete columns are still not findings. Code that matched the previous
   statements, `X: populated values` and `Same availability: ...`, must be
   updated; finding IDs are unchanged (#22).
+- Overview leads no longer rank an approximate dependency as a top "near-rule
+  with exceptions" merely because one repeated determinant group exists. Its
+  repeated rows must cover at least a quarter of evaluated rows and agree with
+  the modal rule in at least 90% of them; other near-rules score 0.3 with the
+  reason "near-rule with sparse repeated support". Lead order and `lead`
+  annotations can therefore change; section findings and their IDs do not
+  ([overview lead ranking](../algorithms.md#overview-lead-ranking)) (#27).
