@@ -4,7 +4,9 @@
 
 1. Update the version in `pyproject.toml` and `src/fieldwork/__init__.py`; run `uv lock`.
 2. Update README release wording, user docs, and developer contracts to match the
-   intended release. Run the supported-Python test matrix.
+   intended release. Complete `docs/release-notes/unreleased.md`, where merged
+   changes are noted as they land, and rename it `v<version>.md`. Run the
+   supported-Python test matrix.
 3. Run `uv run python scripts/generate_assets.py`. It executes the worked example,
    renders public SVG/HTML/visualization-data APIs, rasterizes SVGs with pinned
    resvg and bundled OFL-licensed Lato fonts, and writes a SHA-256 asset manifest.
