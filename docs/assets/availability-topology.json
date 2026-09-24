@@ -154,7 +154,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "dose: availability within modality = CT",
+      "statement": "dose: populated in all rows within modality = CT",
       "features": [
         {
           "table": "table",
@@ -168,7 +168,8 @@
       "structure": {
         "context": {
           "modality": "CT"
-        }
+        },
+        "presence": "all"
       },
       "counting_unit": "rows",
       "analysis_unit": {
@@ -179,7 +180,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "dose: availability within modality = MR",
+      "statement": "dose: populated in no rows within modality = MR",
       "features": [
         {
           "table": "table",
@@ -193,32 +194,8 @@
       "structure": {
         "context": {
           "modality": "MR"
-        }
-      },
-      "counting_unit": "rows",
-      "analysis_unit": {
-        "counting_unit": "rows",
-        "entity_keys": [],
-        "presence_aggregation": "per_row"
-      }
-    },
-    {
-      "pattern": "context_availability",
-      "statement": "image_1: availability within modality = CT",
-      "features": [
-        {
-          "table": "table",
-          "column": "modality"
         },
-        {
-          "table": "table",
-          "column": "image_1"
-        }
-      ],
-      "structure": {
-        "context": {
-          "modality": "CT"
-        }
+        "presence": "none"
       },
       "counting_unit": "rows",
       "analysis_unit": {
@@ -229,7 +206,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_1: availability within modality = MR",
+      "statement": "image_1: populated in all rows within modality = MR",
       "features": [
         {
           "table": "table",
@@ -243,7 +220,8 @@
       "structure": {
         "context": {
           "modality": "MR"
-        }
+        },
+        "presence": "all"
       },
       "counting_unit": "rows",
       "analysis_unit": {
@@ -254,7 +232,33 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_2: availability within modality = CT",
+      "statement": "image_1: populated in no rows within modality = CT",
+      "features": [
+        {
+          "table": "table",
+          "column": "modality"
+        },
+        {
+          "table": "table",
+          "column": "image_1"
+        }
+      ],
+      "structure": {
+        "context": {
+          "modality": "CT"
+        },
+        "presence": "none"
+      },
+      "counting_unit": "rows",
+      "analysis_unit": {
+        "counting_unit": "rows",
+        "entity_keys": [],
+        "presence_aggregation": "per_row"
+      }
+    },
+    {
+      "pattern": "context_availability",
+      "statement": "image_2: populated in no rows within modality = CT",
       "features": [
         {
           "table": "table",
@@ -268,7 +272,8 @@
       "structure": {
         "context": {
           "modality": "CT"
-        }
+        },
+        "presence": "none"
       },
       "counting_unit": "rows",
       "analysis_unit": {
@@ -279,7 +284,7 @@
     },
     {
       "pattern": "context_availability",
-      "statement": "image_2: availability within modality = MR",
+      "statement": "image_2: populated in some rows within modality = MR",
       "features": [
         {
           "table": "table",
@@ -293,7 +298,8 @@
       "structure": {
         "context": {
           "modality": "MR"
-        }
+        },
+        "presence": "some"
       },
       "counting_unit": "rows",
       "analysis_unit": {

@@ -519,7 +519,15 @@ _PROJECTORS: dict[str, Callable[[Mapping[str, Any], Context], dict[str, Any]]] =
 def structural_evidence(structure: Mapping[str, Any]) -> dict[str, Any]:
     return {
         k: structure[k]
-        for k in ("context", "present", "absent", "entity_keys", "presence_pattern", "relation")
+        for k in (
+            "context",
+            "presence",
+            "present",
+            "absent",
+            "entity_keys",
+            "presence_pattern",
+            "relation",
+        )
         if k in structure
     }
 

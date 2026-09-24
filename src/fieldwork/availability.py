@@ -458,15 +458,18 @@ def _contexts(analysis, max_contexts) -> int:
         for c in analysis.selected:
             metrics = {"feature": c, "populated": int(masks[c].sum()), "denominator": len(units)}
             record["availability"].append(metrics)
+            # A qualitative state keeps the finding meaningful without its counts.
+            presence = _presence(metrics["populated"], metrics["denominator"])
             found = analysis.emit(
                 units,
                 "context_availability",
-                f"{c}: availability within {context_statement(values)}",
+                f"{c}: populated in {_QUANTIFIERS[presence]} {analysis.unit} "
+                f"within {context_statement(values)}",
                 list(dict.fromkeys([*contexts, c])),
                 metrics,
                 masks[c],
                 exceptions=~masks[c],
-                structure={"context": values},
+                structure={"context": values, "presence": presence},
                 selector={"operation": "context_availability", "context": values, "feature": c},
             )
             record["finding_ids"].append(found["id"])
@@ -489,8 +492,21 @@ def _contexts(analysis, max_contexts) -> int:
     return count
 
 
+_QUANTIFIERS = {"all": "all", "some": "some", "none": "no"}
+
+
+def _presence(populated: int, denominator: int) -> str:
+    """Whether all, some or none of the units are populated."""
+    if not populated:
+        return "none"
+    return "all" if populated == denominator else "some"
+
+
 def _entities(analysis) -> list[dict[str, Any]]:
-    """How many entities have a feature on any, all, one, some or none of their rows."""
+    """How many entities have a feature on any, all, one, some or none of their rows.
+
+    The summary counts every pattern; only patterns that match an entity are findings.
+    """
     units = analysis.units(np.arange(len(analysis.frame)), True)
     keys, summaries = analysis.entities, []
     for c in analysis.selected:
@@ -507,6 +523,8 @@ def _entities(analysis) -> list[dict[str, Any]]:
         features = list(dict.fromkeys([*keys, c]))
         for pattern, matching in matches.items():
             summary[pattern] = int(matching.sum())
+            if not summary[pattern]:
+                continue
             analysis.emit(
                 units,
                 "entity_availability",

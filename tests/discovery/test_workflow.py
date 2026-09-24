@@ -455,6 +455,50 @@ def test_availability_omits_vacuous_findings_but_keeps_measurements():
     assert [f["features"] for f in result["families"]] == [["left", "twin"]]
 
 
+def test_context_and_entity_availability_keep_their_state_in_topology():
+    df = pd.DataFrame(
+        {
+            "acc": [1, 1, 2, 2, 3, 4, 5],
+            "b": [1, None, 2, None, None, None, 3],
+            "ctx": ["M", "M", "U", "U", "M", "U", "V"],
+        }
+    )
+    result = fw.missingness(df, features=["b"], by=["ctx"], entity="acc")
+    topology = fw.visualization_data(result, detail="topology")["findings"]
+    contexts = {
+        f["structure"]["context"]["ctx"]: f["structure"]["presence"]
+        for f in topology
+        if f["pattern"] == "context_availability"
+    }
+    assert contexts == {"M": "some", "U": "some", "V": "all"}
+    empty = fw.missingness(df.assign(b=None), features=["b"], by=["ctx"])
+    assert {
+        f["structure"]["presence"]
+        for f in empty["findings"]
+        if f["pattern"] == "context_availability"
+    } == {"none"}
+    # Entities 1 and 2 have one of two rows, 3 and 4 none, 5 its only row: no
+    # entity other than 5 has all rows populated, and every pattern matches one.
+    summary = result["entities"][0]
+    assert {k: summary[k] for k in ("any", "all", "one", "some", "none")} == {
+        "any": 3,
+        "all": 1,
+        "one": 3,
+        "some": 2,
+        "none": 2,
+    }
+    unmatched = fw.missingness(df.iloc[:6], features=["b"], entity="acc")
+    assert unmatched["entities"][0]["all"] == 0
+    for analysis in (result, unmatched):
+        counts = analysis["entities"][0]
+        patterns = {
+            f["structure"]["presence_pattern"]
+            for f in fw.visualization_data(analysis, detail="topology")["findings"]
+            if f["pattern"] == "entity_availability"
+        }
+        assert patterns == {p for p in ("any", "all", "one", "some", "none") if counts[p]}
+
+
 def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
     rows = 40
     df = pd.DataFrame(

@@ -104,9 +104,12 @@ controls.
   omitted units with their source rows. Vacuous evidence (always-present
   targets, identical columns) is not reported as a finding.
 - Context analyses aggregate within each joint context value; a missing context
-  value is its own category. Entity summaries classify each entity as
-  any/all/one/some/none of its rows populated; for a single-row entity, `all`
-  and `one` overlap.
+  value is its own category. Each context availability finding states whether
+  all, some or none of the context's units are populated
+  (`structure["presence"]`), so topology exports keep that state. Entity
+  summaries classify each entity as any/all/one/some/none of its rows populated;
+  for a single-row entity, `all` and `one` overlap. The summary counts every
+  pattern; a pattern that matches no entity is not a finding.
 
 ## Dependencies
 
