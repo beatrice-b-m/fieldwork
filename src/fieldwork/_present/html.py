@@ -807,6 +807,7 @@ def _comparison_note() -> str:
 def _source_rows(row: Mapping[str, Any], kind: str) -> str:
     samples = [(key, row[key]) for key in ("examples", "exceptions")]
     call = f"result.inspect(df, {row['id']!r})"
+    sources = "its identical ordered source named <code>df</code>"
     if kind == "relation":
         other = row.get("other_side")
         samples = [(f"{key} ({row['side']})", row[key]) for key in ("examples", "exceptions")]
@@ -816,6 +817,10 @@ def _source_rows(row: Mapping[str, Any], kind: str) -> str:
             ]
         # A self-reference reads one table, so it takes no right frame.
         call = f"result.inspect(left, {row['id']!r}, side={row['side']!r}, right=right)"
+        sources = (
+            "its identical ordered sources named <code>left</code> and <code>right</code> "
+            "(omit <code>right</code> for a self-reference)"
+        )
     return (
         "<h3>Representative source rows</h3>"
         "<p>Positions are zero-based offsets in the original ordered source, "
@@ -825,11 +830,8 @@ def _source_rows(row: Mapping[str, Any], kind: str) -> str:
             "<p>" + esc(sample_label(key[:1].upper() + key[1:], sample)) + "</p>"
             for key, sample in samples
         )
-        + "<p>In Python, with this result named <code>result</code> and its identical "
-        "ordered source named <code>df</code> (for a relation, sources <code>left</code> "
-        "and <code>right</code>; omit <code>right</code> for a self-reference):</p><p><code>"
-        + esc(call)
-        + "</code></p><p>Use <code>all_matches=True</code> to retrieve all "
+        + f"<p>In Python, with this result named <code>result</code> and {sources}:</p>"
+        "<p><code>" + esc(call) + "</code></p><p>Use <code>all_matches=True</code> to retrieve all "
         "matching rows and <code>exceptions=True</code> for exception rows. "
         "These operations require the original source and a Python session.</p>"
     )
