@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from .common import esc, wrap
-from .project import candidate_explanation, dependency_label, grain_title, support_note
+from .project import candidate_explanation, dependency_label, grain_title, structure_notes
 from .text import comparison_labels, skipped_label, unit_label
 
 COLORS = {
@@ -496,9 +496,7 @@ def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[d
 def _card(svg: SVG, row, y, full) -> int:
     lines = wrap(row["statement"], 90)
     metrics = unit_label(row["analysis_unit"]) if "analysis_unit" in row else ""
-    note = support_note(row) if "structure" in row else None
-    if note:
-        metrics += "; " + note
+    metrics = "; ".join(part for part in (metrics, *structure_notes(row)) if part)
     measurements = row.get("measurements", {})
     if full and measurements:
         metrics = f"{row['counting_unit']} · " + " · ".join(

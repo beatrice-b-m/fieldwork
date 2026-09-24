@@ -12,7 +12,7 @@ from .project import (
     dependency_label,
     grain_title,
     signature_label,
-    support_note,
+    structure_notes,
 )
 
 Lines = Iterator[str]
@@ -450,9 +450,7 @@ def _finding_cards(projection, full, max_nodes) -> Lines:
     for row in projection["findings"][:max_nodes]:
         yield (f"[{row['id']}] " if full else "") + row["statement"]
         yield "  Analysis: " + unit_label(row["analysis_unit"])
-        note = support_note(row)
-        if note:
-            yield "  " + note
+        yield from ("  " + note for note in structure_notes(row))
         if not full:
             continue
         if "explanation" in row:

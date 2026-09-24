@@ -47,7 +47,7 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(missingness, fw.Result)
     assert_type(fw.compare(missingness, missingness), fw.Result)
     assert_type(fw.discover_dependencies(df), fw.Result)
-    assert_type(fw.value_patterns(df), fw.Result)
+    assert_type(fw.value_patterns(df, min_count=5), fw.Result)
     paths = fw.suggest_paths(df, objective="structure")
     assert_type(paths, fw.Result)
     assert_type(paths.best, Path | None)

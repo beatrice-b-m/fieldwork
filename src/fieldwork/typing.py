@@ -258,6 +258,8 @@ class PatternOptions(TypedDict, total=False):
     """Joint context columns for observed value mappings; default None."""
     limits: PatternLimits
     """Work and output budgets; see PatternLimits (overview: 20 pair tests)."""
+    min_count: int
+    """Minimum rows for a reported format, length or prefix; default 1."""
 
 
 class SectionOptions(TypedDict, total=False):

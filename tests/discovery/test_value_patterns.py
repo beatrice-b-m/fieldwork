@@ -42,11 +42,12 @@ def shape(text):
 @given(
     st.lists(st.one_of(st.none(), st.text("aZ09-_ é٣", max_size=6)), min_size=1, max_size=30),
     st.integers(1, 4),
+    st.integers(0, 3),
 )
-def test_string_formats_lengths_and_prefixes_match_oracle(values, max_patterns):
+def test_string_formats_lengths_and_prefixes_match_oracle(values, max_patterns, min_count):
     frame = pd.DataFrame({"code": pd.Series(values, dtype=object)})
     populated = [v for v in values if v is not None]
-    result = fw.value_patterns(frame, limits={"max_patterns": max_patterns})
+    result = fw.value_patterns(frame, limits={"max_patterns": max_patterns}, min_count=min_count)
     record = findings(result, "string_patterns").get(("code",))
     if not populated:
         assert record is None
@@ -60,16 +61,24 @@ def test_string_formats_lengths_and_prefixes_match_oracle(values, max_patterns):
     }
     for field, counts in expected.items():
         shown = dict(m[field])
-        assert len(shown) == min(max_patterns, len(counts)), field
-        assert all(counts[value] == n for value, n in shown.items()), field
+        eligible = [n for n in counts.values() if n >= min_count]
+        assert len(shown) == min(max_patterns, len(eligible)), field
+        assert all(counts[value] == n >= min_count for value, n in shown.items()), field
         # Shown patterns are the most frequent ones.
         ranked = [n for _, n in m[field]]
         assert ranked == sorted(ranked, reverse=True)
-        assert min(ranked) >= max(
-            (n for value, n in counts.items() if value not in shown), default=0
+        assert min(ranked, default=min_count) >= max(
+            (n for value, n in counts.items() if value not in shown and n >= min_count),
+            default=0,
         )
     assert m["format_count"] == len(expected["formats"])
     assert m["omitted_format_rows"] == len(populated) - sum(n for _, n in m["formats"])
+    # Topology keeps the reported formats, canonically ordered and without counts.
+    structure = fw.visualization_data(result, detail="topology")["findings"][0]["structure"]
+    assert structure == {
+        "formats": sorted(dict(m["formats"])),
+        "formats_omitted": len(m["formats"]) < len(expected["formats"]),
+    }
 
 
 def test_string_patterns_known_answer():

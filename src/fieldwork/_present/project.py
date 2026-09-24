@@ -544,6 +544,8 @@ def structural_evidence(structure: Mapping[str, Any]) -> dict[str, Any]:
             "relation",
             "strength",
             "repeated_support",
+            "formats",
+            "formats_omitted",
         )
         if k in structure
     }
@@ -678,11 +680,15 @@ def dependency_explanation(row: Mapping[str, Any], dropna: bool | None) -> str:
 TRIVIAL_EXACTNESS = "without repeated support (every determinant group is one row)"
 
 
-def support_note(row: Mapping[str, Any]) -> str | None:
-    """A finding's trivial-exactness caveat, readable without its counts."""
-    return (
-        "Holds " + TRIVIAL_EXACTNESS if row["structure"].get("repeated_support") is False else None
-    )
+def structure_notes(row: Mapping[str, Any]) -> list[str]:
+    """Qualitative structure that a finding's statement omits, readable without counts."""
+    structure, notes = row.get("structure", {}), []
+    if structure.get("repeated_support") is False:
+        notes.append("Holds " + TRIVIAL_EXACTNESS)
+    if "formats" in structure:
+        formats = ", ".join(structure["formats"]) or "none reported"
+        notes.append("Formats: " + formats + (", ..." if structure["formats_omitted"] else ""))
+    return notes
 
 
 def dependency_label(row: Mapping[str, Any]) -> str:

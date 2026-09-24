@@ -22,6 +22,7 @@ from .evidence import (
     budgets,
     columns,
     finding,
+    limit,
     prepare,
     result,
 )
@@ -38,6 +39,7 @@ def value_patterns(
     features: Iterable[str] | None = None,
     by: Iterable[str] | None = None,
     limits: PatternLimits | None = None,
+    min_count: int = 1,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
@@ -63,6 +65,10 @@ def value_patterns(
         Budgets: pairs tested for constant offsets and ratios (``max_pairs``,
         100), formats, lengths and prefixes kept per string column
         (``max_patterns``, 10) and ``example_limit`` (5).
+    min_count : int, optional
+        Nonnegative small-cell threshold; default 1. Formats, lengths and
+        prefixes seen in fewer rows are omitted from the summaries; omitted
+        format rows are counted.
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
@@ -73,7 +79,9 @@ def value_patterns(
     Result
         Kind 'value_patterns': per-column ``summaries``, indexed name
         ``families``, ``coverage`` and findings (string patterns, numeric ranges,
-        constant offsets and ratios, context constancy, indexed families).
+        constant offsets and ratios, context constancy, indexed families). A
+        string pattern finding's ``structure`` lists its reported formats
+        without counts, for topology exports.
 
     Examples
     --------
@@ -85,6 +93,7 @@ def value_patterns(
     [['A9', 2]]
     """
     budget = budgets(limits, _LIMITS)
+    limit("min_count", min_count)
     selected = columns(df, features)
     contexts = columns(df, by or [])
     frame, positions, codes, present, base = prepare(
@@ -101,7 +110,7 @@ def value_patterns(
     base["summaries"] = []
     with phase("value summaries", len(selected), "columns") as tracker:
         for c in selected:
-            base["summaries"].append(_summary(patterns, c, budget["max_patterns"]))
+            base["summaries"].append(_summary(patterns, c, budget["max_patterns"], min_count))
             tracker.advance(detail=c)
     base["families"] = _indexed_families(patterns, selected)
     tested = _numeric_pairs(patterns, selected, budget["max_pairs"])
@@ -115,6 +124,7 @@ def value_patterns(
         "features": selected,
         "by": contexts,
         "limits": budget,
+        "min_count": min_count,
     }
     return result("value_patterns", base)
 
@@ -189,7 +199,7 @@ def _native_numbers(dtype) -> bool:
     )
 
 
-def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
+def _summary(patterns: _Patterns, c: str, max_patterns: int, min_count: int) -> dict[str, Any]:
     present = patterns.present[c]
     series = patterns.frame[c]
     values = series.iloc[np.flatnonzero(present)]
@@ -197,9 +207,19 @@ def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
     examples = bounded_rows(patterns.positions, present, patterns.example_limit)
     kind = pd.api.types.infer_dtype(values.to_numpy(copy=False), skipna=True)
     if len(values) and kind == "string":
-        record.update(_string_summary(values, max_patterns))
+        record.update(_string_summary(values, max_patterns, min_count))
+        formats = [f for f, _ in record["formats"]]
         patterns.emit(
-            "string_patterns", f"{c}: string formats, lengths and prefixes", [c], record, examples
+            "string_patterns",
+            f"{c}: string formats, lengths and prefixes",
+            [c],
+            record,
+            examples,
+            # Formats without counts or ranking; prefixes can disclose identifiers.
+            structure={
+                "formats": sorted(formats),
+                "formats_omitted": record["format_count"] > len(formats),
+            },
         )
     if _native_numbers(series.dtype):
         number = values.to_numpy(dtype=float, na_value=np.nan)
@@ -214,7 +234,7 @@ def _summary(patterns: _Patterns, c: str, max_patterns: int) -> dict[str, Any]:
     return record
 
 
-def _string_summary(values: pd.Series, max_patterns: int) -> dict[str, Any]:
+def _string_summary(values: pd.Series, max_patterns: int, min_count: int) -> dict[str, Any]:
     ids, uniques = pd.factorize(values, sort=False)
     counts = np.bincount(ids)
     formats, lengths, prefixes = Counter(), Counter(), Counter()
@@ -224,13 +244,18 @@ def _string_summary(values: pd.Series, max_patterns: int) -> dict[str, Any]:
         formats[re.sub(r"[A-Za-z]+", "A", re.sub(r"\d+", "9", value))] += int(count)
         lengths[len(value)] += int(count)
         prefixes[value[:3]] += int(count)
-    # Lists, not most_common() tuples, so live and saved payloads match.
+
+    def reported(counter):
+        # Lists, not most_common() tuples, so live and saved payloads match.
+        return [list(item) for item in counter.most_common() if item[1] >= min_count][:max_patterns]
+
+    kept = reported(formats)
     return {
-        "formats": [list(item) for item in formats.most_common(max_patterns)],
-        "lengths": [list(item) for item in lengths.most_common(max_patterns)],
-        "prefixes": [list(item) for item in prefixes.most_common(max_patterns)],
+        "formats": kept,
+        "lengths": reported(lengths),
+        "prefixes": reported(prefixes),
         "format_count": len(formats),
-        "omitted_format_rows": sum(n for _, n in formats.most_common()[max_patterns:]),
+        "omitted_format_rows": len(values) - sum(n for _, n in kept),
     }
 
 

@@ -96,7 +96,11 @@ or an order-invariant joint-information score.
 ## Value patterns
 
 String formats replace digit runs with `9` and ASCII letter runs with `A`; report
-three-character prefixes and lengths. `max_patterns=10` bounds displayed counts.
+three-character prefixes and lengths. `max_patterns=10` bounds displayed counts;
+`min_count` omits formats, lengths and prefixes seen in fewer rows. A string
+pattern finding's `structure` lists the reported formats alphabetically, without
+counts, and whether others were omitted. Topology keeps that list and drops
+lengths and prefixes, since prefixes can reveal identifier fragments.
 Indexed-name families are explicitly name evidence, augmented by identical presence
 when observed. A column is numeric when every populated value is a non-boolean
 number, whatever its dtype, so an object column of numbers is summarized like its
