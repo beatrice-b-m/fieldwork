@@ -38,7 +38,7 @@ _DEFAULTS = {
     "paths": {},
     "value_patterns": {"limits": {"max_pairs": 20}},
 }
-_CONTEXT = {"scope", "missing", "table_id", "progress", "cancel", "timeout"}
+_CONTEXT = {"scope", "missing", "table_id", "progress", "cancel", "timeout", "safe_errors"}
 
 
 @operation("overview")
@@ -82,7 +82,7 @@ def explore(
     scope, missing, table_id
         Source context shared by every analysis and section.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

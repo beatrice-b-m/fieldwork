@@ -38,7 +38,7 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(overview.section("paths"), fw.Result)
     assert_type(fw.profile(df, ["site"], candidate_keys=["site"]), fw.Result)
     assert_type(fw.census(df, ["site"], top_n=2, progress=True), fw.Result)
-    assert_type(fw.levels(df, ["site"], timeout=2), fw.Result)
+    assert_type(fw.levels(df, ["site"], timeout=2, safe_errors=True), fw.Result)
     assert_type(fw.grain(df, [fw.KeySpec("site", ("site",))]), fw.Result)
     assert_type(fw.pairs(df, ["site", "visit"], limits={"max_pairs": 1}), fw.Result)
     assert_type(fw.joint_counts(df, ["site", "visit"], min_count=5), fw.Result)

@@ -20,8 +20,8 @@ fingerprinting, encoding, path search, dependency tests, grain views, and patter
 summaries. Completion of one phase does not imply completion of the overview.
 The default remains silent.
 
-All public dataframe analyses accept keyword-only `progress`, `cancel`, and
-`timeout` (typed once as `fieldwork.typing.Runtime`), including `profile`, foundation tools (`levels`,
+All public dataframe analyses accept keyword-only `progress`, `cancel`,
+`timeout` and `safe_errors` (typed once as `fieldwork.typing.Runtime`), including `profile`, foundation tools (`levels`,
 `census`, `grain`, `pairs`, `joint_counts`, `infer_schema`), `Recipe.run`,
 `Path.census`, source inspection/selection/recomputation, and scope creation and
 refinement. Rendering uses saved results and does not run dataframe analysis.
@@ -71,6 +71,25 @@ effect, so this is not a hard process deadline. Cancellation raises
 Keyboard interrupts also clean up call resources. Progress and cancellation
 objects are never saved in analytical results or recipe parameters. Supply these
 controls when calling `Recipe.run`.
+
+## Keep source values out of error messages
+
+pandas, NumPy and Python error messages can quote the cell that failed. With
+`safe_errors=True`, any other failure is raised as `fieldwork.AnalysisError`,
+whose message and attributes give only the operation, the innermost phase, the
+column when known and the original exception type:
+
+```python
+try:
+    shared = fw.explore(df, safe_errors=True)
+except fw.AnalysisError as error:
+    log(str(error))  # e.g. "overview failed during 'encoding' in column 'code' (TypeError)"
+```
+
+This covers invalid arguments too. The original exception stays available as
+`error.__context__` for local debugging and is not printed in tracebacks.
+Cancellation, keyboard interrupts and progress-callback errors propagate
+unchanged. Nested analyses follow the outermost call's setting.
 
 ## Choose the work you need
 

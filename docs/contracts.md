@@ -165,4 +165,7 @@ controls.
   axis values that only omitted cells support; the evaluated population is
   unchanged.
 - Fieldwork's own error messages name columns, arguments and value types, never
-  source cell values.
+  source cell values. Messages from pandas, NumPy or Python can still quote a
+  cell; when only shared output may leave your environment, pass
+  `safe_errors=True` so failures are raised as `AnalysisError` without the
+  original message ([runtime controls](performance.md#keep-source-values-out-of-error-messages)).

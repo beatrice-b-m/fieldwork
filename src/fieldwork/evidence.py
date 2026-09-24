@@ -19,7 +19,7 @@ from ._explore.encoding import (
     python_value,
     resolve_columns,
 )
-from ._runtime import checkpoint, current_session, operation, phase
+from ._runtime import checkpoint, current_session, focus, operation, phase
 from .result import Result
 from .typing import Runtime
 
@@ -136,7 +136,7 @@ class Scope:
         name : str, optional
             Scope label; default 'selection'.
         **runtime : Unpack[Runtime]
-            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+            Optional runtime controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -179,7 +179,7 @@ class Scope:
         name : str, optional
             Child scope label; default 'refined'.
         **runtime : Unpack[Runtime]
-            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+            Optional runtime controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -288,7 +288,8 @@ def prepare(
     with phase("encoding", len(needed), "columns") as tracker:
         for c in needed:
             try:
-                _encode(frame, c, c in selected, sentinel_keys[c], all_encoded, all_available)
+                with focus(c):
+                    _encode(frame, c, c in selected, sentinel_keys[c], all_encoded, all_available)
             except TypeError as error:
                 if c not in optional:
                     raise TypeError(f"Column {c!r}: {error}") from error

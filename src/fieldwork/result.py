@@ -282,7 +282,7 @@ class Result(Mapping[str, Any]):
             Default False returns the saved examples (at most example_limit);
             True recovers the complete matching population.
         **runtime : Unpack[Runtime]
-            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+            Optional runtime controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -324,7 +324,7 @@ class Result(Mapping[str, Any]):
         name : str, optional
             Name of the returned scope; default 'finding selection'.
         **runtime : Unpack[Runtime]
-            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+            Optional runtime controls; see fieldwork.typing.Runtime.
 
         Returns
         -------

@@ -1,4 +1,4 @@
-"""Dependency-free progress events, terminal/notebook display, and cancellation."""
+"""Dependency-free progress events, terminal/notebook display, cancellation and safe errors."""
 
 from __future__ import annotations
 
@@ -28,6 +28,52 @@ class AnalysisCancelled(RuntimeError):
     ...     print('cancelled')
     cancelled
     """
+
+
+class AnalysisError(RuntimeError):
+    """An analysis failure reported without its message, raised when ``safe_errors=True``.
+
+    pandas, NumPy and Python messages can quote cell values. With
+    ``safe_errors=True`` any other failure is raised as this error instead, naming
+    only the operation, the phase, the column when known and the original type.
+
+    Parameters
+    ----------
+    operation : str
+        Descriptive operation name, as in ProgressEvent.operation.
+    phase : str
+        Innermost phase that failed, as in ProgressEvent.phase.
+    column : str or None
+        Column being prepared or summarized when known; otherwise None.
+    error_type : str
+        Class name of the original exception.
+
+    Notes
+    -----
+    The original exception stays available as ``__context__`` for local
+    debugging, but it is suppressed from printed tracebacks. Cancellation,
+    KeyboardInterrupt and progress-callback errors propagate unchanged.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fieldwork as fw
+    >>> frame = pd.DataFrame({'x': [{'id': 'A-1'}]})
+    >>> try:
+    ...     fw.levels(frame, safe_errors=True)
+    ... except fw.AnalysisError as error:
+    ...     print(error.error_type, error.column)
+    TypeError x
+    """
+
+    def __init__(self, operation: str, phase: str, column: str | None, error_type: str) -> None:
+        self.operation, self.phase, self.column = operation, phase, column
+        self.error_type = error_type
+        where = f" in column {column!r}" if column is not None else ""
+        super().__init__(f"{operation} failed during {phase!r}{where} ({error_type})")
+
+    def __reduce__(self):
+        return type(self), (self.operation, self.phase, self.column, self.error_type)
 
 
 class CancellationToken:

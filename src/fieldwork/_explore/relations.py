@@ -170,7 +170,7 @@ def pairs(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -386,7 +386,7 @@ def joint_counts(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

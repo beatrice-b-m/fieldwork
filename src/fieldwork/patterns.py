@@ -14,7 +14,7 @@ import pandas as pd
 
 from ._explore._kernels import group_ids, modal_groups
 from ._explore.encoding import encode_series
-from ._runtime import checkpoint, operation, phase
+from ._runtime import checkpoint, focus, operation, phase
 from .evidence import (
     Scope,
     analyzable,
@@ -72,7 +72,7 @@ def value_patterns(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -110,7 +110,8 @@ def value_patterns(
     base["summaries"] = []
     with phase("value summaries", len(selected), "columns") as tracker:
         for c in selected:
-            base["summaries"].append(_summary(patterns, c, budget["max_patterns"], min_count))
+            with focus(c):
+                base["summaries"].append(_summary(patterns, c, budget["max_patterns"], min_count))
             tracker.advance(detail=c)
     base["families"] = _indexed_families(patterns, selected)
     tested = _numeric_pairs(patterns, selected, budget["max_pairs"])

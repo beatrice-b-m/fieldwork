@@ -54,6 +54,10 @@ class Runtime(TypedDict, total=False):
     timeout: float | None
     """Finite nonnegative seconds from call start; expiry raises AnalysisCancelled at
     the next checkpoint, after the current pandas/NumPy work item. Default None."""
+    safe_errors: bool | None
+    """True raises any other failure as AnalysisError, whose message names the
+    operation, phase and column but never echoes the original message, which can
+    quote cell values. Default None (False) raises failures unchanged."""
 
 
 class CensusOptions(TypedDict, total=False):

@@ -11,13 +11,19 @@ from contextvars import ContextVar
 from functools import wraps
 from typing import ParamSpec, TypeVar, cast
 
-from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
+from .progress import (
+    AnalysisCancelled,
+    AnalysisError,
+    CancellationToken,
+    ProgressDisplay,
+    ProgressEvent,
+)
 
 _current = ContextVar("fieldwork_analysis", default=None)
 
 
 class Session:
-    def __init__(self, operation, progress, cancel, timeout):
+    def __init__(self, operation, progress, cancel, timeout, safe_errors=None):
         if progress is True:
             progress = ProgressDisplay()
         if progress is not None and progress is not False and not callable(progress):
@@ -31,7 +37,14 @@ class Session:
             or timeout < 0
         ):
             raise ValueError("timeout must be finite nonnegative seconds")
+        if safe_errors is not None and not isinstance(safe_errors, bool):
+            raise TypeError("safe_errors must be boolean")
         self.operation = operation
+        self.safe_errors = bool(safe_errors)
+        # (exception, phase or column) where each failure was first seen, innermost first.
+        self.failed_phases = []
+        self.failed_columns = []
+        self.callback_error = None
         self.callback = None if progress is None or progress is False else progress
         self.cancel = cancel
         self.started = time.monotonic()
@@ -55,6 +68,9 @@ class Session:
         self.fingerprints.clear()
         self.labelled.clear()
         self.prepared.clear()
+        self.failed_phases.clear()
+        self.failed_columns.clear()
+        self.callback_error = None
 
     def emit(self, phase, status, *, force=False):
         now = time.monotonic()
@@ -76,11 +92,29 @@ class Session:
         )
         try:
             self.callback(event)
-        except BaseException:
+        except BaseException as error:
             # Preserve the original callback error instead of calling it again
             # while unwinding every nested phase.
             self.callback = None
+            self.callback_error = error
             raise
+
+    def safe_error(self, error):
+        """The error as an AnalysisError, or None when it must propagate unchanged."""
+        chain, cause = [], error
+        while cause is not None and cause not in chain:
+            chain.append(cause)
+            cause = cause.__cause__ or cause.__context__
+        if isinstance(error, (AnalysisCancelled, AnalysisError)) or self.callback_error in chain:
+            return None
+
+        def first(records):
+            return next((where for seen, where in records if seen in chain), None)
+
+        failed = first(self.failed_phases) or self.operation
+        return AnalysisError(
+            self.operation, failed, first(self.failed_columns), type(error).__name__
+        )
 
 
 class Phase:
@@ -123,13 +157,26 @@ def phase(name, total=None, unit="items"):
         if session:
             session.emit(item, "cancelled", force=True)
         raise
-    except BaseException:
+    except BaseException as error:
         if session:
+            session.failed_phases.append((error, name))
             session.emit(item, "failed", force=True)
         raise
     finally:
         if session:
             session.stack.pop()
+
+
+@contextmanager
+def focus(name):
+    """Name the column being worked on, for safe error reports."""
+    try:
+        yield
+    except Exception as error:
+        session = _current.get()
+        if session:
+            session.failed_columns.append((error, name))
+        raise
 
 
 def checkpoint():
@@ -148,6 +195,7 @@ _CONTROLS = {
     "progress": "Progress",
     "cancel": "CancellationToken | None",
     "timeout": "float | None",
+    "safe_errors": "bool | None",
 }
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -177,26 +225,29 @@ def operation(name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
         ]
 
         @wraps(function)
-        def run(*args, progress=None, cancel=None, timeout=None, **kwargs):
+        def run(*args, progress=None, cancel=None, timeout=None, safe_errors=None, **kwargs):
             unknown = sorted(kwargs.keys() - named) if strict else []
             if unknown:
                 raise TypeError(
                     f"{function.__name__}() got an unexpected keyword argument {unknown[0]!r}"
                 )
-            parent = _current.get()
-            token = None
-            if parent is None:
-                owned = Session(name, progress, cancel, timeout)
-                token = _current.set(owned)
-            elif progress is not None or cancel is not None or timeout is not None:
+            owned = token = None
+            controls = (progress, cancel, timeout, safe_errors)
+            if _current.get() is None or any(control is not None for control in controls):
                 # An explicitly controlled reentrant call gets its own lifetime.
-                owned = Session(name, progress, cancel, timeout)
+                owned = Session(name, *controls)
                 token = _current.set(owned)
             try:
                 with phase(name):
                     return function(*args, **kwargs)
+            except Exception as error:
+                # Only the session that owns safe_errors reports; nested calls propagate.
+                safe = owned.safe_error(error) if owned and owned.safe_errors else None
+                if safe is None:
+                    raise
+                raise safe from None
             finally:
-                if token is not None:
+                if owned is not None and token is not None:
                     owned.close()
                     _current.reset(token)
 
