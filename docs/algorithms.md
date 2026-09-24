@@ -189,7 +189,14 @@ want to explain: near-rules with repeated support and a few exceptions, mutually
 exclusive or empty columns, presence rules with exceptions, mixed string formats,
 equivalent encodings and partially populated columns. Trivially true or purely
 descriptive findings (constant targets, unique determinants, uniform formats,
-numeric ranges, census paths) rank last. After the first finding of a pattern on a
+numeric ranges, census paths) rank last. A near-rule counts as having repeated
+support only when its [repeated rows](#dependency-target-coverage-and-repeated-support)
+cover at least a quarter of evaluated rows (`repeat_coverage` ≥ 0.25) and agree
+with the modal rule in at least 90% of them (`repeat_modal_accuracy` ≥ 0.9).
+Otherwise its overall accuracy rests on singleton groups, which cannot disagree,
+or its repeated groups often break the rule, so the lead ranks low with the
+reason "near-rule with sparse repeated support" (or "near-rule supported only by singleton groups" when no group
+repeats). After the first finding of a pattern on a
 given leading column, further ones are halved (all equivalent-encoding findings
 after the first, since they chain across columns), so one near-key determining
 many targets does not crowd out other leads. Scores are for ordering only; they are not

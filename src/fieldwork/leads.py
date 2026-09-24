@@ -15,14 +15,24 @@ TRIVIAL_CONSTANT = "target is constant"
 TRIVIAL_UNIQUE = "determinant is unique here"
 TRIVIAL = {TRIVIAL_CONSTANT, TRIVIAL_UNIQUE}
 
+# A near-rule is a strong lead only when repeated groups, the only rows that can
+# disagree, cover a real share of the data and mostly agree with the rule.
+MIN_REPEAT_COVERAGE = 0.25
+MIN_REPEAT_ACCURACY = 0.9
+
 
 def lead(record: dict[str, Any], constant_columns: set[str]) -> tuple[float, str]:
     """Return a (score, reason) pair for one finding; higher scores rank first."""
     pattern, m = record["pattern"], record["measurements"]
     if pattern == "approximate_dependency":
-        if m.get("repeated_rows"):
+        if not m.get("repeated_rows"):
+            return 0.2, "near-rule supported only by singleton groups"
+        if (
+            m["repeat_coverage"] >= MIN_REPEAT_COVERAGE
+            and m["repeat_modal_accuracy"] >= MIN_REPEAT_ACCURACY
+        ):
             return 0.9, "near-rule with exceptions"
-        return 0.2, "near-rule supported only by singleton groups"
+        return 0.3, "near-rule with sparse repeated support"
     if pattern == "mutually_exclusive":
         return 0.85, "columns never populated together"
     if pattern == "availability":

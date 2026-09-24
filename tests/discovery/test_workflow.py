@@ -578,6 +578,41 @@ def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
     assert overview.inspect(df, "f0", exceptions=True, all_matches=True).index.tolist() == [2]
 
 
+def test_overview_demotes_near_rules_with_sparse_repeated_support():
+    # 98 singleton groups make modal accuracy 0.99, but the one repeated group
+    # covers 2% of rows and disagrees with itself (#27).
+    df = pd.DataFrame(
+        {"X": list(range(98)) + [98, 98], "Y": [f"v{i}" for i in range(98)] + ["p", "q"]}
+    )
+    overview = fw.explore(df)
+    rule = next(f for f in overview.findings if f["pattern"] == "approximate_dependency")
+    assert rule["measurements"]["modal_accuracy"] == 0.99
+    assert rule["lead"] == {"score": 0.3, "reason": "near-rule with sparse repeated support"}
+    assert overview.findings[0]["lead"]["reason"] == "mixed string formats"
+
+
+@pytest.mark.parametrize(
+    ("coverage", "accuracy", "reason"),
+    [
+        (0.25, 0.9, "near-rule with exceptions"),
+        (0.2, 0.95, "near-rule with sparse repeated support"),
+        (1.0, 0.8, "near-rule with sparse repeated support"),
+    ],
+)
+def test_near_rule_lead_requires_covering_and_agreeing_repeated_groups(coverage, accuracy, reason):
+    from fieldwork.leads import lead
+
+    record = {
+        "pattern": "approximate_dependency",
+        "measurements": {
+            "repeated_rows": 10,
+            "repeat_coverage": coverage,
+            "repeat_modal_accuracy": accuracy,
+        },
+    }
+    assert lead(record, set())[1] == reason
+
+
 def test_similarity_with_an_always_present_feature_is_not_reported():
     df = pd.DataFrame({"complete": range(10), "nearly": [1] * 9 + [None]})
     result = fw.missingness(df, min_similarity=0.8)
