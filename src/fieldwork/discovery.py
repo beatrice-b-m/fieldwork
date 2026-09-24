@@ -354,10 +354,12 @@ def _exception_groups(search: _Search, key, eligible, grouped, sizes, distinct) 
 def _finding(search: _Search, record, eligible, good) -> None:
     key, target, context = record["determinant"], record["target"], record["context"]
     positions, limit = search.positions[eligible], search.example_limit
+    # Statements differ too, since plain-text topology shows only the statement.
+    verb = "determines" if record["exact"] else "approximately determines"
     finding(
         search.base,
         "exact_dependency" if record["exact"] else "approximate_dependency",
-        f"{', '.join(key)} determines {target}"
+        f"{', '.join(key)} {verb} {target}"
         + (" within " + context_statement(context) if context else ""),
         list(dict.fromkeys([*key, target, *(context or {})])),
         # The finding samples its own exceptions; the test keeps its groups once.

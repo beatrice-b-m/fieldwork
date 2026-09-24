@@ -112,6 +112,8 @@ controls.
 
 - A dependency test is exact when every determinant group has one target value,
   and approximate when the modal value covers at least `min_accuracy` of rows.
+  Approximate findings are stated as "X approximately determines Y", so every
+  output, including plain-text topology, keeps the distinction.
   With `dropna=True` (default) each test uses its own complete cases; with
   `False`, missing values are a category. Each test reports its populations,
   its target coverage and how consistent repeated determinant groups are, since

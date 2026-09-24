@@ -204,3 +204,19 @@ def test_saved_details_below_threshold_and_disclosure():
             # Missing Y participates as a category, so X no longer determines Y.
             assert (d["exact"], d["evaluated_rows"], d["repeat_modal_accuracy"]) == (False, 4, 0.5)
             assert not any(f["measurements"]["determinant"] == ["X"] for f in saved["findings"])
+
+
+def test_topology_text_distinguishes_exact_from_approximate_dependencies():
+    # The same determinant and target, once exact and once approximate: the
+    # plain-text topology shows only statements, so the statements must differ.
+    exact = pd.DataFrame({"k": [1] * 20 + [2, 2], "x": ["a"] * 20 + ["c", "c"]})
+    approximate = exact.assign(x=["a"] * 19 + ["b", "c", "c"])
+    texts = []
+    for df in (exact, approximate):
+        result = fw.discover_dependencies(df, max_key_size=1, min_accuracy=0.9)
+        patterns = {
+            f["pattern"] for f in result["findings"] if f["measurements"]["determinant"] == ["k"]
+        }
+        assert patterns == {"exact_dependency" if df is exact else "approximate_dependency"}
+        texts.append(fw.render_plaintext(result, detail="topology"))
+    assert texts[0] != texts[1]
