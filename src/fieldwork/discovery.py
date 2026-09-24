@@ -367,7 +367,12 @@ def _finding(search: _Search, record, eligible, good) -> None:
         bounded_rows(positions, good, limit),
         exceptions=bounded_rows(positions, ~good, limit),
         example_limit=limit,
-        structure={"context": context} if context is not None else {},
+        structure={
+            **({"context": context} if context is not None else {}),
+            "strength": "exact" if record["exact"] else "approximate",
+            # Without a repeated determinant group, exactness holds trivially.
+            "repeated_support": bool(record["repeated_groups"]),
+        },
         selector={
             "operation": "dependency",
             "determinant": list(key),

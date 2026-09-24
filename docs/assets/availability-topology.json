@@ -418,7 +418,7 @@
     },
     {
       "pattern": "presence_implication",
-      "statement": "image_1 populated implies image_2 populated",
+      "statement": "image_1 populated approximately implies image_2 populated",
       "features": [
         {
           "table": "table",
@@ -429,7 +429,9 @@
           "column": "image_2"
         }
       ],
-      "structure": {},
+      "structure": {
+        "strength": "approximate"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
@@ -450,7 +452,9 @@
           "column": "image_1"
         }
       ],
-      "structure": {},
+      "structure": {
+        "strength": "exact"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
@@ -471,7 +475,9 @@
           "column": "image_2"
         }
       ],
-      "structure": {},
+      "structure": {
+        "strength": "approximate"
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",

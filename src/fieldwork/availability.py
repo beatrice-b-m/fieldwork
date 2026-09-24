@@ -412,6 +412,8 @@ def _pair_findings(analysis, units, names, masks, metrics, min_similarity) -> No
             metrics,
             x & y,
             exceptions=x != y,
+            # Identical availability is a family, so similarity is never exact.
+            structure={"strength": "approximate"},
         )
     if metrics["both_present"] == 0 and x.any() and y.any():
         statement = f"{a} and {b} are mutually exclusive"
@@ -424,10 +426,12 @@ def _implication(analysis, units, names, masks, metrics, min_implication) -> Non
     rate = metrics["both_present"] / denominator if denominator else None
     if rate is None or rate < min_implication:
         return
+    strength = "exact" if rate == 1 else "approximate"
+    verb = "implies" if strength == "exact" else "approximately implies"
     analysis.emit(
         units,
         "presence_implication",
-        f"{source} populated implies {target} populated",
+        f"{source} populated {verb} {target} populated",
         [source, target],
         {
             **metrics,
@@ -438,6 +442,7 @@ def _implication(analysis, units, names, masks, metrics, min_implication) -> Non
         },
         first & second,
         exceptions=first & ~second,
+        structure={"strength": strength},
         selector={"operation": "presence_implication", "source": source, "target": target},
     )
 

@@ -251,6 +251,15 @@ score. This intentional presentation change does not reorder analytical candidat
 or findings. Ranking remains budget-sensitive and is not a completeness guarantee.
 Unique identifiers remain valid row-grain candidates.
 
+Each dependency finding's `structure` records its `strength` (`exact` or
+`approximate`, as its pattern does) and `repeated_support`: whether E has a
+repeated group. An exact finding without repeated support holds only because
+every determinant group is one row. Grain tests carry the same flag for their
+key groups, and each candidate or grain key has a structural role: `unique
+identifier` (no repeated group), `repeated grouping`, `constant` (one group) or
+`no evaluated support`. Topology exports keep these qualitative fields and drop
+the counts behind them.
+
 Full candidate summaries show both exact-target counts, determinant group counts,
 and global tests completed/possible. Standalone full dependency projections and
 renderings expose all completed per-target records within display limits, including

@@ -597,8 +597,8 @@ def _evidence_page(projection: Mapping[str, Any], max_findings: int) -> str:
     )
     if "feature_network" in projection:
         parts.append(_connections(projection, max_findings, full))
-    if full:
-        parts.append(_candidates_and_tests(projection, max_findings))
+    if full or "candidates" in projection:
+        parts.append(_candidates_and_tests(projection, max_findings, full))
     if kind == "schema_proposal":
         parts.append(_proposals(projection, max_findings))
     else:
@@ -701,17 +701,22 @@ def _connections(projection: Mapping[str, Any], max_findings: int, full: bool) -
     )
 
 
-def _candidates_and_tests(projection: Mapping[str, Any], max_findings: int) -> str:
+def _candidates_and_tests(projection: Mapping[str, Any], max_findings: int, full: bool) -> str:
     parts = []
     candidates = projection.get("candidates", projection.get("overview", {}).get("grains", []))
     if candidates:
         cards = [
             f"<details data-record><summary>{esc(grain_title(c))} "
             f'<span class="badge">{esc(c["role"])}</span></summary><div class="content">'
-            f"<p>{esc(candidate_explanation(c))}</p>{evidence_table(c)}</div></details>"
+            + (
+                f"<p>{esc(candidate_explanation(c))}</p>{evidence_table(c)}"
+                if full
+                else "<p>Structural role only; support counts were removed.</p>"
+            )
+            + "</div></details>"
             for c in candidates[:max_findings]
         ]
-        parts.append(collection("Candidate grains", cards, len(candidates), full=True))
+        parts.append(collection("Candidate grains", cards, len(candidates), full=full))
     if "dependencies" in projection:
         tests = projection["dependencies"]
         cards = [

@@ -15,7 +15,10 @@
           "column": "Y"
         }
       ],
-      "structure": {},
+      "structure": {
+        "strength": "exact",
+        "repeated_support": false
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",
@@ -79,7 +82,10 @@
           "column": "X"
         }
       ],
-      "structure": {},
+      "structure": {
+        "strength": "exact",
+        "repeated_support": false
+      },
       "counting_unit": "rows",
       "analysis_unit": {
         "counting_unit": "rows",

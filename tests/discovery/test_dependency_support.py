@@ -220,3 +220,36 @@ def test_topology_text_distinguishes_exact_from_approximate_dependencies():
         assert patterns == {"exact_dependency" if df is exact else "approximate_dependency"}
         texts.append(fw.render_plaintext(result, detail="topology"))
     assert texts[0] != texts[1]
+
+
+def test_topology_flags_trivial_exactness_and_candidate_roles():
+    df = pd.DataFrame({"id": [1, 2, 3, 4], "g": [1, 1, 2, 2], "x": ["a", "b", "c", "c"]})
+    grain = fw.visualization_data(fw.grain(df, ["id", "g"]), detail="topology")
+    tests = {(t["key"], t["target"]): t for t in grain["dependencies"]}
+    # id determines x only because every id is a single row; g has repeated support.
+    assert (tests[("id", "x")]["state"], tests[("id", "x")]["repeated_support"]) == (
+        "holds",
+        False,
+    )
+    assert tests[("g", "id")]["state"] == "fails"
+    assert tests[("g", "id")]["repeated_support"] is True
+    roles = {tuple(n["key_names"]): n["role"] for n in grain["nodes"]}
+    assert roles == {("id",): "unique identifier", ("g",): "repeated grouping"}
+    assert {(e["key"], e["feature_label"], e["repeated_support"]) for e in grain["evidence"]} >= {
+        ("id", "x", False)
+    }
+
+    result = fw.discover_dependencies(df.assign(k=[5] * 4), max_key_size=1)
+    topology = fw.visualization_data(result, detail="topology")
+    assert topology["candidates"] == [
+        {"columns": ["id"], "role": "unique identifier"},
+        {"columns": ["g"], "role": "repeated grouping"},
+        {"columns": ["x"], "role": "repeated grouping"},
+        {"columns": ["k"], "role": "constant"},
+    ]
+    support = {
+        (tuple(f["measurements"]["determinant"]), f["measurements"]["target"]): f["structure"]
+        for f in result["findings"]
+    }
+    assert support[(("id",), "x")] == {"strength": "exact", "repeated_support": False}
+    assert support[(("x",), "g")] == {"strength": "exact", "repeated_support": True}

@@ -100,7 +100,11 @@ controls.
   counted. `analysis_unit` records the unit, aggregation, denominator and
   exclusions, and every availability measurement uses that unit.
 - "A implies B" is measured over units where A is populated; similar presence
-  (Jaccard) over units where A or B is. Signatures count units and report
+  (Jaccard) over units where A or B is. Each finding records its
+  `structure["strength"]`: an implication is `exact` when B is populated on
+  every unit where A is, and `approximate` otherwise (stated as "approximately
+  implies"). Similar presence is always approximate, since identical
+  availability is reported as a family. Signatures count units and report
   omitted units with their source rows. Vacuous evidence (always-present
   targets, identical columns) is not reported as a finding.
 - Context analyses aggregate within each joint context value; a missing context
@@ -124,8 +128,13 @@ controls.
   ([definitions](algorithms.md#dependency-target-coverage-and-repeated-support)).
 - `dependencies` keeps every completed test, including those below the finding
   threshold. Candidate counters describe work done, not completeness.
-- Topology exports keep candidates' structural roles in canonical order, without
-  measurements.
+- Dependency findings record their `strength` and whether a repeated
+  determinant group supports them (`repeated_support`); exactness without one
+  is trivial ([definitions](algorithms.md#dependency-target-coverage-and-repeated-support)).
+  Grain tests record `repeated_support` too.
+- Topology exports keep candidates' and grain keys' structural roles and these
+  qualitative flags, without measurements. Standalone dependency exports list
+  candidates in search order; overviews order them canonically.
 
 ## Reusing settings on a new delivery
 

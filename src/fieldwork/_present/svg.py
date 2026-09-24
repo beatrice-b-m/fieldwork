@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from .common import esc, wrap
-from .project import candidate_explanation, dependency_label, grain_title
+from .project import candidate_explanation, dependency_label, grain_title, support_note
 from .text import comparison_labels, skipped_label, unit_label
 
 COLORS = {
@@ -96,6 +96,7 @@ def _node_lines(node, projection, features, exceptions, collapsed) -> list[tuple
     lines: list[tuple[str, Any, bool]] = [(title, None, True) for title in node["titles"]]
     if len(node["titles"]) > 1:
         lines.append(("Observationally equivalent keys", None, False))
+    lines.append((node["role"].capitalize(), None, False))
     support = node.get("support")
     if support:
         lines.append(
@@ -464,6 +465,12 @@ def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[d
     rows = list(projection["findings"][:max_findings])
     displayed = [("findings", len(projection["findings"]), max_findings)]
     full = projection["detail"] == "full"
+    if not full and projection["kind"] == "dependencies":
+        candidates = projection["candidates"]
+        shown = min(5, max_findings)
+        cards = [{"statement": grain_title(c) + ": " + c["role"]} for c in candidates[:shown]]
+        displayed.append(("candidate grains", len(candidates), shown))
+        rows = cards + rows
     if full and projection["kind"] in {"overview", "dependencies"}:
         candidates = projection.get("candidates", projection.get("overview", {}).get("grains", []))
         shown = min(5, max_findings)
@@ -489,6 +496,9 @@ def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[d
 def _card(svg: SVG, row, y, full) -> int:
     lines = wrap(row["statement"], 90)
     metrics = unit_label(row["analysis_unit"]) if "analysis_unit" in row else ""
+    note = support_note(row) if "structure" in row else None
+    if note:
+        metrics += "; " + note
     measurements = row.get("measurements", {})
     if full and measurements:
         metrics = f"{row['counting_unit']} · " + " · ".join(
