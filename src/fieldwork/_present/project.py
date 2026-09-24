@@ -258,6 +258,7 @@ def _grain(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
             "feature": feature_ids[test["target"]],
             "key": test["key"],
             "state": _STATE[test["holds"]],
+            "repeated_support": bool(test["repeated_groups"]),
             "compatible": test["compatible"],
             "scope": context.population(test),
         }
@@ -303,6 +304,9 @@ def _grain_node(node, names, feature_ids, context) -> dict[str, Any]:
     projected: dict[str, Any] = {
         "id": node["id"],
         "titles": titles,
+        "role": support_role(
+            node["evaluated_rows"], node["evaluated_groups"], node["repeated_groups"]
+        ),
         "attributes": [feature_ids[a] for a in node["attributes"]],
         "key_names": list(node["keys"]),
     }
@@ -321,6 +325,8 @@ def _grain_test(record: Mapping[str, Any], context: Context) -> dict[str, Any]:
         "columns": [label(c, column=True) for c in record["key_columns"]],
         "target": label(record["target"], column=True),
         "state": state,
+        # Exactness without a repeated key group holds trivially.
+        "repeated_support": bool(record["repeated_groups"]),
         "reason": (record.get("undefined_reason") or "").replace("_", " ") or None,
         "scope": context.population(record),
         "excluded": bool(record["missing_excluded_rows"]),
@@ -432,10 +438,15 @@ def _joint_counts(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
     a = [context.value(v) for v in data["a"]]
     b = [context.value(v) for v in data["b"]]
     predicates = [context.predicate(p["column"], p["value"]) for p in data.get("context", [])]
-    caption = "Observed joint cells; blank cells are unobserved in this scope."
+    omitted = data.get("omitted_cells", 0)
+    caption = (
+        "Observed joint cells; blank cells are unobserved or below min_count in this scope."
+        if omitted
+        else "Observed joint cells; blank cells are unobserved in this scope."
+    )
     if predicates:
         caption += " Context: " + ", ".join(predicates)
-    return {
+    output = {
         "status": data["status"],
         "scope": context.population(data),
         "columns": [label(c, column=True) for c in data["columns"]],
@@ -452,8 +463,12 @@ def _joint_counts(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
             }
             for c in data["cells"]
         ],
+        "omitted": bool(omitted),
         "caption": caption,
     }
+    if context.full:
+        output["omitted_counts"] = {"cells": omitted, "rows": data.get("omitted_rows", 0)}
+    return output
 
 
 def _schema_proposal(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
@@ -519,7 +534,19 @@ _PROJECTORS: dict[str, Callable[[Mapping[str, Any], Context], dict[str, Any]]] =
 def structural_evidence(structure: Mapping[str, Any]) -> dict[str, Any]:
     return {
         k: structure[k]
-        for k in ("context", "present", "absent", "entity_keys", "presence_pattern", "relation")
+        for k in (
+            "context",
+            "presence",
+            "present",
+            "absent",
+            "entity_keys",
+            "presence_pattern",
+            "relation",
+            "strength",
+            "repeated_support",
+            "formats",
+            "formats_omitted",
+        )
         if k in structure
     }
 
@@ -533,14 +560,19 @@ def qualitative_unit(unit: Mapping[str, Any]) -> dict[str, Any]:
 _ROLES = {"repeated grouping": 0, "unique identifier": 1, "constant": 2, "no evaluated support": 3}
 
 
-def candidate_role(candidate: Mapping[str, Any]) -> str:
-    if not candidate["evaluated_rows"] or not candidate["groups"]:
+def support_role(evaluated_rows: int, groups: int, repeated_groups: int) -> str:
+    """A grouping's structural role from its support; the counts stay private."""
+    if not evaluated_rows or not groups:
         return "no evaluated support"
-    if candidate["groups"] == 1:
+    if groups == 1:
         return "constant"
-    if candidate["unique"]:
-        return "unique identifier"
-    return "repeated grouping"
+    return "repeated grouping" if repeated_groups else "unique identifier"
+
+
+def candidate_role(candidate: Mapping[str, Any]) -> str:
+    return support_role(
+        candidate["evaluated_rows"], candidate["groups"], candidate["repeated_groups"]
+    )
 
 
 def candidate_priority(candidate: Mapping[str, Any]) -> tuple:
@@ -645,6 +677,20 @@ def dependency_explanation(row: Mapping[str, Any], dropna: bool | None) -> str:
     return text
 
 
+TRIVIAL_EXACTNESS = "without repeated support (every determinant group is one row)"
+
+
+def structure_notes(row: Mapping[str, Any]) -> list[str]:
+    """Qualitative structure that a finding's statement omits, readable without counts."""
+    structure, notes = row.get("structure", {}), []
+    if structure.get("repeated_support") is False:
+        notes.append("Holds " + TRIVIAL_EXACTNESS)
+    if "formats" in structure:
+        formats = ", ".join(structure["formats"]) or "none reported"
+        notes.append("Formats: " + formats + (", ..." if structure["formats_omitted"] else ""))
+    return notes
+
+
 def dependency_label(row: Mapping[str, Any]) -> str:
     text = ", ".join(row["determinant"]) + " → " + row["target"]
     if row.get("context"):
@@ -688,6 +734,11 @@ def _findings_kind(data: Mapping[str, Any], context: Context) -> dict[str, Any]:
         output["dependencies"] = [
             {**d, "explanation": dependency_explanation(d, dropna)}
             for d in data.get("dependencies", [])
+        ]
+    elif data["kind"] == "dependencies":
+        # Roles, in search order, tell a unique row ID from a repeated grouping.
+        output["candidates"] = [
+            {"columns": c["columns"], "role": candidate_role(c)} for c in data.get("candidates", [])
         ]
     if data["kind"] == "overview":
         output.update(_overview(data, context))

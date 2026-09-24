@@ -54,6 +54,10 @@ class Runtime(TypedDict, total=False):
     timeout: float | None
     """Finite nonnegative seconds from call start; expiry raises AnalysisCancelled at
     the next checkpoint, after the current pandas/NumPy work item. Default None."""
+    safe_errors: bool | None
+    """True raises any other failure as AnalysisError, whose message names the
+    operation, phase and column but never echoes the original message, which can
+    quote cell values. Default None (False) raises failures unchanged."""
 
 
 class CensusOptions(TypedDict, total=False):
@@ -258,6 +262,8 @@ class PatternOptions(TypedDict, total=False):
     """Joint context columns for observed value mappings; default None."""
     limits: PatternLimits
     """Work and output budgets; see PatternLimits (overview: 20 pair tests)."""
+    min_count: int
+    """Minimum rows for a reported format, length or prefix; default 1."""
 
 
 class SectionOptions(TypedDict, total=False):

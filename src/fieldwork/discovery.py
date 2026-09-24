@@ -88,7 +88,7 @@ def discover_dependencies(
     missing, scope, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -354,10 +354,12 @@ def _exception_groups(search: _Search, key, eligible, grouped, sizes, distinct) 
 def _finding(search: _Search, record, eligible, good) -> None:
     key, target, context = record["determinant"], record["target"], record["context"]
     positions, limit = search.positions[eligible], search.example_limit
+    # Statements differ too, since plain-text topology shows only the statement.
+    verb = "determines" if record["exact"] else "approximately determines"
     finding(
         search.base,
         "exact_dependency" if record["exact"] else "approximate_dependency",
-        f"{', '.join(key)} determines {target}"
+        f"{', '.join(key)} {verb} {target}"
         + (" within " + context_statement(context) if context else ""),
         list(dict.fromkeys([*key, target, *(context or {})])),
         # The finding samples its own exceptions; the test keeps its groups once.
@@ -365,7 +367,12 @@ def _finding(search: _Search, record, eligible, good) -> None:
         bounded_rows(positions, good, limit),
         exceptions=bounded_rows(positions, ~good, limit),
         example_limit=limit,
-        structure={"context": context} if context is not None else {},
+        structure={
+            **({"context": context} if context is not None else {}),
+            "strength": "exact" if record["exact"] else "approximate",
+            # Without a repeated determinant group, exactness holds trivially.
+            "repeated_support": bool(record["repeated_groups"]),
+        },
         selector={
             "operation": "dependency",
             "determinant": list(key),

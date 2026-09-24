@@ -90,7 +90,7 @@ class Path:
         schema : dict or None, optional
             Advisory roles by column; default None.
         **runtime : Unpack[Runtime]
-            Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+            Optional runtime controls; see fieldwork.typing.Runtime.
 
         Returns
         -------
@@ -178,7 +178,7 @@ def suggest_paths(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------

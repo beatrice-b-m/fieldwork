@@ -455,6 +455,71 @@ def test_availability_omits_vacuous_findings_but_keeps_measurements():
     assert [f["features"] for f in result["families"]] == [["left", "twin"]]
 
 
+def test_context_and_entity_availability_keep_their_state_in_topology():
+    df = pd.DataFrame(
+        {
+            "acc": [1, 1, 2, 2, 3, 4, 5],
+            "b": [1, None, 2, None, None, None, 3],
+            "ctx": ["M", "M", "U", "U", "M", "U", "V"],
+        }
+    )
+    result = fw.missingness(df, features=["b"], by=["ctx"], entity="acc")
+    topology = fw.visualization_data(result, detail="topology")["findings"]
+    contexts = {
+        f["structure"]["context"]["ctx"]: f["structure"]["presence"]
+        for f in topology
+        if f["pattern"] == "context_availability"
+    }
+    assert contexts == {"M": "some", "U": "some", "V": "all"}
+    empty = fw.missingness(df.assign(b=None), features=["b"], by=["ctx"])
+    assert {
+        f["structure"]["presence"]
+        for f in empty["findings"]
+        if f["pattern"] == "context_availability"
+    } == {"none"}
+    # Entities 1 and 2 have one of two rows, 3 and 4 none, 5 its only row: no
+    # entity other than 5 has all rows populated, and every pattern matches one.
+    summary = result["entities"][0]
+    assert {k: summary[k] for k in ("any", "all", "one", "some", "none")} == {
+        "any": 3,
+        "all": 1,
+        "one": 3,
+        "some": 2,
+        "none": 2,
+    }
+    unmatched = fw.missingness(df.iloc[:6], features=["b"], entity="acc")
+    assert unmatched["entities"][0]["all"] == 0
+    for analysis in (result, unmatched):
+        counts = analysis["entities"][0]
+        patterns = {
+            f["structure"]["presence_pattern"]
+            for f in fw.visualization_data(analysis, detail="topology")["findings"]
+            if f["pattern"] == "entity_availability"
+        }
+        assert patterns == {p for p in ("any", "all", "one", "some", "none") if counts[p]}
+
+
+def test_topology_distinguishes_exact_from_approximate_availability_relations():
+    df = pd.DataFrame({"a": [1] * 10 + [None], "c": [1] * 9 + [None, None]})
+    topology = fw.visualization_data(fw.missingness(df), detail="topology")["findings"]
+    strengths = {
+        (f["pattern"], tuple(c["column"] for c in f["features"])): f["structure"]["strength"]
+        for f in topology
+        if f["pattern"] in {"presence_implication", "similar_availability"}
+    }
+    # c implies a on every unit; a implies c on 9 of 10.
+    assert strengths == {
+        ("presence_implication", ("a", "c")): "approximate",
+        ("presence_implication", ("c", "a")): "exact",
+        ("similar_availability", ("a", "c")): "approximate",
+    }
+    # Plain-text topology shows statements only, so they carry the strength too:
+    # "a implies c" reads differently once it holds exactly.
+    exact = pd.DataFrame({"a": [1] * 9 + [None, None], "c": [1] * 10 + [None]})
+    texts = [fw.render_plaintext(fw.missingness(frame), detail="topology") for frame in (df, exact)]
+    assert texts[0] != texts[1]
+
+
 def test_overview_ranks_leads_and_keeps_trivial_rules_out_of_network():
     rows = 40
     df = pd.DataFrame(

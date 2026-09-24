@@ -6,7 +6,14 @@ from collections.abc import Callable, Iterator, Mapping
 from typing import Any
 
 from .common import quantity
-from .project import candidate_explanation, dependency_label, grain_title, signature_label
+from .project import (
+    TRIVIAL_EXACTNESS,
+    candidate_explanation,
+    dependency_label,
+    grain_title,
+    signature_label,
+    structure_notes,
+)
 
 Lines = Iterator[str]
 
@@ -112,16 +119,24 @@ def _census(projection, full, max_nodes) -> Lines:
 
 
 def _grain(projection, full, max_nodes) -> Lines:
+    yield "  Candidate keys"
+    for node in projection["nodes"]:
+        yield f"    {' / '.join(node['titles'])}: {node['role']}"
     yield "  Observed dependencies among tested keys."
     for test in projection["dependencies"]:
         yield f"  {test['key']} [{', '.join(test['columns'])}] -> {test['target']}"
+        trivial = (
+            " " + TRIVIAL_EXACTNESS
+            if test["state"] == "holds" and not test["repeated_support"]
+            else ""
+        )
         if test["state"] == "undefined":
             yield f"    observed dependency undefined ({test['reason']})"
         elif not full:
-            yield f"    observed dependency {test['state']}"
+            yield f"    observed dependency {test['state']}{trivial}"
         else:
             yield (
-                f"    observed dependency {test['state']}; "
+                f"    observed dependency {test['state']}{trivial}; "
                 f"{test['violating_groups']}/{test['evaluated_groups']} violating groups; "
                 f"{test['affected_rows']} affected rows"
             )
@@ -223,6 +238,14 @@ def _joint_counts(projection, full, max_nodes) -> Lines:
     for cell in projection["cells"]:
         text = f"    {a}={cell['a_label']}, {b}={cell['b_label']}"
         yield text + (f": {quantity(cell['count'], 'row')}" if full else "")
+    if projection["omitted"]:
+        counts = projection.get("omitted_counts")
+        yield (
+            f"    ... {quantity(counts['rows'], 'row')} in {quantity(counts['cells'], 'cell')} "
+            "below min_count omitted"
+            if full
+            else "    ... cells below min_count omitted"
+        )
 
 
 def _schema_proposal(projection, full, max_nodes) -> Lines:
@@ -345,7 +368,7 @@ def _findings(projection, full, max_nodes) -> Lines:
         yield "Analysis: " + unit_label(projection["analysis_unit"])
     if kind == "overview":
         yield from _overview(projection, full, max_nodes)
-    yield from _candidates_and_tests(projection, max_nodes)
+    yield from _candidates_and_tests(projection, full, max_nodes)
     if kind != "overview":
         yield from _finding_cards(projection, full, max_nodes)
 
@@ -405,12 +428,13 @@ def _overview(projection, full, max_nodes) -> Lines:
     yield "Summary lists are limited; individual sections retain complete evidence and coverage."
 
 
-def _candidates_and_tests(projection, max_nodes) -> Lines:
+def _candidates_and_tests(projection, full, max_nodes) -> Lines:
     if "candidates" in projection:
         yield "Candidate grains"
         for candidate in projection["candidates"][:max_nodes]:
             yield "  " + ", ".join(candidate["columns"]) + ": " + candidate["role"]
-            yield from ("  " + part for part in candidate_explanation(candidate).split("; "))
+            if full:
+                yield from ("  " + part for part in candidate_explanation(candidate).split("; "))
         if len(projection["candidates"]) > max_nodes:
             yield "... more candidate grains not rendered (max_nodes)"
     if "dependencies" in projection:
@@ -426,6 +450,7 @@ def _finding_cards(projection, full, max_nodes) -> Lines:
     for row in projection["findings"][:max_nodes]:
         yield (f"[{row['id']}] " if full else "") + row["statement"]
         yield "  Analysis: " + unit_label(row["analysis_unit"])
+        yield from ("  " + note for note in structure_notes(row))
         if not full:
             continue
         if "explanation" in row:

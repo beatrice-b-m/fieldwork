@@ -100,18 +100,27 @@ controls.
   counted. `analysis_unit` records the unit, aggregation, denominator and
   exclusions, and every availability measurement uses that unit.
 - "A implies B" is measured over units where A is populated; similar presence
-  (Jaccard) over units where A or B is. Signatures count units and report
+  (Jaccard) over units where A or B is. Each finding records its
+  `structure["strength"]`: an implication is `exact` when B is populated on
+  every unit where A is, and `approximate` otherwise (stated as "approximately
+  implies"). Similar presence is always approximate, since identical
+  availability is reported as a family. Signatures count units and report
   omitted units with their source rows. Vacuous evidence (always-present
   targets, identical columns) is not reported as a finding.
 - Context analyses aggregate within each joint context value; a missing context
-  value is its own category. Entity summaries classify each entity as
-  any/all/one/some/none of its rows populated; for a single-row entity, `all`
-  and `one` overlap.
+  value is its own category. Each context availability finding states whether
+  all, some or none of the context's units are populated
+  (`structure["presence"]`), so topology exports keep that state. Entity
+  summaries classify each entity as any/all/one/some/none of its rows populated;
+  for a single-row entity, `all` and `one` overlap. The summary counts every
+  pattern; a pattern that matches no entity is not a finding.
 
 ## Dependencies
 
 - A dependency test is exact when every determinant group has one target value,
   and approximate when the modal value covers at least `min_accuracy` of rows.
+  Approximate findings are stated as "X approximately determines Y", so every
+  output, including plain-text topology, keeps the distinction.
   With `dropna=True` (default) each test uses its own complete cases; with
   `False`, missing values are a category. Each test reports its populations,
   its target coverage and how consistent repeated determinant groups are, since
@@ -119,8 +128,13 @@ controls.
   ([definitions](algorithms.md#dependency-target-coverage-and-repeated-support)).
 - `dependencies` keeps every completed test, including those below the finding
   threshold. Candidate counters describe work done, not completeness.
-- Topology exports keep candidates' structural roles in canonical order, without
-  measurements.
+- Dependency findings record their `strength` and whether a repeated
+  determinant group supports them (`repeated_support`); exactness without one
+  is trivial ([definitions](algorithms.md#dependency-target-coverage-and-repeated-support)).
+  Grain tests record `repeated_support` too.
+- Topology exports keep candidates' and grain keys' structural roles and these
+  qualitative flags, without measurements. Standalone dependency exports list
+  candidates in search order; overviews order them canonically.
 
 ## Reusing settings on a new delivery
 
@@ -144,3 +158,14 @@ controls.
   identifiers and scope counts. It is a disclosure filter, not anonymization:
   names and value labels can still identify people or sites.
 - Display truncation is reported separately from search coverage.
+- For small-cell control, `levels`, `census`, `joint_counts` and
+  `value_patterns` accept `min_count`: rarer levels, branches, joint cells or
+  string formats are omitted, full output reports their mass and topology marks
+  the omission. `joint_counts` also drops
+  axis values that only omitted cells support; the evaluated population is
+  unchanged.
+- Fieldwork's own error messages name columns, arguments and value types, never
+  source cell values. Messages from pandas, NumPy or Python can still quote a
+  cell; when only shared output may leave your environment, pass
+  `safe_errors=True` so failures are raised as `AnalysisError` without the
+  original message ([runtime controls](performance.md#keep-source-values-out-of-error-messages)).

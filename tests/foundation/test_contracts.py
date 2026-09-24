@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from fieldwork import KeySpec, census, grain, levels, profile, visualization_data
+from fieldwork import KeySpec, census, grain, levels, pairs, profile, visualization_data
 from fieldwork._explore._kernels import exact_pair_ids
 
 
@@ -87,6 +87,12 @@ def test_dataframe_is_not_mutated() -> None:
     pd.testing.assert_frame_equal(frame, before)
 
 
-def test_unsupported_values_fail() -> None:
-    with pytest.raises(TypeError, match="Unsupported"):
-        levels(pd.DataFrame({"x": [{"mutable": "mapping"}]}))
+def test_unsupported_values_fail_without_echoing_source_values() -> None:
+    secret = "123-45-6789"
+    with pytest.raises(TypeError, match="Unsupported") as error:
+        levels(pd.DataFrame({"x": [{"id": secret}]}))
+    assert secret not in str(error.value)
+    frame = pd.DataFrame({"a": [secret, "x"], "b": [1, 2]})
+    with pytest.raises(ValueError, match="omits observed levels") as error:
+        pairs(frame, ["a", "b"], include_absence=True, reference_domains={"a": ["x"]})
+    assert secret not in str(error.value)

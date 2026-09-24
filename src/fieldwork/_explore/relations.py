@@ -103,9 +103,10 @@ def _declared_domain(
     declared = {_key(python_value(value)) for value in reference_domains[column]}
     missing = observed - declared
     if missing:
+        # Name the column and count, never the levels: messages must not echo source values.
         raise ValueError(
-            f"Declared reference domain for {column!r} omits observed levels: "
-            f"{[_json(key) for key in sorted(missing)]}"
+            f"Declared reference domain for {column!r} omits observed levels "
+            f"({len(missing)}); compare it with levels(df, [{column!r}])"
         )
     return sorted(declared), "caller_declared"
 
@@ -169,7 +170,7 @@ def pairs(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -355,6 +356,7 @@ def joint_counts(
     context: Mapping[str, Any] | None = None,
     dropna: bool = False,
     max_cells: int = 2500,
+    min_count: int = 1,
     scope: Scope | None = None,
     missing: Mapping[str, Iterable[Any]] | None = None,
     table_id: str = "table",
@@ -374,19 +376,24 @@ def joint_counts(
     dropna : bool, optional
         True excludes rows missing a pair or context column; default False.
     max_cells : int, optional
-        Positive budget for the supported-value grid (blank cells included);
+        Positive budget for the reported value grid (blank cells included);
         default 2500. Exceeding it raises ValueError rather than dropping mass.
+    min_count : int, optional
+        Nonnegative small-cell threshold; default 1 reports every observed cell.
+        Cells counting fewer rows are omitted, with their mass reported in
+        ``omitted_cells`` and ``omitted_rows``, and so are axis values that
+        only omitted cells support.
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
     Result
         Kind 'joint_counts': axis values ``a`` and ``b`` in value order, observed
-        ``cells`` indexing them, and the evaluated, missing-excluded and
-        context-excluded rows.
+        ``cells`` indexing them, the evaluated, missing-excluded and
+        context-excluded rows, and the cells and rows omitted by ``min_count``.
 
     Examples
     --------
@@ -404,6 +411,9 @@ def joint_counts(
     if max_cells is None:
         raise ValueError("max_cells must be a positive integer")
     validate_limit("max_cells", max_cells, zero=False)
+    if min_count is None:
+        raise ValueError("min_count must be a non-negative integer")
+    validate_limit("min_count", min_count)
     restriction = _context(df, context or {})
     if set(restriction) & set(selected):
         raise ValueError("context columns must be disjoint from the analyzed pair")
@@ -414,16 +424,19 @@ def joint_counts(
     mask = _complete([encoded[c] for c in selected], size) if dropna else np.ones(size, bool)
     rows, eligible = _context_rows(encoded, restriction, mask, dropna)
     (a_values, a_codes), (b_values, b_codes) = encoded[selected[0]], encoded[selected[1]]
-    a_supported = np.unique(a_codes[rows]).tolist()  # code order is value order
-    b_supported = np.unique(b_codes[rows]).tolist()
+    ids, code_pairs = exact_pair_ids(a_codes[rows], b_codes[rows])
+    sizes = np.bincount(ids, minlength=len(code_pairs))
+    small = sizes < min_count
+    code_pairs, sizes = [p for p, s in zip(code_pairs, small) if not s], sizes[~small]
+    # Axes keep values that a reported cell supports; code order is value order.
+    a_supported = sorted({a for a, _ in code_pairs})
+    b_supported = sorted({b for _, b in code_pairs})
     if len(a_supported) * len(b_supported) > max_cells:
         raise ValueError(
             "Selected pair exceeds max_cells; narrow the context or increase the budget"
         )
     a_index = {code: i for i, code in enumerate(a_supported)}
     b_index = {code: i for i, code in enumerate(b_supported)}
-    ids, code_pairs = exact_pair_ids(a_codes[rows], b_codes[rows])
-    sizes = np.bincount(ids, minlength=len(code_pairs))
     cells = sorted(
         (
             {"a": a_index[a], "b": b_index[b], "count": int(n)}
@@ -437,6 +450,7 @@ def joint_counts(
         "context": _as_mapping(restriction),
         "dropna": dropna,
         "max_cells": max_cells,
+        "min_count": min_count,
     }
     base.update(
         columns=selected,
@@ -447,5 +461,7 @@ def joint_counts(
         a=[json_value(a_values[c]) for c in a_supported],
         b=[json_value(b_values[c]) for c in b_supported],
         cells=cells,
+        omitted_cells=int(small.sum()),
+        omitted_rows=len(rows) - int(sizes.sum()),
     )
     return Result("joint_counts", base)

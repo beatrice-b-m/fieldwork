@@ -2,7 +2,9 @@
 
 import inspect
 import io
+import pickle
 import sys
+import traceback
 from types import SimpleNamespace
 
 import pandas as pd
@@ -79,9 +81,61 @@ def test_cleanup_and_original_error_on_interruption(control):
     assert fw.missingness(sample())["status"] == "computed"
 
 
+SECRET = "123-45-6789"
+
+
+def leaking_summary(*args, **kwargs):
+    raise ValueError(f"could not parse {SECRET!r}")
+
+
+@pytest.mark.parametrize("call", ["value_patterns", "explore"])
+def test_safe_errors_name_the_failure_without_echoing_source_values(monkeypatch, call):
+    monkeypatch.setattr("fieldwork.patterns._string_summary", leaking_summary)
+    frame = pd.DataFrame({"code": ["a", "b"]})
+    run = {"value_patterns": fw.value_patterns, "explore": fw.explore}[call]
+    with pytest.raises(ValueError, match=SECRET):
+        run(frame)
+    with pytest.raises(fw.AnalysisError) as caught:
+        run(frame, safe_errors=True)
+    error = caught.value
+    assert (error.operation, error.phase, error.column, error.error_type) == (
+        "value patterns" if call == "value_patterns" else "overview",
+        "value summaries",
+        "code",
+        "ValueError",
+    )
+    printed = "".join(traceback.format_exception(error))
+    assert SECRET not in str(error) and SECRET not in printed
+    # The original stays available for local debugging only.
+    assert SECRET in str(error.__context__)
+    restored = pickle.loads(pickle.dumps(error))
+    assert (str(restored), restored.column) == (str(error), error.column)
+    assert _runtime.current_session() is None
+
+
+def test_safe_errors_keep_cancellation_and_callback_errors():
+    token = fw.CancellationToken()
+    token.cancel()
+    with pytest.raises(fw.AnalysisCancelled):
+        fw.levels(sample(), cancel=token, safe_errors=True)
+
+    def callback(event):
+        raise LookupError("callback failed")
+
+    with pytest.raises(LookupError):
+        fw.levels(sample(), progress=callback, safe_errors=True)
+    with pytest.raises(fw.AnalysisError) as caught:
+        fw.levels(pd.DataFrame({"x": [{"id": SECRET}]}), safe_errors=True)
+    assert (caught.value.phase, caught.value.column) == ("encoding", "x")
+    with pytest.raises(ValueError, match="Runtime controls"):
+        fw.Recipe("levels", {"safe_errors": True})
+    assert "safe_errors" in inspect.signature(fw.levels).parameters
+
+
 @pytest.mark.parametrize(
     "options",
     [
+        {"safe_errors": "yes"},
         {"timeout": -1},
         {"timeout": True},
         {"timeout": float("nan")},

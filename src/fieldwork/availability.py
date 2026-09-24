@@ -165,7 +165,7 @@ def missingness(
     scope, missing, table_id
         Source context shared by every analysis.
     **runtime : Unpack[Runtime]
-        Optional progress, cancel and timeout controls; see fieldwork.typing.Runtime.
+        Optional runtime controls; see fieldwork.typing.Runtime.
 
     Returns
     -------
@@ -412,6 +412,8 @@ def _pair_findings(analysis, units, names, masks, metrics, min_similarity) -> No
             metrics,
             x & y,
             exceptions=x != y,
+            # Identical availability is a family, so similarity is never exact.
+            structure={"strength": "approximate"},
         )
     if metrics["both_present"] == 0 and x.any() and y.any():
         statement = f"{a} and {b} are mutually exclusive"
@@ -424,10 +426,12 @@ def _implication(analysis, units, names, masks, metrics, min_implication) -> Non
     rate = metrics["both_present"] / denominator if denominator else None
     if rate is None or rate < min_implication:
         return
+    strength = "exact" if rate == 1 else "approximate"
+    verb = "implies" if strength == "exact" else "approximately implies"
     analysis.emit(
         units,
         "presence_implication",
-        f"{source} populated implies {target} populated",
+        f"{source} populated {verb} {target} populated",
         [source, target],
         {
             **metrics,
@@ -438,6 +442,7 @@ def _implication(analysis, units, names, masks, metrics, min_implication) -> Non
         },
         first & second,
         exceptions=first & ~second,
+        structure={"strength": strength},
         selector={"operation": "presence_implication", "source": source, "target": target},
     )
 
@@ -458,15 +463,18 @@ def _contexts(analysis, max_contexts) -> int:
         for c in analysis.selected:
             metrics = {"feature": c, "populated": int(masks[c].sum()), "denominator": len(units)}
             record["availability"].append(metrics)
+            # A qualitative state keeps the finding meaningful without its counts.
+            presence = _presence(metrics["populated"], metrics["denominator"])
             found = analysis.emit(
                 units,
                 "context_availability",
-                f"{c}: availability within {context_statement(values)}",
+                f"{c}: populated in {_QUANTIFIERS[presence]} {analysis.unit} "
+                f"within {context_statement(values)}",
                 list(dict.fromkeys([*contexts, c])),
                 metrics,
                 masks[c],
                 exceptions=~masks[c],
-                structure={"context": values},
+                structure={"context": values, "presence": presence},
                 selector={"operation": "context_availability", "context": values, "feature": c},
             )
             record["finding_ids"].append(found["id"])
@@ -489,8 +497,21 @@ def _contexts(analysis, max_contexts) -> int:
     return count
 
 
+_QUANTIFIERS = {"all": "all", "some": "some", "none": "no"}
+
+
+def _presence(populated: int, denominator: int) -> str:
+    """Whether all, some or none of the units are populated."""
+    if not populated:
+        return "none"
+    return "all" if populated == denominator else "some"
+
+
 def _entities(analysis) -> list[dict[str, Any]]:
-    """How many entities have a feature on any, all, one, some or none of their rows."""
+    """How many entities have a feature on any, all, one, some or none of their rows.
+
+    The summary counts every pattern; only patterns that match an entity are findings.
+    """
     units = analysis.units(np.arange(len(analysis.frame)), True)
     keys, summaries = analysis.entities, []
     for c in analysis.selected:
@@ -507,6 +528,8 @@ def _entities(analysis) -> list[dict[str, Any]]:
         features = list(dict.fromkeys([*keys, c]))
         for pattern, matching in matches.items():
             summary[pattern] = int(matching.sum())
+            if not summary[pattern]:
+                continue
             analysis.emit(
                 units,
                 "entity_availability",

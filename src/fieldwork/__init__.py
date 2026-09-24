@@ -34,13 +34,20 @@ from .navigation import suggest_paths
 from .overview import explore
 from .patterns import value_patterns
 from .presentation import render_html, render_plaintext, render_svg, visualization_data
-from .progress import AnalysisCancelled, CancellationToken, ProgressDisplay, ProgressEvent
+from .progress import (
+    AnalysisCancelled,
+    AnalysisError,
+    CancellationToken,
+    ProgressDisplay,
+    ProgressEvent,
+)
 from .result import Result
 from .workflow import Recipe, compare
 
 __version__ = "0.3.1"
 __all__ = [
     "AnalysisCancelled",
+    "AnalysisError",
     "CancellationToken",
     "KeySpec",
     "ProgressDisplay",

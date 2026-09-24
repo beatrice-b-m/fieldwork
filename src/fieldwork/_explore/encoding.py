@@ -86,7 +86,8 @@ def python_value(value: Any) -> Any:
         return value
     if isinstance(value, (timedelta, np.timedelta64)):
         return pd.Timedelta(value)
-    raise TypeError(f"Unsupported value {value!r} of type {type(value).__name__}")
+    # The type, never the value: exception messages must not echo source cells.
+    raise TypeError(f"Unsupported value of type {type(value).__name__}")
 
 
 def value_key(value: Any) -> tuple[int, Any]:

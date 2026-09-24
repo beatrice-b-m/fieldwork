@@ -67,7 +67,7 @@ class Recipe:
     def __post_init__(self):
         if self.version != "1.0" or self.operation not in self.operations():
             raise ValueError("Unsupported recipe version or operation")
-        if {"progress", "cancel", "timeout"} & self.parameters.keys():
+        if {"progress", "cancel", "timeout", "safe_errors"} & self.parameters.keys():
             raise ValueError(
                 "Runtime controls belong in Recipe.run overrides, not saved parameters"
             )

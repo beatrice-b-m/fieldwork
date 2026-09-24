@@ -96,7 +96,11 @@ or an order-invariant joint-information score.
 ## Value patterns
 
 String formats replace digit runs with `9` and ASCII letter runs with `A`; report
-three-character prefixes and lengths. `max_patterns=10` bounds displayed counts.
+three-character prefixes and lengths. `max_patterns=10` bounds displayed counts;
+`min_count` omits formats, lengths and prefixes seen in fewer rows. A string
+pattern finding's `structure` lists the reported formats alphabetically, without
+counts, and whether others were omitted. Topology keeps that list and drops
+lengths and prefixes, since prefixes can reveal identifier fragments.
 Indexed-name families are explicitly name evidence, augmented by identical presence
 when observed. A column is numeric when every populated value is a non-boolean
 number, whatever its dtype, so an object column of numbers is summarized like its
@@ -250,6 +254,15 @@ a tie-breaker; global test coverage is disclosed rather than multiplied into a
 score. This intentional presentation change does not reorder analytical candidates
 or findings. Ranking remains budget-sensitive and is not a completeness guarantee.
 Unique identifiers remain valid row-grain candidates.
+
+Each dependency finding's `structure` records its `strength` (`exact` or
+`approximate`, as its pattern does) and `repeated_support`: whether E has a
+repeated group. An exact finding without repeated support holds only because
+every determinant group is one row. Grain tests carry the same flag for their
+key groups, and each candidate or grain key has a structural role: `unique
+identifier` (no repeated group), `repeated grouping`, `constant` (one group) or
+`no evaluated support`. Topology exports keep these qualitative fields and drop
+the counts behind them.
 
 Full candidate summaries show both exact-target counts, determinant group counts,
 and global tests completed/possible. Standalone full dependency projections and
