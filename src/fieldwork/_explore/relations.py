@@ -103,9 +103,10 @@ def _declared_domain(
     declared = {_key(python_value(value)) for value in reference_domains[column]}
     missing = observed - declared
     if missing:
+        # Name the column and count, never the levels: messages must not echo source values.
         raise ValueError(
-            f"Declared reference domain for {column!r} omits observed levels: "
-            f"{[_json(key) for key in sorted(missing)]}"
+            f"Declared reference domain for {column!r} omits observed levels "
+            f"({len(missing)}); compare it with levels(df, [{column!r}])"
         )
     return sorted(declared), "caller_declared"
 

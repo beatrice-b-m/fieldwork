@@ -146,3 +146,5 @@ controls.
   identifiers and scope counts. It is a disclosure filter, not anonymization:
   names and value labels can still identify people or sites.
 - Display truncation is reported separately from search coverage.
+- Fieldwork's own error messages name columns, arguments and value types, never
+  source cell values.
