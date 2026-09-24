@@ -608,7 +608,7 @@ def _evidence_page(projection: Mapping[str, Any], max_findings: int) -> str:
 
 def _context(projection: Mapping[str, Any], full: bool) -> str:
     parts = []
-    if projection["kind"] == "comparison":
+    if projection["kind"] in {"comparison", "relation"}:
         parts += ["<p>" + esc(text) + "</p>" for text in comparison_labels(projection)]
     else:
         if full and "scope" in projection:
@@ -789,7 +789,7 @@ def _finding_card(row: Mapping[str, Any], kind: str, full: bool) -> str:
         if "explanation" in row:
             card.append("<p>" + esc(row["explanation"]) + "</p>")
         card.append(evidence_table(row["measurements"]))
-        card.append(_comparison_note() if kind == "comparison" else _source_rows(row))
+        card.append(_comparison_note() if kind == "comparison" else _source_rows(row, kind))
     if row.get("structure"):
         card.append(evidence_table(row["structure"]))
     return "".join(card) + "</div></details>"
@@ -804,19 +804,31 @@ def _comparison_note() -> str:
     )
 
 
-def _source_rows(row: Mapping[str, Any]) -> str:
+def _source_rows(row: Mapping[str, Any], kind: str) -> str:
+    samples = [(key, row[key]) for key in ("examples", "exceptions")]
+    call = f"result.inspect(df, {row['id']!r})"
+    if kind == "relation":
+        other = row.get("other_side")
+        samples = [(f"{key} ({row['side']})", row[key]) for key in ("examples", "exceptions")]
+        if other:
+            samples += [
+                (f"{key} ({other['side']})", other[key]) for key in ("examples", "exceptions")
+            ]
+        # A self-reference reads one table, so it takes no right frame.
+        call = f"result.inspect(left, {row['id']!r}, side={row['side']!r}, right=right)"
     return (
         "<h3>Representative source rows</h3>"
         "<p>Positions are zero-based offsets in the original ordered source, "
         "not dataframe index labels. Saved samples are the first matches in source "
         "order; their size is not the total support.</p>"
         + "".join(
-            "<p>" + esc(sample_label(key.title(), row[key])) + "</p>"
-            for key in ("examples", "exceptions")
+            "<p>" + esc(sample_label(key[:1].upper() + key[1:], sample)) + "</p>"
+            for key, sample in samples
         )
         + "<p>In Python, with this result named <code>result</code> and its identical "
-        "ordered source named <code>df</code>:</p><p><code>"
-        + esc(f"result.inspect(df, {row['id']!r})")
+        "ordered source named <code>df</code> (for a relation, sources <code>left</code> "
+        "and <code>right</code>; omit <code>right</code> for a self-reference):</p><p><code>"
+        + esc(call)
         + "</code></p><p>Use <code>all_matches=True</code> to retrieve all "
         "matching rows and <code>exceptions=True</code> for exception rows. "
         "These operations require the original source and a Python session.</p>"

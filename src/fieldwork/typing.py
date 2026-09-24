@@ -18,6 +18,7 @@ __all__ = [
     "CensusOptions",
     "DependencyLimits",
     "DependencyOptions",
+    "MatchMode",
     "MissingnessLimits",
     "MissingnessOptions",
     "PairLimits",
@@ -26,16 +27,22 @@ __all__ = [
     "PathOptions",
     "PatternLimits",
     "PatternOptions",
+    "RelateLimits",
     "Runtime",
     "SchemaRole",
     "Section",
     "SectionOptions",
+    "Side",
 ]
 
 SchemaRole: TypeAlias = Literal["id", "categorical", "continuous", "unknown"]
 """Advisory column role; supplying a role never converts source values."""
 Section: TypeAlias = Literal["missingness", "dependencies", "paths", "value_patterns"]
 """An independently selectable automatic overview section."""
+MatchMode: TypeAlias = Literal["typed", "text"]
+"""How ``relate`` matches values across tables; see docs/algorithms.md."""
+Side: TypeAlias = Literal["left", "right"]
+"""A table of a relation result, for its row inspection and selection."""
 
 
 class Runtime(TypedDict, total=False):
@@ -148,6 +155,13 @@ class PatternLimits(TypedDict, total=False):
     """Nonnegative saved formats, lengths and prefixes per string column; default 10."""
     example_limit: int
     """Nonnegative representative source-row limit per finding side; default 5."""
+
+
+class RelateLimits(TypedDict, total=False):
+    """Output budget of ``relate``."""
+
+    example_limit: int
+    """Nonnegative representative source-row limit per finding and side; default 5."""
 
 
 class PairLimits(TypedDict, total=False):

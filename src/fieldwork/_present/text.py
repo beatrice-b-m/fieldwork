@@ -293,6 +293,9 @@ def unit_label(unit: Mapping[str, Any]) -> str:
 
 
 def comparison_labels(projection: Mapping[str, Any]) -> list[str]:
+    """Each source of a two-source result (comparison or relation), and its warnings."""
+    if projection["kind"] == "relation":
+        return relation_labels(projection)
     labels = []
     for side in ("before", "after"):
         scope = projection.get(f"{side}_scope")
@@ -306,6 +309,36 @@ def comparison_labels(projection: Mapping[str, Any]) -> list[str]:
         if unit:
             labels.append(f"  {side.title()} analysis: " + unit_label(unit))
     return labels
+
+
+def relation_labels(projection: Mapping[str, Any]) -> list[str]:
+    labels = []
+    for name, side in projection["sides"].items():
+        text = f"{name.title()}: {side['table']}; key " + ", ".join(side["key"])
+        if side["compare"]:
+            text += "; compared " + ", ".join(side["compare"])
+        text += f"; scope {side['scope']['name']}"
+        if "rows" in side:
+            rows = side["rows"]
+            text += (
+                f"; {rows['evaluated']} evaluated rows, {rows['incomplete_key']} with an "
+                f"incomplete key, {side['keys']['distinct']} distinct keys"
+            )
+        labels.append(text)
+    if projection["self_reference"]:
+        labels.append("Self-reference: both sides read the same table")
+    labels += [warning_label(warning) for warning in projection["warnings"]]
+    return labels
+
+
+def warning_label(warning: Mapping[str, Any]) -> str:
+    kinds = {*warning["left_kinds"], *warning["right_kinds"]}
+    hint = "; match='text' compares integers as text" if kinds == {"number", "string"} else ""
+    return (
+        f"Warning: {warning['code']}: {warning['role']} {warning['column']} / "
+        f"{warning['right_column']} hold different value kinds "
+        f"({', '.join(warning['left_kinds'])} / {', '.join(warning['right_kinds'])}){hint}"
+    )
 
 
 _COVERAGE = (
@@ -353,7 +386,7 @@ def sample_label(name: str, sample: Mapping[str, Any]) -> str:
 
 def _findings(projection, full, max_nodes) -> Lines:
     kind = projection["kind"]
-    if full and kind != "comparison":
+    if full and kind not in {"comparison", "relation"}:
         yield f"Population: {projection.get('scope', {}).get('evaluated_rows', 0)} rows"
     if projection.get("section_selection", {}).get("omitted"):
         yield "Not requested: " + ", ".join(projection["section_selection"]["omitted"])
@@ -467,7 +500,12 @@ def _finding_cards(projection, full, max_nodes) -> Lines:
                 f"  {feature['feature']}: {feature['populated']}/{feature['denominator']} "
                 f"populated {row['counting_unit']}"
             )
-        yield "  " + sample_label("Examples", row["examples"])
-        yield "  " + sample_label("Exceptions", row["exceptions"])
+        side = f" ({row['side']})" if "side" in row else ""
+        yield "  " + sample_label("Examples" + side, row["examples"])
+        yield "  " + sample_label("Exceptions" + side, row["exceptions"])
+        if "other_side" in row:
+            other = row["other_side"]
+            yield "  " + sample_label(f"Examples ({other['side']})", other["examples"])
+            yield "  " + sample_label(f"Exceptions ({other['side']})", other["exceptions"])
     if len(projection["findings"]) > max_nodes:
         yield "... more findings not rendered (max_nodes)"

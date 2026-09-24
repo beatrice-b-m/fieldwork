@@ -4,7 +4,8 @@
 also available alone: ``missingness``, ``discover_dependencies``,
 ``suggest_paths`` and ``value_patterns``. ``profile(df, dimensions)`` combines
 ``levels``, ``census``, ``grain`` and ``pairs`` for chosen columns; ``joint_counts``
-and ``infer_schema`` complete the individual tools.
+and ``infer_schema`` complete the individual tools. ``relate`` checks key coverage,
+cardinality, agreement and self-references across two tables.
 
 Every analysis returns a ``Result``, reads the source without mutating it, and
 accepts the same ``scope``, ``missing`` and ``table_id`` context and runtime
@@ -41,6 +42,7 @@ from .progress import (
     ProgressDisplay,
     ProgressEvent,
 )
+from .relate import relate
 from .result import Result
 from .workflow import Recipe, compare
 
@@ -67,6 +69,7 @@ __all__ = [
     "missingness",
     "pairs",
     "profile",
+    "relate",
     "render_html",
     "render_plaintext",
     "render_svg",

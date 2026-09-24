@@ -416,6 +416,8 @@ def _subtitle(projection) -> str:
         return "Topology only"
     if projection["kind"] == "comparison":
         return "Availability comparison · before → after"
+    if projection["kind"] == "relation":
+        return "Relation · left and right tables through a key"
     unit = projection.get("analysis_unit")
     described = (
         f"{unit['denominator']} {unit['counting_unit']} · {unit['presence_aggregation']}"
@@ -431,7 +433,7 @@ def _context_lines(projection) -> list[str]:
         lines.append("Not requested: " + ", ".join(projection["section_selection"]["omitted"]))
     if projection.get("skipped_features"):
         lines.append(skipped_label(projection["skipped_features"]))
-    if "analysis_unit" in projection and projection["kind"] != "comparison":
+    if "analysis_unit" in projection and projection["kind"] not in {"comparison", "relation"}:
         lines.append("Analysis: " + unit_label(projection["analysis_unit"]))
     return lines
 
