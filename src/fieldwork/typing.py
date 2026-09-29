@@ -32,6 +32,8 @@ __all__ = [
     "SchemaRole",
     "Section",
     "SectionOptions",
+    "Shading",
+    "ShadingRule",
     "Side",
 ]
 
@@ -43,6 +45,27 @@ MatchMode: TypeAlias = Literal["typed", "text"]
 """How ``relate`` matches values across tables; see docs/algorithms.md."""
 Side: TypeAlias = Literal["left", "right"]
 """A table of a relation result, for its row inspection and selection."""
+ShadingRule: TypeAlias = Literal["equal", "log", "quantile"] | tuple[float, float, float]
+"""How a figure's four shading ranges are cut; see docs/output-ux.md.
+
+'equal' splits the observed values into equal-width ranges; 'log' spaces them
+evenly on a log scale up to the largest value (from 1 for counts), rounded;
+'quantile' puts about a quarter of the cells in each range. Three increasing
+numbers fix the cut-offs, so several reports share one scale.
+"""
+
+
+class Shading(TypedDict, total=False):
+    """Shading ranges of the association and joint-count figures.
+
+    The cut-offs used are saved in the projection's ``shading`` entry and printed
+    in each figure's legend.
+    """
+
+    association: ShadingRule
+    """Cramér's V cells of the pairs association view; default 'equal'."""
+    counts: ShadingRule
+    """Joint-count heatmap cells; default 'log'."""
 
 
 class Runtime(TypedDict, total=False):

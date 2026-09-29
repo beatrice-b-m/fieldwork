@@ -11,6 +11,7 @@ from ._present.project import project
 from ._present.svg import figure
 from ._present.text import lines
 from .result import Result
+from .typing import Shading
 
 Detail = Literal["full", "topology"]
 
@@ -37,6 +38,7 @@ def visualization_data(
     *,
     section: str | None = None,
     detail: Detail = "full",
+    shading: Shading | None = None,
 ) -> dict[str, Any]:
     """Project saved evidence into the data every renderer draws from.
 
@@ -52,6 +54,10 @@ def visualization_data(
         keeps labels and qualitative relationships only, in canonical order: no
         quantities, positions or statistics. Topology is a disclosure filter, not
         anonymization; labels can still identify values.
+    shading : Shading or None, optional
+        Rules for the shading ranges of association and joint-count figures;
+        default None uses 'equal' and 'log'. Full-detail pairs and joint-count
+        projections record the cut-offs used under ``shading``.
 
     Returns
     -------
@@ -61,7 +67,10 @@ def visualization_data(
     Raises
     ------
     ValueError
-        The detail or section is invalid, or the section was not requested.
+        The detail, section or a shading rule is invalid, or the section was
+        not requested.
+    TypeError
+        shading is not a mapping.
 
     Examples
     --------
@@ -71,7 +80,7 @@ def visualization_data(
     >>> fw.visualization_data(result, detail="topology")["detail"]
     'topology'
     """
-    return project(_data(result), section=section, detail=detail)
+    return project(_data(result), section=section, detail=detail, shading=shading)
 
 
 def render_plaintext(
@@ -145,6 +154,7 @@ def render_svg(
     | None = None,
     show_exceptions: bool = False,
     max_findings: int = 12,
+    shading: Shading | None = None,
 ) -> str:
     """Render saved evidence as a self-contained static SVG.
 
@@ -164,6 +174,8 @@ def render_svg(
         Grain map only: list the columns each key fails to determine.
     max_findings : int, optional
         Nonnegative per-list display limit for findings views; default 12.
+    shading : Shading or None, optional
+        As in visualization_data; applies to the association and heatmap views.
 
     Returns
     -------
@@ -177,10 +189,14 @@ def render_svg(
     >>> result = fw.missingness(pd.DataFrame({"x": [1, None]}))
     >>> fw.render_svg(result).startswith("<svg")
     True
+    >>> counts = fw.joint_counts(pd.DataFrame({"a": [1, 1, 2], "b": [3, 4, 4]}), ["a", "b"])
+    >>> fw.render_svg(counts, shading={"counts": (2, 5, 10)}).startswith("<svg")
+    True
     """
     _limit("max_findings", max_findings, 0)
     data = _data(result)
-    projection = project(data, section=_figure_section(data, section), detail=detail)
+    section = _figure_section(data, section)
+    projection = project(data, section=section, detail=detail, shading=shading)
     return figure(projection, view, show_exceptions=show_exceptions, max_findings=max_findings)
 
 
@@ -190,6 +206,7 @@ def render_html(
     section: str | None = None,
     detail: Detail = "full",
     max_findings: int = 100,
+    shading: Shading | None = None,
 ) -> str:
     """Render a standalone, offline HTML report of saved evidence.
 
@@ -204,6 +221,8 @@ def render_html(
     max_findings : int, optional
         Nonnegative per-list display limit for findings, candidates and tests;
         default 100. Search in the page covers the included records only.
+    shading : Shading or None, optional
+        As in visualization_data.
 
     Returns
     -------
@@ -221,5 +240,6 @@ def render_html(
     """
     _limit("max_findings", max_findings, 0)
     data = _data(result)
-    projection = project(data, section=_figure_section(data, section), detail=detail)
+    section = _figure_section(data, section)
+    projection = project(data, section=section, detail=detail, shading=shading)
     return page(projection, max_findings=max_findings)
