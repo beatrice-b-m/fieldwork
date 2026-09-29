@@ -63,11 +63,12 @@ to go from an overview to examining individual records, or work through the
 [documentation](https://fieldwork.beabm.dev/) covers the tools you can use as
 your questions become more specific.
 
-Fieldwork 0.3.1 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
+Fieldwork 0.3.2 is an alpha release for Python 3.11–3.14, with pandas and NumPy as its
 only required runtime dependencies.
 
-See the [0.3.1 release notes](docs/release-notes/v0.3.1.md) for two presentation
-fixes, and the [0.3.0 release notes](docs/release-notes/v0.3.0.md) for the simplified
+See the [0.3.2 release notes](docs/release-notes/v0.3.2.md) for cross-table checks with
+`relate`, restyled figures and reports, richer topology exports and the `safe_errors`
+control, and the [0.3.0 release notes](docs/release-notes/v0.3.0.md) for the simplified
 result model, the separate `explore` and `profile` functions, faster analyses and the
 saved-format and API changes. Results saved by 0.2.x must be recomputed.
 

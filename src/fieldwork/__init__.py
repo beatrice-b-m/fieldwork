@@ -46,7 +46,7 @@ from .relate import relate
 from .result import Result
 from .workflow import Recipe, compare
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __all__ = [
     "AnalysisCancelled",
     "AnalysisError",
