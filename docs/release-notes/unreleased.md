@@ -3,7 +3,24 @@
 Changes merged since 0.3.1. At release, complete these notes and rename the file
 `v<version>.md`.
 
+## Added
+
+- `render_svg`, `render_html` and `visualization_data` accept `shading`
+  (`fieldwork.typing.Shading`) to choose how association and joint-count cells
+  are split into four ranges: `"equal"`, `"log"`, `"quantile"` or three fixed
+  cut-offs. Full-detail pairs and joint-count projections record the cut-offs
+  used under `shading` ([shading ranges](../output-ux.md#shading-ranges)).
+
 ## Changed
+
+- Figures and reports are restyled. Figures draw on white with dark outlines,
+  system fonts (identifiers in monospace), orthogonal grain-map connectors and
+  fixed-place legends. Colour now encodes results only: blue for determined
+  (constant, n:1), orange for varying (varying, 1:n), a dark fill for 1:1,
+  dashed outlines for absent or out-of-scope cells, and a four-range scale for
+  amounts that adapts to each figure. HTML reports follow the viewer's light or
+  dark scheme, keep figures on white, and remain offline
+  ([colour and type](../output-ux.md#colour-and-type)).
 
 - Column availability findings in `missingness` state whether a column is
   populated in some or no units (`X: populated in some rows`, `X: populated in
