@@ -6,10 +6,11 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import quote
 
+from . import style as st
 from .common import esc
 from .common import esc as _esc
 from .project import candidate_explanation, dependency_label, grain_title
-from .svg import COLORS, figure, grain_map, matrix_keys
+from .svg import figure, grain_map, matrix_keys
 from .text import comparison_labels, coverage_lines, sample_label, skipped_label, unit_label
 
 STYLE = """
@@ -436,10 +437,13 @@ def _matrix(projection: Mapping[str, Any]) -> str:
             different = bool(record and not record["compatible"])
             description = f"{feature['label']} by {key}: {state}"
             description += "; different target population" if different else ""
+            _, stroke, _, kind = st.STATES[state]
+            mark = st.icon(kind, stroke, 0, 0) if kind else ""
             parts.append(
-                f'<td data-matrix-key="{index}" style="background:{COLORS[state]}">'
+                f'<td data-matrix-key="{index}" class="state-{state}">'
                 f'<button type="button" data-feature="{feature["id"]}" class="feature" '
-                f'aria-label="{esc(description)}">{state}{" *" if different else ""}</button></td>'
+                f'aria-label="{esc(description)}"><span class="state">{mark}'
+                f"{state}{' *' if different else ''}</span></button></td>"
             )
         parts.append("</tr>")
     parts.append("</tbody></table></div>")

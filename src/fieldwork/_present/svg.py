@@ -6,64 +6,69 @@ from collections import defaultdict
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from . import style as st
 from .common import esc, wrap
 from .project import candidate_explanation, dependency_label, grain_title, structure_notes
 from .text import comparison_labels, skipped_label, unit_label
 
-COLORS = {
-    "constant": "#dcf3e7",
-    "varying": "#ffe4d4",
-    "undefined": "#eceef2",
-    "untested": "#ffffff",
-    "1:1": "#dcf3e7",
-    "1:n": "#dcecff",
-    "n:1": "#eee2ff",
-    "n:m": "#ffe4d4",
-}
-
 
 class SVG:
-    """An SVG document assembled from escaped text and rectangles."""
+    """An SVG document assembled from escaped text and shapes, always on white."""
 
     def __init__(self, title: str, *, role: str = "img", marker: str = "arrow"):
         self.title, self.role, self.marker = title, role, marker
         self.parts: list[str] = []
 
-    def text(self, x, y, value, *, size=14, bold=False, attrs=""):
+    def text(
+        self, x, y, value, *, size=13, bold=False, mono=False, color=None, anchor=None, attrs=""
+    ):
+        extra = f' font-family="{st.MONO}"' if mono else ""
+        extra += f' fill="{color}"' if color else ""
+        extra += f' text-anchor="{anchor}"' if anchor else ""
         self.parts.append(
             f'<text x="{x}" y="{y}" font-size="{size}" '
-            f'font-weight="{600 if bold else 400}" {attrs}>{esc(value)}</text>'
+            f'font-weight="{700 if bold else 400}"{extra} {attrs}>{esc(value)}</text>'
         )
 
-    def rect(self, x, y, width, height, *, fill="#ffffff", attrs=""):
+    def rect(
+        self, x, y, width, height, *, fill=st.PAPER, stroke=st.INK, dashed=False, rx=4, attrs=""
+    ):
+        outline = f' stroke="{stroke}" stroke-width="1.2"' if stroke else ""
+        outline += ' stroke-dasharray="5 4"' if dashed and stroke else ""
         self.parts.append(
             f'<rect x="{x}" y="{y}" width="{width}" height="{height}" '
-            f'rx="7" fill="{fill}" stroke="#cbd5df" {attrs}/>'
+            f'rx="{rx}" fill="{fill}"{outline} {attrs}/>'
+        )
+
+    def line(self, x1, y1, x2, y2, *, stroke=st.LINE, width=1):
+        self.parts.append(
+            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{stroke}" '
+            f'stroke-width="{width}"/>'
         )
 
     def finish(self, width, height) -> str:
         marker = (
-            f'<defs><marker id="{self.marker}" markerWidth="8" markerHeight="8" '
-            'refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" '
-            'fill="#647b8c"/></marker></defs>'
+            f'<defs><marker id="{self.marker}" viewBox="0 0 8 8" markerWidth="8" '
+            'markerHeight="8" markerUnits="userSpaceOnUse" refX="7" refY="4" orient="auto">'
+            f'<path d="M0 0L8 4L0 8z" fill="{st.INK}"/></marker></defs>'
             if any("marker-end=" in part for part in self.parts)
             else ""
         )
         return (
             f'<svg xmlns="http://www.w3.org/2000/svg" role="{self.role}" '
             f'aria-label="{esc(self.title)}" viewBox="0 0 {width} {height}" '
-            f'width="{width}" height="{height}" font-family="Arial, sans-serif" fill="#193345">'
+            f'width="{width}" height="{height}" font-family="{st.SANS}" fill="{st.TEXT}">'
             f"<title>{esc(self.title)}</title>"
             + marker
-            + '<rect width="100%" height="100%" fill="#f6f8fb"/>'
+            + f'<rect width="100%" height="100%" fill="{st.PAPER}"/>'
             + "".join(self.parts)
             + "</svg>"
         )
 
 
 def _heading(svg: SVG, projection: Mapping[str, Any], title: str) -> int:
-    svg.text(24, 32, title, size=22, bold=True)
-    y = 55
+    svg.text(24, 40, title, size=24, bold=True)
+    y = 64
     lines = [projection.get("caption", ""), projection.get("scope", "")]
     if projection["detail"] == "topology":
         lines.append("Topology only · quantitative evidence suppressed")
@@ -71,9 +76,37 @@ def _heading(svg: SVG, projection: Mapping[str, Any], title: str) -> int:
         lines.append("Missingness: " + projection["missingness"])
     for line in lines:
         for wrapped in wrap(line, 105) if line else []:
-            svg.text(24, y, wrapped, size=12)
+            svg.text(24, y, wrapped, color=st.INK_MUTED)
             y += 18
     return y + 20
+
+
+def _legend(svg: SVG, y, items, *, columns=2, width=300) -> int:
+    """A legend at a fixed place below a grid: (fill, stroke, dashed, icon, label, text)."""
+    svg.line(24, y, 24 + columns * width - 24, y)
+    y += 12
+    for index, (fill, stroke, dashed, kind, name, text) in enumerate(items):
+        x, top = 24 + (index % columns) * width, y + (index // columns) * 26
+        svg.rect(x, top, 22, 18, fill=fill, stroke=stroke, dashed=dashed)
+        if kind:
+            svg.parts.append(st.icon(kind, stroke, x + 4, top + 2))
+        svg.parts.append(
+            f'<text x="{x + 32}" y="{top + 14}" font-size="13"><tspan font-weight="700">'
+            f"{esc(name)}</tspan>  {esc(text)}</text>"
+        )
+    return y + ((len(items) + columns - 1) // columns) * 26
+
+
+def _range_legend(svg: SVG, y, cuts, *, counts, empty) -> int:
+    """The four shading ranges with the cut-offs used, then the empty-cell swatch."""
+    labels = st.range_labels(cuts, counts=counts)
+    for index, (fill, text) in enumerate(zip(st.AMOUNT_SCALE, labels, strict=True)):
+        svg.rect(24 + index * 100, y, 94, 16, fill=fill, stroke=None, rx=0)
+        svg.text(24 + index * 100, y + 32, text, size=11)
+    fill, stroke, dashed, text = empty
+    svg.rect(24 + 4 * 100 + 16, y, 40, 16, fill=fill, stroke=stroke, dashed=dashed, rx=0)
+    svg.text(24 + 4 * 100 + 16, y + 32, text, size=11)
+    return y + 48
 
 
 def _ranks(projection) -> dict[str, int]:
@@ -92,34 +125,35 @@ def _ranks(projection) -> dict[str, int]:
     return ranks
 
 
-def _node_lines(node, projection, features, exceptions, collapsed) -> list[tuple[str, Any, bool]]:
-    lines: list[tuple[str, Any, bool]] = [(title, None, True) for title in node["titles"]]
+def _node_lines(node, projection, features, exceptions, collapsed) -> list[tuple[str, Any, str]]:
+    """Card lines as (text, feature id, kind); kind is title, plain, label or feature."""
+    lines: list[tuple[str, Any, str]] = [(title, None, "title") for title in node["titles"]]
     if len(node["titles"]) > 1:
-        lines.append(("Observationally equivalent keys", None, False))
-    lines.append((node["role"].capitalize(), None, False))
+        lines.append(("Observationally equivalent keys", None, "plain"))
+    lines.append((node["role"].capitalize(), None, "plain"))
     support = node.get("support")
     if support:
         lines.append(
             (
                 f"{support['evaluated_groups']} groups · {support['evaluated_rows']} rows",
                 None,
-                False,
+                "plain",
             )
         )
         lines.append(
             (
                 f"{support['singleton_groups']} singleton · {support['repeated_groups']} repeated groups",
                 None,
-                False,
+                "plain",
             )
         )
-    lines.append(("Attributes collapsed" if collapsed else "Attributes", None, True))
+    lines.append(("Attributes collapsed" if collapsed else "Attributes", None, "label"))
     for feature_id in [] if collapsed else node["attributes"]:
         feature = features[feature_id]
         shared = " (shared)" if len(feature["nodes"]) > 1 else ""
-        lines.append((feature["label"] + shared, feature_id, False))
+        lines.append((feature["label"] + shared, feature_id, "feature"))
     if not node["attributes"]:
-        lines.append(("No assigned attributes", None, False))
+        lines.append(("No assigned attributes", None, "plain"))
     for record in projection["evidence"] if exceptions else []:
         if (
             record["key"] == node["key_names"][0]
@@ -129,8 +163,13 @@ def _node_lines(node, projection, features, exceptions, collapsed) -> list[tuple
             text = "Varies: " + features[record["feature"]]["label"]
             if projection["detail"] == "full":
                 text += f" · {record['violating_groups']}/{record['evaluated_groups']} groups"
-            lines.append((text, record["feature"], False))
-    return [(part, feature, bold) for text, feature, bold in lines for part in wrap(text)]
+            lines.append((text, record["feature"], "plain"))
+    # Key names are set larger in monospace, so they wrap sooner.
+    return [
+        (part, feature, kind)
+        for text, feature, kind in lines
+        for part in wrap(text, 36 if kind == "title" else 42)
+    ]
 
 
 def grain_map(
@@ -147,9 +186,7 @@ def grain_map(
     interactive role.
     """
     svg = SVG("Observed grain map", role=role, marker=marker)
-    y = _heading(svg, projection, "Observed grain map")
-    svg.text(24, y, "Arrows mean finer grouping ↓", size=13, bold=True)
-    y += 30
+    y = _heading(svg, {**projection, "caption": _join(projection.get("caption"))}, svg.title)
     features = {f["id"]: f for f in projection["features"]}
     nodes = projection["nodes"]
     ranks = _ranks(projection)
@@ -157,7 +194,7 @@ def grain_map(
     for node in nodes:
         layers[ranks[node["id"]]].append(node)
     contents = {n["id"]: _node_lines(n, projection, features, exceptions, collapsed) for n in nodes}
-    heights = {node_id: 30 + 20 * len(lines) for node_id, lines in contents.items()}
+    heights = {node_id: 38 + 20 * len(lines) for node_id, lines in contents.items()}
     width = max(900, max((len(layer) for layer in layers.values()), default=1) * 400 + 24)
     positions = {}
     for rank in sorted(layers):
@@ -165,33 +202,67 @@ def grain_map(
         for index, node in enumerate(layers[rank]):
             positions[node["id"]] = (start + index * 400, y)
         y += max(heights[n["id"]] for n in layers[rank]) + 70
+    # Orthogonal edges: every edge into a target turns on the same row above it,
+    # so several sources join one trunk that enters the target once.
     for edge in projection["edges"]:
         (ax, ay), (bx, by) = positions[edge["source"]], positions[edge["target"]]
         ay += heights[edge["source"]]
         svg.parts.append(
             f'<path data-source="{edge["source"]}" data-target="{edge["target"]}" '
-            f'd="M{ax + 190},{ay} C{ax + 190},{(ay + by) / 2} {bx + 190},{(ay + by) / 2} '
-            f'{bx + 190},{by - 4}" fill="none" stroke="#647b8c" stroke-width="1.5" '
-            f'marker-end="url(#{marker})"/>'
+            f'd="M{ax + 190} {ay}V{by - 30}H{bx + 190}V{by - 2}" fill="none" '
+            f'stroke="{st.INK}" stroke-width="1.2" marker-end="url(#{marker})"/>'
         )
     for node in nodes:
         x, top = positions[node["id"]]
         assigned = " ".join(f["id"] for f in projection["features"] if node["id"] in f["nodes"])
         svg.parts.append(f'<g data-node="{node["id"]}" data-features="{assigned}">')
         svg.rect(x, top, 380, heights[node["id"]])
-        for index, (text, feature, bold) in enumerate(contents[node["id"]]):
+        cursor, previous = top + 26, "title"
+        for text, feature, kind in contents[node["id"]]:
+            if previous == "title" and kind != "title":  # a rule under the key names
+                svg.line(x + 12, cursor - 12, x + 368, cursor - 12)
+                cursor += 8
+            previous = kind
             attrs = f'data-feature="{feature}" class="feature" tabindex="0"' if feature else ""
-            svg.text(x + 16, top + 25 + 20 * index, text, bold=bold, attrs=attrs)
+            svg.text(
+                x + 16,
+                cursor,
+                text,
+                size={"title": 15, "label": 11, "feature": 13}.get(kind, 13),
+                bold=kind in {"title", "label"},
+                mono=kind in {"title", "feature"},
+                color=st.INK_MUTED if kind == "label" else None,
+                attrs=attrs,
+            )
+            cursor += 20
         svg.parts.append("</g>")
     unplaced = [f for f in projection["features"] if not f["nodes"] and not f["key_component"]]
     if unplaced:
-        svg.text(24, y, "Not placed by tested keys", bold=True)
-        y += 24
-        for feature in unplaced:
-            for line in wrap(feature["label"] + " · " + feature["reason"].replace("_", " "), 100):
-                svg.text(24, y, line, attrs=f'data-feature="{feature["id"]}" class="feature"')
-                y += 20
+        lines = [
+            (part, feature["id"])
+            for feature in unplaced
+            for part in wrap(feature["label"] + " · " + feature["reason"].replace("_", " "), 90)
+        ]
+        # Dashed: these columns are outside what the tested keys explain.
+        svg.rect(24, y, width - 48, 46 + 20 * len(lines), stroke=st.MUTED, dashed=True)
+        svg.text(40, y + 26, "Not placed by tested keys", bold=True)
+        svg.line(36, y + 38, width - 36, y + 38)
+        for index, (text, feature_id) in enumerate(lines):
+            svg.text(
+                40,
+                y + 60 + 20 * index,
+                text,
+                mono=True,
+                attrs=f'data-feature="{feature_id}" class="feature"',
+            )
+        y += 46 + 20 * len(lines) + 20
     return svg.finish(width, y + 20)
+
+
+def _join(caption) -> str:
+    """The map's caption with the arrow reading, so no annotation needs placing."""
+    note = "Arrows point to finer groupings."
+    return f"{caption} {note}" if caption else note
 
 
 def matrix_keys(projection: Mapping[str, Any]) -> list[str]:
@@ -207,30 +278,50 @@ def grain_matrix(projection: Mapping[str, Any]) -> str:
     """Each feature's behavior (constant, varying...) under each candidate key."""
     svg = SVG("Candidate key × target feature")
     y = _heading(svg, projection, "Candidate key × target feature")
-    svg.text(24, y, "Constant · varying · undefined · untested | * different target population")
-    y += 32
     keys = matrix_keys(projection)
+    width = max(900, 300 + 140 * len(keys) + 24)
     header = [wrap(key, 16) for key in keys]
     for index, lines in enumerate(header):
         for line_index, line in enumerate(lines):
-            svg.text(300 + index * 140 + 6, y + line_index * 18, line, size=12)
-    y += max((len(lines) for lines in header), default=1) * 18 + 10
+            svg.text(
+                300 + index * 140 + 6, y + line_index * 18, line, size=12, bold=True, mono=True
+            )
+    y += max((len(lines) for lines in header), default=1) * 18 - 8
+    svg.line(24, y, width - 24, y, stroke=st.INK)
+    y += 10
     lookup = {(r["key"], r["feature"]): r for r in projection["evidence"]}
     for feature in projection["features"]:
         lines = wrap(feature["label"], 30)
         height = max(44, 20 * len(lines) + 10)
         for i, line in enumerate(lines):
-            svg.text(24, y + 24 + i * 20, line)
+            svg.text(24, y + 24 + i * 20, line, mono=True)
         for index, key in enumerate(keys):
             record = lookup.get((key, feature["id"]))
             state = record["state"] if record else "untested"
+            fill, stroke, dashed, kind = st.STATES[state]
             x = 300 + index * 140
-            svg.rect(x, y, 134, height - 6, fill=COLORS[state])
+            svg.rect(x, y, 134, height - 6, fill=fill, stroke=stroke, dashed=dashed)
+            if kind:
+                svg.parts.append(st.icon(kind, stroke, x + 10, y + 12))
             marker = " *" if record and not record["compatible"] else ""
             attrs = f'data-feature="{feature["id"]}" class="feature" tabindex="0"'
-            svg.text(x + 8, y + 24, state + marker, size=12, attrs=attrs)
+            svg.text(
+                x + 30,
+                y + 24,
+                state + marker,
+                color=st.INK_MUTED if state == "untested" else None,
+                attrs=attrs,
+            )
         y += height
-    return svg.finish(max(900, 300 + 140 * len(keys) + 24), y + 20)
+    items = [
+        (*st.STATES["constant"], "Constant", "one value per group"),
+        (*st.STATES["varying"], "Varying", "conflicting values"),
+        (*st.STATES["undefined"], "Undefined", "no evaluated support"),
+        (*st.STATES["untested"], "Untested", "no saved test"),
+    ]
+    y = _legend(svg, y + 16, items)
+    svg.text(24, y + 16, "* the target's evaluated population differs from the map population")
+    return svg.finish(width, y + 36)
 
 
 def bars(projection: Mapping[str, Any]) -> str:
@@ -248,37 +339,52 @@ def bars(projection: Mapping[str, Any]) -> str:
     width = max(980, bar_x + 550)
     for group in groups:
         for line in wrap(group["label"], 100):
-            svg.text(24, y, line if full or not is_tree else "Observed paths", bold=True)
+            svg.text(24, y, line if full or not is_tree else "Observed paths", size=15, bold=True)
             y += 22
         for line in wrap(group.get("scope", ""), 100) if group.get("scope") else []:
-            svg.text(24, y, line, size=12)
+            svg.text(24, y, line, size=12, color=st.INK_MUTED)
             y += 18
+        y += 8
+        rows_at: dict[str, tuple[int, int]] = {}
         for row in group["rows"]:
-            y = _bar(svg, row, y, bar_x, is_tree, full)
+            y = _bar(svg, row, y, bar_x, is_tree, full, rows_at)
         y += 22
+    if full and any(row.get("omitted") for g in groups for row in g["rows"]):
+        svg.rect(24, y - 4, 22, 14, fill=st.PAPER, stroke=st.MUTED, dashed=True, rx=0)
+        svg.text(54, y + 8, "Omitted branches: outside the shown paths, mass kept")
+        y += 30
     return svg.finish(width, y + 10)
 
 
-def _bar(svg: SVG, row, y, bar_x, is_tree, full) -> int:
-    x = 24 + row.get("depth", 0) * 20
+def _bar(svg: SVG, row, y, bar_x, is_tree, full, rows_at) -> int:
+    depth = row.get("depth", 0)
+    x = 24 + depth * 20
     attrs = f'data-row="{row["id"]}" data-parent="{row.get("parent") or ""}"' if is_tree else ""
     svg.parts.append(f"<g {attrs}>")
     lines = wrap(row["label"], 42)
-    if is_tree:
+    if is_tree and row.get("parent") in rows_at:
+        # A thin elbow guide from the parent row, not an arrow per row.
+        parent_y, parent_depth = rows_at[row["parent"]]
+        guide_x = 24 + parent_depth * 20 + 4
         svg.parts.append(
-            f'<path d="M{x},{y - 10} v8 h8 m-3,-3 l3,3 -3,3" fill="none" stroke="#647b8c"/>'
+            f'<path d="M{guide_x} {parent_y + 5}V{y - 4}H{x + 8}" fill="none" '
+            f'stroke="{st.MUTED}" stroke-width="0.6"/>'
         )
+    if is_tree:
+        rows_at[row["id"]] = (y, depth)
     for i, line in enumerate(lines):
-        svg.text(x + (14 if is_tree else 0), y + i * 18, line, size=13)
+        svg.text(x + (12 if is_tree and depth else 0), y + i * 18, line, bold=is_tree and not depth)
     if full:
         share = row.get("share")
-        svg.rect(bar_x, y - 13, 300, 16, fill="#edf1f5")
-        fill = "#a5aeb8" if row.get("omitted") else "#65a5b3"
-        svg.rect(bar_x, y - 13, 300 * (share or 0), 16, fill=fill)
+        svg.rect(bar_x, y - 12, 300, 14, fill=st.SURFACE, stroke=st.LINE, rx=0)
+        if row.get("omitted"):
+            svg.rect(bar_x, y - 12, 300 * (share or 0), 14, stroke=st.MUTED, dashed=True, rx=0)
+        else:
+            svg.rect(bar_x, y - 12, 300 * (share or 0), 14, fill=st.AMOUNT, stroke=None, rx=0)
         value = f"{row['count']} rows · {share:.1%}" if share is not None else "0 rows · undefined"
-        svg.text(bar_x + 312, y, value, size=12)
+        svg.text(bar_x + 316, y, value, attrs='style="font-variant-numeric:tabular-nums"')
     svg.parts.append("</g>")
-    return y + max(28, len(lines) * 18 + 8)
+    return y + max(30, len(lines) * 18 + 10)
 
 
 _REVERSE = {"1:n": "n:1", "n:1": "1:n", "1:1": "1:1", "n:m": "n:m", "undefined": "undefined"}
@@ -287,6 +393,7 @@ _REVERSE = {"1:n": "n:1", "n:1": "1:n", "1:1": "1:1", "n:m": "n:m", "undefined":
 def pairs(projection: Mapping[str, Any], *, association: bool = False) -> str:
     """A feature x feature matrix per context: relations, or Cramér's V."""
     svg = SVG("Pair association" if association else "Directional pair mappings")
+    cuts = projection.get("shading", {}).get("association") if association else None
     y = _heading(svg, projection, svg.title)
     features = projection["features"]
     if projection["omitted"]:
@@ -296,35 +403,40 @@ def pairs(projection: Mapping[str, Any], *, association: bool = False) -> str:
         for line in wrap(context["label"], 100):
             svg.text(24, y, line, bold=True)
             y += 24
-        header = [wrap(feature, 14) for feature in features]
+        header = [wrap(feature, 16) for feature in features]
         for i, lines in enumerate(header):
             for j, line in enumerate(lines):
-                svg.text(240 + i * 125, y + 18 * j, line, size=12)
-        y += max((len(lines) for lines in header), default=1) * 18 + 12
+                svg.text(240 + i * 125, y + 18 * j, line, size=12, bold=True, mono=True)
+        y += max((len(lines) for lines in header), default=1) * 18 - 6
+        svg.line(24, y, 240 + len(features) * 125 - 6, y, stroke=st.INK)
+        y += 12
         lookup = {}
         for cell in context["cells"]:
             lookup[(cell["a"], cell["b"])] = cell
             lookup[(cell["b"], cell["a"])] = {**cell, "relation": _REVERSE[cell["relation"]]}
         for i, feature in enumerate(features):
-            y = _pair_row(svg, feature, i, len(features), lookup, y, association)
-        y += 32
+            y = _pair_row(svg, feature, i, len(features), lookup, y, association, cuts)
+        y += 24
+    if association and cuts:
+        y = _range_legend(svg, y, cuts, counts=False, empty=(st.PAPER, st.MUTED, True, "undefined"))
+    elif not association:
+        items = [
+            (*st.RELATIONS["n:1"], None, "n:1", "row determines column"),
+            (*st.RELATIONS["1:n"], None, "1:n", "column determines row"),
+            (*st.RELATIONS["1:1"], None, "1:1", "determined both ways"),
+            (*st.RELATIONS["n:m"], None, "n:m", "neither determines the other"),
+        ]
+        y = _legend(svg, y, items, width=360)
     return svg.finish(max(900, 240 + len(features) * 125 + 24), y + 20)
 
 
-def _pair_row(svg, feature, i, count, lookup, y, association) -> int:
+def _pair_row(svg, feature, i, count, lookup, y, association, cuts) -> int:
     lines = wrap(feature, 25)
     height = max(48, len(lines) * 18 + 10)
     for k, line in enumerate(lines):
-        svg.text(24, y + 24 + 18 * k, line, size=12)
+        svg.text(24, y + 24 + 18 * k, line, mono=True)
     for j in range(count):
         cell = lookup.get((i, j))
-        value, fill = ("—" if i == j else "untested"), "#ffffff"
-        if cell and association:
-            v = cell["association"]
-            value = f"{v:.3f}" if v is not None else "undefined"
-            fill = f"rgb({int(245 - 120 * (v or 0))}, {int(248 - 75 * (v or 0))}, 230)"
-        elif cell:
-            value, fill = cell["relation"], COLORS[cell["relation"]]
         x = 240 + j * 125
         svg.parts.append("<g>")
         if cell:
@@ -332,8 +444,28 @@ def _pair_row(svg, feature, i, count, lookup, y, association) -> int:
             if association and cell["association"] is None:
                 title += " · " + str(cell["association_reason"])
             svg.parts.append(f"<title>{esc(title)}</title>")
-        svg.rect(x, y, 119, height - 6, fill=fill)
-        svg.text(x + 12, y + 24, value, size=12)
+        color = None
+        if i == j:
+            value = "—"
+            svg.rect(x, y, 119, height - 6, fill=st.SURFACE, stroke=None)
+        elif not cell:
+            value, color = "untested", st.INK_MUTED
+            svg.rect(x, y, 119, height - 6, stroke=st.SUBTLE, dashed=True)
+        elif association and cell["association"] is None:
+            value, color = "undefined", st.INK_MUTED
+            svg.rect(x, y, 119, height - 6, stroke=st.MUTED, dashed=True)
+        elif association:
+            v = cell["association"]
+            index = st.shade(v, cuts)
+            value = f"{v:.3f}"
+            color = st.ON_DARKEST if index == 3 else None
+            svg.rect(x, y, 119, height - 6, fill=st.AMOUNT_SCALE[index], stroke=None)
+        else:
+            value = cell["relation"]
+            fill, stroke, dashed = st.RELATIONS[value]
+            color = st.ON_DARKEST if value == "1:1" else None
+            svg.rect(x, y, 119, height - 6, fill=fill, stroke=stroke, dashed=dashed)
+        svg.text(x + 60, y + 24, value, bold=not association, color=color, anchor="middle")
         svg.parts.append("</g>")
     return y + height
 
@@ -350,11 +482,13 @@ def heatmap(projection: Mapping[str, Any]) -> str:
     headers = [wrap(v, 13) for v in projection["b"]]
     for j, lines in enumerate(headers):
         for k, line in enumerate(lines):
-            svg.text(240 + j * 120, y + k * 18, line, size=12)
-    y += max((len(lines) for lines in headers), default=1) * 18 + 10
+            svg.text(240 + j * 120 + 57, y + k * 18, line, size=12, bold=True, anchor="middle")
+    y += max((len(lines) for lines in headers), default=1) * 18 - 6
+    svg.line(24, y, 240 + 120 * len(projection["b"]) - 6, y, stroke=st.INK)
+    y += 12
     lookup = {(c["a"], c["b"]): c for c in projection["cells"]}
     full = projection["detail"] == "full"
-    maximum = max((c.get("count", 1) for c in projection["cells"]), default=1)
+    cuts = projection.get("shading", {}).get("counts")
     for i, value in enumerate(projection["a"]):
         lines = wrap(value, 25)
         height = max(44, len(lines) * 18 + 10)
@@ -362,14 +496,26 @@ def heatmap(projection: Mapping[str, Any]) -> str:
             svg.text(24, y + 24 + k * 18, line, size=12)
         for j in range(len(projection["b"])):
             cell = lookup.get((i, j))
-            fraction = cell["count"] / maximum if cell and full else 0
-            fill = "#ffffff" if not cell else "#dcf3e7"
-            if cell and full:
-                fill = f"rgb({int(235 - 140 * fraction)}, {int(245 - 85 * fraction)}, 210)"
-            svg.rect(240 + j * 120, y, 114, height - 6, fill=fill)
+            x, color = 240 + j * 120, None
+            if not cell:
+                svg.rect(x, y, 114, height - 6, stroke=st.LINE)
+            elif full and cuts:
+                index = st.shade(cell["count"], cuts)
+                color = st.ON_DARKEST if index == 3 else None
+                svg.rect(x, y, 114, height - 6, fill=st.AMOUNT_SCALE[index], stroke=None)
+            else:
+                svg.rect(x, y, 114, height - 6, fill=st.PANEL, stroke=None)
             text = cell["count"] if cell and full else "observed" if cell else "—"
-            svg.text(250 + j * 120, y + 24, text, size=12)
+            svg.text(
+                x + 57,
+                y + 24,
+                text,
+                color=color or (None if cell else st.INK_MUTED),
+                anchor="middle",
+            )
         y += height
+    if full and cuts:
+        y = _range_legend(svg, y + 20, cuts, counts=True, empty=(st.PAPER, st.LINE, False, "none"))
     return svg.finish(max(900, 264 + 120 * len(projection["b"])), y + 20)
 
 
@@ -377,18 +523,25 @@ def findings(projection: Mapping[str, Any], max_findings: int) -> str:
     """Evidence cards: findings, candidates and tests, or availability bars."""
     kind, full = projection["kind"], projection["detail"] == "full"
     svg = SVG(f"Fieldwork {kind}")
-    svg.text(24, 36, f"Fieldwork / {kind.replace('_', ' ').title()}", size=23, bold=True)
-    svg.text(24, 62, _subtitle(projection), size=13)
-    y = 92
+    svg.text(24, 40, f"Fieldwork / {kind.replace('_', ' ').title()}", size=24, bold=True)
+    svg.text(24, 64, _subtitle(projection), color=st.INK_MUTED)
+    y = 94
     for text in _context_lines(projection):
         for line in wrap(text, 102):
-            svg.text(24, y, line, size=13)
+            svg.text(24, y, line, color=st.INK_MUTED)
             y += 20
     if full and "availability" in projection:
         rows = projection["availability"]
         displayed = [("availability features", len(rows), max_findings)]
+        y += 8
         for row in rows[:max_findings]:
             y = _availability_bar(svg, row, y)
+        if rows[:max_findings]:
+            svg.rect(24, y + 4, 22, 14, fill=st.AMOUNT, stroke=None, rx=0)
+            svg.text(54, y + 16, "Populated")
+            svg.rect(150, y + 4, 22, 14, stroke=st.MUTED, dashed=True, rx=0)
+            svg.text(180, y + 16, "Missing")
+            y += 34
     else:
         displayed, cards = _cards(projection, max_findings)
         for card in cards:
@@ -406,6 +559,7 @@ def findings(projection: Mapping[str, Any], max_findings: int) -> str:
                 y + 14,
                 text if full else "More evidence available · display limit reached",
                 size=12,
+                color=st.INK_MUTED,
             )
             y += 30
     return svg.finish(864, y + 20)
@@ -439,15 +593,25 @@ def _context_lines(projection) -> list[str]:
 
 
 def _availability_bar(svg: SVG, row, y) -> int:
-    for line in wrap(row["feature"], 28):
-        svg.text(24, y + 18, line, size=13)
-        y += 18
+    lines = wrap(row["feature"], 28)
+    for index, line in enumerate(lines):
+        svg.text(24, y + 13 + 18 * index, line, mono=True)
     fraction = row["populated_fraction"] or 0
-    svg.rect(270, y - 1, 400, 17, fill="#e2e8f0")
-    if fraction:
-        svg.rect(270, y - 1, round(400 * fraction, 2), 17, fill="#66a89b")
-    svg.text(685, y + 13, f"{row['populated']}/{row['denominator']}", size=12)
-    return y + 28
+    width = round(400 * fraction, 2)
+    # Populated share solid; the missing remainder dashed. Labels sit in a fixed
+    # column after the bar, whatever its length.
+    if width:
+        svg.rect(270, y, width, 18, fill=st.AMOUNT, stroke=None, rx=0)
+    if width < 400:
+        svg.rect(270 + width, y, 400 - width, 18, stroke=st.MUTED, dashed=True, rx=0)
+    populated, total = row["populated"], row["denominator"]
+    share = f" · {row['populated_fraction']:.0%}" if row["populated_fraction"] is not None else ""
+    svg.parts.append(
+        f'<text x="684" y="{y + 13}" font-size="13" style="font-variant-numeric:tabular-nums">'
+        f"{populated} / {total}{share}"
+        f'\u00a0<tspan fill="{st.INK_MUTED}">·\u00a0{total - populated} missing</tspan></text>'
+    )
+    return y + max(34, 18 * len(lines) + 12)
 
 
 def _cards(projection, max_findings) -> tuple[list[tuple[str, int, int]], list[dict[str, Any]]]:
@@ -513,16 +677,19 @@ def _card(svg: SVG, row, y, full) -> int:
     if not full and "explanation" in row and "analysis_unit" not in row:
         metrics = row["explanation"]
     detail = wrap(metrics, 102) if metrics else []
-    height = 26 + len(lines) * 20 + len(detail) * 17
-    svg.rect(20, y, 820, height)
-    cursor = y + 24
+    height = 26 + len(lines) * 20 + (len(detail) * 18 + 12 if detail else 0)
+    svg.rect(24, y, 816, height)
+    cursor = y + 25
     for line in lines:
-        svg.text(34, cursor, line, bold=True)
+        svg.text(38, cursor, line, size=14, bold=True)
         cursor += 20
+    if detail:
+        svg.line(36, cursor - 10, 828, cursor - 10)
+        cursor += 8
     for line in detail:
-        svg.text(34, cursor, line, size=12)
-        cursor += 17
-    return y + height + 10
+        svg.text(38, cursor, line, size=12.5)
+        cursor += 18
+    return y + height + 12
 
 
 VIEWS: dict[str, tuple[str, ...]] = {
