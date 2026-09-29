@@ -244,7 +244,7 @@ def grain_map(
             for part in wrap(feature["label"] + " · " + feature["reason"].replace("_", " "), 90)
         ]
         # Dashed: these columns are outside what the tested keys explain.
-        svg.rect(24, y, width - 48, 46 + 20 * len(lines), stroke=st.MUTED, dashed=True)
+        svg.rect(24, y, width - 48, 54 + 20 * len(lines), stroke=st.MUTED, dashed=True)
         svg.text(40, y + 26, "Not placed by tested keys", bold=True)
         svg.line(36, y + 38, width - 36, y + 38)
         for index, (text, feature_id) in enumerate(lines):
@@ -255,7 +255,7 @@ def grain_map(
                 mono=True,
                 attrs=f'data-feature="{feature_id}" class="feature"',
             )
-        y += 46 + 20 * len(lines) + 20
+        y += 54 + 20 * len(lines) + 20
     return svg.finish(width, y + 20)
 
 
