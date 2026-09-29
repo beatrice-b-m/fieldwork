@@ -46,9 +46,12 @@ def generate(output: Path):
                 font_files=[
                     str(ROOT / "scripts/fonts/Lato-Regular.ttf"),
                     str(ROOT / "scripts/fonts/Lato-Bold.ttf"),
+                    str(ROOT / "scripts/fonts/DejaVuSansMono.ttf"),
+                    str(ROOT / "scripts/fonts/DejaVuSansMono-Bold.ttf"),
                 ],
                 font_family="Lato",
                 sans_serif_family="Lato",
+                monospace_family="DejaVu Sans Mono",
             ),
             f"{name}.html": fw.render_html(result, detail=detail).encode(),
             f"{name}.json": (

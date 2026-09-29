@@ -9,7 +9,8 @@
    supported-Python test matrix.
 3. Run `uv run python scripts/generate_assets.py`. It executes the worked example,
    renders public SVG/HTML/visualization-data APIs, rasterizes SVGs with pinned
-   resvg and bundled OFL-licensed Lato fonts, and writes a SHA-256 asset manifest.
+   resvg and bundled Lato (OFL) and DejaVu Sans Mono (Bitstream Vera license) fonts,
+   and writes a SHA-256 asset manifest.
    The generated `README.pypi.md` uses version-tagged absolute image/link URLs.
 4. Visually inspect the generated wide-table hero, availability, census, grain,
    path and topology images. Run the generator with `--check` to detect stale
@@ -72,7 +73,7 @@ metadata. Run `npm run format` followed by `npm run validate`. Keep these update
 in a reviewable PR before publishing the documentation site. No site deployment is
 part of package builds. Do not substitute developer docs for the user journey.
 
-Fonts are build-only assets under `scripts/fonts/`; their OFL license is included
-in source distributions. Runtime SVG/HTML remain dependency-free and use the
-client's sans-serif font. Bitmap baselines use explicit fonts to avoid platform
+Fonts are build-only assets under `scripts/fonts/`; their licenses (`OFL.txt`,
+`DejaVu-LICENSE.txt`) are included in source distributions. Runtime SVG/HTML remain
+dependency-free and use the client's system sans-serif and monospace fonts. Bitmap baselines use explicit fonts to avoid platform
 font drift.

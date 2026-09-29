@@ -19,6 +19,7 @@ from .._explore.encoding import json_order
 from ..evidence import context_statement, qualitative_analysis_unit
 from ..result import overview_findings
 from .common import controls, label, predicate
+from .style import cutoffs, validate_shading
 
 FINDING_KINDS = {
     "missingness",
@@ -86,10 +87,12 @@ def project(
     section: str | None = None,
     detail: str = "full",
     missing_label: str = "<NA>",
+    shading: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Project a saved result (or one of its sections) for presentation."""
     if detail not in {"full", "topology"}:
         raise ValueError("detail must be 'full' or 'topology'")
+    rules = validate_shading(shading)
     data = resolve(data, section)
     if data.get("status") == "not_requested":
         raise ValueError("Requested visualization section was not computed")
@@ -101,7 +104,23 @@ def project(
         raise ValueError(f"No presentation for result kind {kind!r}")
     output = {"kind": kind, "detail": detail, "conditional": _conditional(data)}
     output.update(_PROJECTORS[kind](data, context))
+    if context.full and kind in {"pairs", "joint_counts"}:
+        output["shading"] = _shading(output, rules)
     return output
+
+
+def _shading(output: Mapping[str, Any], rules: Mapping[str, Any]) -> dict[str, Any]:
+    """Cut-offs of the four shading ranges, over every context of the figure."""
+    if output["kind"] == "pairs":
+        values = [c["association"] for ctx in output["contexts"] for c in ctx["cells"]]
+        cuts = cutoffs(values, rules["association"], counts=False)
+        return {"association": cuts, "association_rule": _rule_name(rules["association"])}
+    cuts = cutoffs([c["count"] for c in output["cells"]], rules["counts"], counts=True)
+    return {"counts": cuts, "counts_rule": _rule_name(rules["counts"])}
+
+
+def _rule_name(rule: Any) -> str:
+    return rule if isinstance(rule, str) else "fixed"
 
 
 def _conditional(data: Mapping[str, Any]) -> bool:

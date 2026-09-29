@@ -75,6 +75,9 @@ def consume(df: pd.DataFrame) -> None:
     assert_type(fw.render_plaintext(overview), str)
     assert_type(fw.render_svg(overview, view="findings"), str)
     assert_type(fw.render_html(overview, detail="topology"), str)
+    assert_type(fw.render_svg(overview, shading={"association": "quantile"}), str)
+    assert_type(fw.render_html(overview, shading={"counts": (10, 50, 150)}), str)
+    assert_type(fw.visualization_data(overview, shading={"counts": "log"}), dict[str, Any])
     assert_type(fw.Result.from_dict(fw.levels(df).to_dict()), fw.Result)
     assert_type(fw.Result.from_dict(overview.to_dict()), fw.Result)
     assert_type(fw.Recipe("missingness").run(df, progress=True), fw.Result)
@@ -91,6 +94,8 @@ def consume(df: pd.DataFrame) -> None:
     fw.grain(df, ["site"], _cache=None)  # pyright: ignore[reportCallIssue]
     paths.path().census(df, missing={})  # pyright: ignore[reportCallIssue]
     fw.render_svg(overview, view="bogus")  # pyright: ignore[reportArgumentType]
+    fw.render_svg(overview, shading={"counts": "linear"})  # pyright: ignore[reportArgumentType]
+    fw.render_html(overview, shading={"colour": "log"})  # pyright: ignore[reportArgumentType]
     fw.suggest_paths(df, max_candidates=2)  # pyright: ignore[reportCallIssue]
     fw.suggest_paths(df, limits={"max_candidate": 2})  # pyright: ignore[reportArgumentType]
     fw.relate(df, df, on={"site": "site"}, match="loose")  # pyright: ignore[reportArgumentType]
